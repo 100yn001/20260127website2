@@ -247,18 +247,22 @@ export default function ProfileScreen() {
 
   
   const handleLogOut = () => {
-    Alert.alert('Log out', 'Are you sure you want to log out?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Log out',
-        style: 'destructive',
-        onPress: async () => {
-          await signOut();
-          await AsyncStorage.multiRemove(['hasCompletedOnboarding', 'userName', 'onboardingAnswers']);
-          router.replace('/onboarding');
-        },
-      },
-    ]);
+    const doLogOut = async () => {
+      await signOut();
+      await AsyncStorage.multiRemove(['hasCompletedOnboarding', 'userName', 'onboardingAnswers']);
+      router.replace('/onboarding');
+    };
+
+    if (Platform.OS === 'web') {
+      if (window.confirm('Are you sure you want to log out?')) {
+        doLogOut();
+      }
+    } else {
+      Alert.alert('Log out', 'Are you sure you want to log out?', [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Log out', style: 'destructive', onPress: doLogOut },
+      ]);
+    }
   };
 
   const handleDeleteAccount = async () => {
