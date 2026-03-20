@@ -1,0 +1,11 @@
+# Dependencies
+node_modules/
+
+# Build output
+lib/
+
+# Environment variables (contains secrets)
+.env
+
+# Logs
+*.log

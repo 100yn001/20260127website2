@@ -27,27 +27,23 @@ export const Colors = {
   },
 };
 
-export const Fonts = Platform.select({
-  ios: {
-    /** iOS `UIFontDescriptorSystemDesignDefault` */
-    sans: 'system-ui',
-    /** iOS `UIFontDescriptorSystemDesignSerif` */
-    serif: 'ui-serif',
-    /** iOS `UIFontDescriptorSystemDesignRounded` */
-    rounded: 'ui-rounded',
-    /** iOS `UIFontDescriptorSystemDesignMonospaced` */
-    mono: 'ui-monospace',
-  },
-  default: {
-    sans: 'normal',
-    serif: 'serif',
-    rounded: 'normal',
-    mono: 'monospace',
-  },
-  web: {
-    sans: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
-    serif: "Georgia, 'Times New Roman', serif",
-    rounded: "'SF Pro Rounded', 'Hiragino Maru Gothic ProN', Meiryo, 'MS PGothic', sans-serif",
-    mono: "SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
-  },
-});
+export const Fonts = {
+  /** EB Garamond Regular (default body text) */
+  regular: 'EBGaramond-Regular',
+  /** EB Garamond Medium (headings and emphasis) */
+  medium: 'EBGaramond-Medium',
+  /** EB Garamond SemiBold (strong emphasis) */
+  semiBold: 'EBGaramond-SemiBold',
+  /** EB Garamond Bold (very strong emphasis) */
+  bold: 'EBGaramond-Bold',
+  /** EB Garamond Italic */
+  italic: 'EBGaramond-Italic',
+  /** EB Garamond Medium Italic */
+  mediumItalic: 'EBGaramond-MediumItalic',
+  
+  // Legacy aliases for backward compatibility
+  sans: 'EBGaramond-Regular',
+  serif: 'EBGaramond-Regular',
+  rounded: 'EBGaramond-Medium',
+  mono: 'EBGaramond-Regular',
+};

@@ -1,24 +1,117 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { Stack } from 'expo-router';
+import { Stack, usePathname } from 'expo-router';
+import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
+import { useEffect } from 'react';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import 'react-native-reanimated';
 
+// Register RNTP playback service — no-op on web via .web.ts variant
+import '@/services/track-player-init';
+
+import NowPlayingBar from '@/components/NowPlayingBar';
+import { IconSymbol } from '@/components/ui/icon-symbol';
+import { AudioPlayerProvider } from '@/contexts/AudioPlayerContext';
+import { AuthProvider } from '@/contexts/AuthContext';
+import { StoryQueueProvider } from '@/contexts/StoryQueueContext';
+import { ThemeProvider, useTheme } from '@/contexts/ThemeContext';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useLoadedFonts } from '@/hooks/use-loaded-fonts';
+import { Platform, TouchableOpacity, View } from 'react-native';
+
+// Keep splash screen visible while loading fonts
+SplashScreen.preventAutoHideAsync();
 
 export const unstable_settings = {
-  anchor: '(tabs)',
+  initialRouteName: 'index',
 };
 
+function FullscreenButton() {
+  const { isFullscreen, toggleFullscreen } = useTheme();
+  const pathname = usePathname();
+  const isOnPlayer = pathname === '/player';
+
+  // Exit fullscreen when navigating away from the player
+  useEffect(() => {
+    if (!isOnPlayer && isFullscreen) {
+      toggleFullscreen();
+    }
+  }, [isOnPlayer]);
+
+  if (Platform.OS !== 'web' || !isOnPlayer) return null;
+  return (
+    <TouchableOpacity
+      onPress={toggleFullscreen}
+      activeOpacity={0.7}
+      style={{
+        position: 'absolute',
+        right: 16,
+        bottom: isFullscreen ? 16 : 76,
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: isFullscreen ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.35)',
+        zIndex: 999,
+      }}
+    >
+      <IconSymbol
+        name={isFullscreen ? 'arrow.down.right.and.arrow.up.left' : 'arrow.up.left.and.arrow.down.right'}
+        size={16}
+        color="#fff"
+      />
+    </TouchableOpacity>
+  );
+}
+
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
+  const _colorScheme = useColorScheme();
+  const fontsLoaded = useLoadedFonts();
+
+  useEffect(() => {
+    if (fontsLoaded) {
+      SplashScreen.hideAsync();
+    }
+  }, [fontsLoaded]);
+
+  if (!fontsLoaded) {
+    return null;
+  }
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
-      </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <ThemeProvider>
+        <AuthProvider>
+          <AudioPlayerProvider>
+            <StoryQueueProvider>
+              <View style={{ flex: 1 }}>
+                <Stack screenOptions={{ headerShown: false }}>
+                  <Stack.Screen name="index" options={{ headerShown: false }} />
+                  <Stack.Screen name="onboarding" options={{ headerShown: false }} />
+                  <Stack.Screen name="auth" options={{ headerShown: false }} />
+                  <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                  <Stack.Screen name="followup" options={{ headerShown: false }} />
+                  <Stack.Screen name="character-quiz" options={{ headerShown: false }} />
+                  <Stack.Screen name="create-narrator" options={{ headerShown: false }} />
+                  <Stack.Screen name="regenerate" options={{ headerShown: false }} />
+                  <Stack.Screen name="voice-library" options={{ headerShown: false }} />
+                  <Stack.Screen name="narrator-story" options={{ headerShown: false }} />
+                  <Stack.Screen name="narrator-selection" options={{ headerShown: false }} />
+                  <Stack.Screen name="narrator-stories" options={{ headerShown: false }} />
+                  <Stack.Screen name="static-narrators" options={{ headerShown: false }} />
+                  <Stack.Screen name="story-details" options={{ headerShown: false }} />
+                  <Stack.Screen name="loading" options={{ headerShown: false }} />
+                  <Stack.Screen name="player" options={{ headerShown: false }} />
+                  <Stack.Screen name="modal" options={{ headerShown: false, presentation: 'modal' }} />
+                </Stack>
+                <NowPlayingBar />
+                <FullscreenButton />
+              </View>
+              <StatusBar style="light" />
+            </StoryQueueProvider>
+          </AudioPlayerProvider>
+        </AuthProvider>
+      </ThemeProvider>
+    </GestureHandlerRootView>
   );
 }

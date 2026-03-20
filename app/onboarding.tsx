@@ -1,0 +1,983 @@
+import { IconSymbol } from '@/components/ui/icon-symbol';
+import { auth, db } from '@/config/firebase';
+import { useAuth } from '@/contexts/AuthContext';
+import { saveUserProfile } from '@/services/user-service';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useRouter } from 'expo-router';
+import { collection, getDocs, query, where } from 'firebase/firestore';
+import React, { useEffect, useState } from 'react';
+import {
+    ActivityIndicator,
+    Alert,
+    Modal,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View
+} from 'react-native';
+import Animated, {
+    useAnimatedStyle,
+    useSharedValue,
+    withDelay,
+    withTiming,
+} from 'react-native-reanimated';
+
+type Step = 'welcome' | 'instruction' | 'quiz' | 'object' | 'animal' | 'descriptors' | 'descriptors2' | 'name' | 'secretcode' | 'signup';
+
+const allQuestions = [
+  { top: 'moon', bottom: 'sun' },
+  { top: 'up', bottom: 'down' },
+  { top: 'sea', bottom: 'stars' },
+  { top: 'lung', bottom: 'heart' },
+  { top: 'eclipse', bottom: 'solstice' },
+  { top: 'snow', bottom: 'amber' },
+  { top: 'vine', bottom: 'wire' },
+  { top: 'tide', bottom: 'wind' },
+  { top: 'predator', bottom: 'prey' },
+  { top: 'linen', bottom: 'leather' },
+  { top: 'moth', bottom: 'flame' },
+  { top: 'inhale', bottom: 'exhale' },
+  { top: 'compass', bottom: 'anchor' },
+  { top: 'needle', bottom: 'thread' },
+  { top: 'comet', bottom: 'nebula' },
+  { top: 'chorus', bottom: 'solo' },
+  { top: 'question', bottom: 'answer' },
+];
+
+// Shuffle and pick 10 random questions
+const shuffleArray = <T,>(array: T[]): T[] => {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+};
+
+const objects = ['mirror', 'hourglass', 'globe', 'violin', 'kite', 'magnet'];
+
+const animals = ['raven', 'bear', 'seahorse', 'fox', 'rabbit', 'beetle'];
+
+const descriptorWords = [
+  'sensitive', 'candid', 'thoughtful',
+  'methodical', 'grounded', 'messy',
+  'quiet', 'decisive', 'detached',
+];
+
+const descriptorWords2 = [
+  'stoic', 'discerning', 'expressive',
+  'loud', 'dreamy', 'intuitive',
+  'tender', 'weird', 'introspective',
+];
+
+export default function OnboardingScreen() {
+  const router = useRouter();
+  const { user, signUp, signIn: _signIn } = useAuth();
+  const [step, setStep] = useState<Step>('welcome');
+  const [questionIndex, setQuestionIndex] = useState(0);
+  const [selectedChoice, setSelectedChoice] = useState<string | null>(null);
+  const [selectedObject, setSelectedObject] = useState<string | null>(null);
+  const [selectedAnimal, setSelectedAnimal] = useState<string | null>(null);
+  const [selectedDescriptors, setSelectedDescriptors] = useState<string[]>([]);
+  const [selectedDescriptors2, setSelectedDescriptors2] = useState<string[]>([]);
+  const [questions] = useState(() => shuffleArray(allQuestions).slice(0, 10));
+  const [nameInput, setNameInput] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [secretCode, setSecretCode] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState<boolean>(false);
+  const [showExistingAccountModal, setShowExistingAccountModal] = useState(false);
+
+  const opacity = useSharedValue(0);
+  const welcomeOpacity = useSharedValue(0);
+  const toOpacity = useSharedValue(0);
+  const ynOpacity = useSharedValue(0);
+  const buttonOpacity = useSharedValue(0);
+
+  useEffect(() => {
+    const fetchOnboardingStatus = async () => {
+      const stored = await AsyncStorage.getItem('hasCompletedOnboarding');
+      setHasCompletedOnboarding(stored === 'true');
+    };
+    fetchOnboardingStatus();
+  }, []);
+
+  useEffect(() => {
+    if (user && hasCompletedOnboarding && step === 'welcome') {
+      router.replace('/(tabs)/library');
+    }
+  }, [user, hasCompletedOnboarding, step, router]);
+
+
+  useEffect(() => {
+    if (step === 'welcome') {
+      // Reset all opacity values to 0 first
+      welcomeOpacity.value = 0;
+      toOpacity.value = 0;
+      ynOpacity.value = 0;
+      buttonOpacity.value = 0;
+      
+      // Then stagger word appearances
+      welcomeOpacity.value = withTiming(1, { duration: 700 });
+      toOpacity.value = withDelay(400, withTiming(1, { duration: 700 }));
+      ynOpacity.value = withDelay(800, withTiming(1, { duration: 1000 }));
+      buttonOpacity.value = withDelay(4300, withTiming(1, { duration: 1500 }));
+    } else {
+      opacity.value = withTiming(1, { duration: 1200 });
+    }
+  }, [step]);
+
+  // Auto-transition for instruction step
+  useEffect(() => {
+    if (step === 'instruction') {
+      const timer = setTimeout(() => {
+        handleInstructionContinue();
+      }, 2500);
+      return () => clearTimeout(timer);
+    }
+  }, [step]);
+
+  const handleChoice = (choice: string) => {
+    setSelectedChoice(choice);
+    const currentQuestion = questions[questionIndex];
+    const questionKey = `${currentQuestion.top}_${currentQuestion.bottom}`;
+    setAnswers({ ...answers, [questionKey]: choice });
+
+    setTimeout(() => {
+      opacity.value = withTiming(0, { duration: 500 });
+      setTimeout(() => {
+        if (questionIndex < questions.length - 1) {
+          setQuestionIndex(questionIndex + 1);
+          setSelectedChoice(null);
+        } else {
+          setStep('object');
+        }
+        opacity.value = withTiming(1, { duration: 700 });
+      }, 550);
+    }, 1000);
+  };
+
+  const handleObjectChoice = (object: string) => {
+    setSelectedObject(object);
+    setAnswers({ ...answers, object });
+    
+    setTimeout(() => {
+      opacity.value = withTiming(0, { duration: 500 });
+      setTimeout(() => {
+        setStep('animal');
+        opacity.value = withTiming(1, { duration: 700 });
+      }, 550);
+    }, 1000);
+  };
+
+  const handleAnimalChoice = (animal: string) => {
+    setSelectedAnimal(animal);
+    setAnswers({ ...answers, animal });
+    
+    setTimeout(() => {
+      opacity.value = withTiming(0, { duration: 500 });
+      setTimeout(() => {
+        setStep('descriptors');
+        opacity.value = withTiming(1, { duration: 700 });
+      }, 550);
+    }, 1200);
+  };
+
+  const toggleDescriptor = (word: string) => {
+    if (selectedDescriptors.includes(word)) {
+      setSelectedDescriptors(selectedDescriptors.filter(w => w !== word));
+    } else if (selectedDescriptors.length < 3) {
+      setSelectedDescriptors([...selectedDescriptors, word]);
+    }
+  };
+
+  const handleDescriptorsContinue = () => {
+    setAnswers({ ...answers, descriptors: selectedDescriptors.join(', ') });
+    opacity.value = withTiming(0, { duration: 500 });
+    setTimeout(() => {
+      setStep('descriptors2');
+      opacity.value = withTiming(1, { duration: 700 });
+    }, 550);
+  };
+
+  const toggleDescriptor2 = (word: string) => {
+    if (selectedDescriptors2.includes(word)) {
+      setSelectedDescriptors2(selectedDescriptors2.filter(w => w !== word));
+    } else if (selectedDescriptors2.length < 3) {
+      setSelectedDescriptors2([...selectedDescriptors2, word]);
+    }
+  };
+
+  const handleDescriptors2Continue = () => {
+    setAnswers({ ...answers, descriptors2: selectedDescriptors2.join(', ') });
+    opacity.value = withTiming(0, { duration: 500 });
+    setTimeout(() => {
+      setStep('name');
+      opacity.value = withTiming(1, { duration: 700 });
+    }, 550);
+  };
+
+  const handleNameSubmit = async () => {
+    if (!nameInput.trim()) return;
+    
+    opacity.value = withTiming(0, { duration: 500 });
+    setTimeout(() => {
+      setStep('secretcode');
+      opacity.value = withTiming(1, { duration: 700 });
+    }, 550);
+  };
+
+  const handleSecretCodeSubmit = async () => {
+    if (!secretCode.trim()) {
+      Alert.alert('Error', 'Please enter a secret code');
+      return;
+    }
+    
+    setIsLoading(true);
+    try {
+      // Query betapasswords collection for matching password
+      const betaPasswordsRef = collection(db, 'betapasswords');
+      const q = query(betaPasswordsRef, where('password', '==', secretCode.toLowerCase().trim()));
+      const snapshot = await getDocs(q);
+      
+      if (snapshot.empty) {
+        Alert.alert('Error', 'Invalid secret code');
+        setIsLoading(false);
+        return;
+      }
+      
+      // Valid password found
+      setIsLoading(false);
+      opacity.value = withTiming(0, { duration: 500 });
+      setTimeout(() => {
+        setStep('signup');
+        opacity.value = withTiming(1, { duration: 700 });
+      }, 550);
+    } catch (error) {
+      console.error('Error validating secret code:', error);
+      Alert.alert('Error', 'Could not verify secret code. Please try again.');
+      setIsLoading(false);
+    }
+  };
+
+  const handleSignUpSubmit = async () => {
+    if (!email.trim() || !password.trim() || !confirmPassword.trim()) {
+      Alert.alert('Error', 'Please fill in all fields');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      Alert.alert('Error', 'Passwords do not match');
+      return;
+    }
+
+    if (password.length < 6) {
+      Alert.alert('Error', 'Password must be at least 6 characters');
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      
+      // Create Firebase auth account (this also signs in the user)
+      await signUp(email, password);
+      
+      // Wait a moment for auth state to update
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      const currentUser = auth.currentUser;
+      
+      if (!currentUser) throw new Error('Failed to get user');
+
+      // Save user profile with onboarding answers to Firestore
+      await saveUserProfile(currentUser.uid, email, nameInput, {
+        object: selectedObject || undefined,
+        descriptors: selectedDescriptors,
+        descriptors2: selectedDescriptors2,
+      } as any);
+
+      // Also save to AsyncStorage for offline access
+      await AsyncStorage.setItem('hasCompletedOnboarding', 'true');
+      await AsyncStorage.setItem('userName', nameInput);
+      await AsyncStorage.setItem('onboardingAnswers', JSON.stringify(answers));
+      
+      setIsLoading(false);
+      router.replace('/(tabs)/library');
+      
+    } catch (error: any) {
+      setIsLoading(false);
+      
+      // Check if email already exists
+      if (error.code === 'auth/email-already-in-use' || error.message?.includes('email-already-in-use')) {
+        setShowExistingAccountModal(true);
+      } else {
+        Alert.alert('sign up failed', error.message);
+      }
+    }
+  };
+
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+  }));
+
+  const welcomeStyle = useAnimatedStyle(() => ({
+    opacity: welcomeOpacity.value,
+  }));
+
+  const toStyle = useAnimatedStyle(() => ({
+    opacity: toOpacity.value,
+  }));
+
+  const ynStyle = useAnimatedStyle(() => ({
+    opacity: ynOpacity.value,
+  }));
+
+  const buttonStyle = useAnimatedStyle(() => ({
+    opacity: buttonOpacity.value,
+  }));
+
+
+  const handleWelcomeContinue = () => {
+    // Fade out welcome screen elements
+    buttonOpacity.value = withTiming(0, { duration: 800 });
+    welcomeOpacity.value = withTiming(0, { duration: 900 });
+    toOpacity.value = withTiming(0, { duration: 900 });
+    ynOpacity.value = withTiming(0, { duration: 900 });
+    setTimeout(() => {
+      setStep('instruction');
+      opacity.value = withTiming(1, { duration: 900 });
+    }, 1000);
+  };
+
+  const handleInstructionContinue = () => {
+    opacity.value = withTiming(0, { duration: 600 });
+    setTimeout(() => {
+      setStep('quiz');
+      opacity.value = withTiming(1, { duration: 800 });
+    }, 650);
+  };
+
+  if (step === 'welcome') {
+    return (
+      <View style={styles.container}>
+        <View style={styles.centered}>
+          <View style={styles.titleRow}>
+            <Animated.Text style={[styles.welcomeWord, welcomeStyle]}>welcome</Animated.Text>
+            <Animated.Text style={[styles.welcomeWord, toStyle]}>to</Animated.Text>
+            <Animated.View style={ynStyle}>
+              <Text style={styles.welcomeWord}>
+                <Text style={styles.bracket}>{'{'}</Text>
+                <Text style={styles.bracket}>yn</Text>
+                <Text style={styles.bracket}>{'}'}</Text>
+              </Text>
+            </Animated.View>
+          </View>
+        </View>
+
+        <Animated.View style={[styles.bottomButtons, buttonStyle]}>
+          <TouchableOpacity onPress={handleWelcomeContinue} style={styles.button}>
+            <Text style={styles.continueText}>get started →</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => router.push('/auth/login')} style={styles.signInButton}>
+            <Text style={styles.signInText}>already have an account? sign in</Text>
+          </TouchableOpacity>
+        </Animated.View>
+      </View>
+    );
+  }
+
+
+  if (step === 'instruction') {
+    return (
+      <View style={styles.container}>
+        <Animated.View style={[styles.fullScreen, animatedStyle]}>
+          <View style={styles.centered}>
+            <Text style={styles.subtitle}>pick the word{'\n'}that most calls to you</Text>
+          </View>
+        </Animated.View>
+      </View>
+    );
+  }
+
+  if (step === 'quiz') {
+    const currentQuestion = questions[questionIndex];
+    const isTopSelected = selectedChoice === currentQuestion.top;
+    const isBottomSelected = selectedChoice === currentQuestion.bottom;
+    
+    return (
+      <View style={styles.container}>
+        <View style={styles.quizContainer}>
+          <TouchableOpacity
+            style={styles.quizTop}
+            onPress={() => handleChoice(currentQuestion.top)}
+            disabled={selectedChoice !== null}
+          >
+            <Animated.Text style={[
+              styles.quizText,
+              isTopSelected && styles.selectedText,
+              animatedStyle,
+              isBottomSelected && { opacity: 0 }
+            ]}>
+              {currentQuestion.top}
+            </Animated.Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.quizBottom}
+            onPress={() => handleChoice(currentQuestion.bottom)}
+            disabled={selectedChoice !== null}
+          >
+            <Animated.Text style={[
+              styles.quizText,
+              isBottomSelected && styles.selectedText,
+              animatedStyle,
+              isTopSelected && { opacity: 0 }
+            ]}>
+              {currentQuestion.bottom}
+            </Animated.Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
+  if (step === 'object') {
+    return (
+      <View style={styles.container}>
+        <Animated.View style={[styles.fullScreen, animatedStyle]}>
+          <View style={styles.centered}>
+            <Text style={styles.subtitle}>pick an object</Text>
+            <View style={styles.objectGrid}>
+              {objects.map((object) => (
+                <TouchableOpacity
+                  key={object}
+                  style={styles.objectButton}
+                  onPress={() => handleObjectChoice(object)}
+                  disabled={selectedObject !== null}
+                >
+                  <Text style={[
+                    styles.objectText,
+                    selectedObject === object && styles.selectedText
+                  ]}>
+                    {object}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        </Animated.View>
+      </View>
+    );
+  }
+
+  if (step === 'animal') {
+    return (
+      <View style={styles.container}>
+        <Animated.View style={[styles.fullScreen, animatedStyle]}>
+          <View style={styles.centered}>
+            <Text style={styles.subtitle}>pick an animal</Text>
+            <View style={styles.objectGrid}>
+              {animals.map((animal) => (
+                <TouchableOpacity
+                  key={animal}
+                  style={styles.objectButton}
+                  onPress={() => handleAnimalChoice(animal)}
+                  disabled={selectedAnimal !== null}
+                >
+                  <Text style={[
+                    styles.objectText,
+                    selectedAnimal === animal && styles.selectedText
+                  ]}>
+                    {animal}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        </Animated.View>
+      </View>
+    );
+  }
+
+  if (step === 'descriptors') {
+    return (
+      <View style={styles.container}>
+        <Animated.View style={[styles.fullScreen, animatedStyle]}>
+          <View style={styles.centered}>
+            <Text style={styles.subtitle}>
+              pick the three words{'\n'}that best describe you
+            </Text>
+            <View style={styles.descriptorGrid}>
+              {descriptorWords.map((word) => (
+                <TouchableOpacity
+                  key={word}
+                  style={styles.descriptorButton}
+                  onPress={() => toggleDescriptor(word)}
+                >
+                  <Text style={[
+                    styles.descriptorText,
+                    selectedDescriptors.includes(word) && styles.selectedText
+                  ]}>
+                    {word}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            {selectedDescriptors.length === 3 && (
+              <TouchableOpacity
+                style={styles.continueButton}
+                onPress={handleDescriptorsContinue}
+              >
+                <Text style={styles.continueText}>continue</Text>
+                <IconSymbol name="arrow.right" size={20} color="#fff" />
+              </TouchableOpacity>
+            )}
+          </View>
+        </Animated.View>
+      </View>
+    );
+  }
+
+  if (step === 'descriptors2') {
+    return (
+      <View style={styles.container}>
+        <Animated.View style={[styles.fullScreen, animatedStyle]}>
+          <View style={styles.centered}>
+            <Text style={styles.subtitle}>
+              pick the three words{'\n'}that best describe you
+            </Text>
+            <View style={styles.descriptorGrid}>
+              {descriptorWords2.map((word) => (
+                <TouchableOpacity
+                  key={word}
+                  style={styles.descriptorButton}
+                  onPress={() => toggleDescriptor2(word)}
+                >
+                  <Text style={[
+                    styles.descriptorText,
+                    selectedDescriptors2.includes(word) && styles.selectedText
+                  ]}>
+                    {word}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            {selectedDescriptors2.length === 3 && (
+              <TouchableOpacity
+                style={styles.continueButton}
+                onPress={handleDescriptors2Continue}
+              >
+                <Text style={styles.continueText}>continue</Text>
+                <IconSymbol name="arrow.right" size={20} color="#fff" />
+              </TouchableOpacity>
+            )}
+          </View>
+        </Animated.View>
+      </View>
+    );
+  }
+
+  if (step === 'name') {
+    return (
+      <View style={styles.container}>
+        <Animated.View style={[styles.fullScreen, animatedStyle]}>
+          <View style={styles.centered}>
+            <Text style={styles.subtitle}>
+              what is <Text style={styles.bracket}>your name</Text>
+            </Text>
+            <TextInput
+              style={styles.nameInput}
+              value={nameInput}
+              onChangeText={setNameInput}
+              placeholder=""
+              placeholderTextColor="#666"
+              autoFocus
+              autoCapitalize="words"
+            />
+            {nameInput.trim() && (
+              <TouchableOpacity
+                style={styles.continueButton}
+                onPress={handleNameSubmit}
+              >
+                <Text style={styles.continueText}>continue</Text>
+                <IconSymbol name="arrow.right" size={20} color="#fff" />
+              </TouchableOpacity>
+            )}
+          </View>
+        </Animated.View>
+      </View>
+    );
+  }
+
+  if (step === 'secretcode') {
+    return (
+      <View style={styles.container}>
+        <Animated.View style={[styles.fullScreen, animatedStyle]}>
+          <View style={styles.centered}>
+            <Text style={styles.subtitle}>
+              enter the <Text style={styles.bracket}>secret code</Text>
+            </Text>
+            <TextInput
+              style={styles.nameInput}
+              value={secretCode}
+              onChangeText={setSecretCode}
+              placeholder=""
+              placeholderTextColor="#666"
+              autoFocus
+              autoCapitalize="none"
+            />
+            {secretCode.trim() && (
+              <TouchableOpacity
+                style={[styles.continueButton, isLoading && { opacity: 0.5 }]}
+                onPress={handleSecretCodeSubmit}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <>
+                    <Text style={styles.continueText}>continue</Text>
+                    <IconSymbol name="arrow.right" size={20} color="#fff" />
+                  </>
+                )}
+              </TouchableOpacity>
+            )}
+          </View>
+        </Animated.View>
+      </View>
+    );
+  }
+
+  if (step === 'signup') {
+    return (
+      <View style={styles.container}>
+        <Animated.View style={[styles.fullScreen, animatedStyle]}>
+          <View style={styles.centered}>
+            <Text style={styles.subtitle}>
+              <Text style={styles.italic}>create your account</Text>
+            </Text>
+            <TextInput
+              style={styles.nameInput}
+              value={email}
+              onChangeText={setEmail}
+              placeholder="email"
+              placeholderTextColor="#666"
+              autoCapitalize="none"
+              keyboardType="email-address"
+              autoFocus
+              editable={!isLoading}
+            />
+            <TextInput
+              style={styles.nameInput}
+              value={password}
+              onChangeText={setPassword}
+              placeholder="password"
+              placeholderTextColor="#666"
+              secureTextEntry
+              editable={!isLoading}
+            />
+            <TextInput
+              style={styles.nameInput}
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              placeholder="confirm password"
+              placeholderTextColor="#666"
+              secureTextEntry
+              editable={!isLoading}
+            />
+            {email.trim() && password.trim() && confirmPassword.trim() && (
+              <TouchableOpacity
+                style={[styles.signupButton, isLoading && { opacity: 0.5 }]}
+                onPress={handleSignUpSubmit}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.continueText}>create account →</Text>
+                )}
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity
+              style={styles.signInLink}
+              onPress={() => router.push('/auth/login')}
+              disabled={isLoading}
+            >
+              <Text style={styles.signInText}>already have an account? sign in</Text>
+            </TouchableOpacity>
+          </View>
+        </Animated.View>
+
+        {/* Existing Account Modal */}
+        <Modal
+          visible={showExistingAccountModal}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setShowExistingAccountModal(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>account exists</Text>
+              <Text style={styles.modalMessage}>
+                looks like you already have a{' '}
+                <Text style={styles.modalYn}>{'{'}yn{'}'}</Text>
+                {' '}account
+              </Text>
+              <View style={styles.modalButtons}>
+                <TouchableOpacity
+                  style={styles.modalCancelButton}
+                  onPress={() => setShowExistingAccountModal(false)}
+                >
+                  <Text style={styles.modalCancelText}>cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.modalSignInButton}
+                  onPress={() => {
+                    setShowExistingAccountModal(false);
+                    router.push('/auth/login');
+                  }}
+                >
+                  <Text style={styles.modalSignInText}>sign in</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+      </View>
+    );
+  }
+
+  return null;
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#000',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  fullScreen: {
+    flex: 1,
+    width: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  centered: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 32,
+  },
+  title: {
+    fontSize: 32,
+    color: '#fff',
+    marginBottom: 60,
+    fontFamily: 'EBGaramond-Medium',
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  welcomeWord: {
+    fontSize: 36,
+    color: '#fff',
+    fontFamily: 'EBGaramond-Medium',
+  },
+  bracket: {
+    color: '#7f1d1d',
+  },
+  bottomButtons: {
+    position: 'absolute',
+    bottom: 60,
+    alignItems: 'center',
+    gap: 16,
+  },
+  bottomButtonsFixed: {
+    position: 'absolute',
+    bottom: 60,
+    alignItems: 'center',
+  },
+  button: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+  },
+  signInButton: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+  },
+  signInText: {
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.6)',
+    textDecorationLine: 'underline',
+    fontFamily: 'EBGaramond-Regular',
+  },
+  subtitle: {
+    fontSize: 24,
+    color: '#fff',
+    marginBottom: 40,
+    textAlign: 'center',
+    fontFamily: 'EBGaramond-Regular',
+  },
+  continueButton: {
+    position: 'absolute',
+    bottom: 80,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#6B6B7B',
+    paddingVertical: 16,
+    paddingHorizontal: 32,
+    borderRadius: 999,
+  },
+  signupButton: {
+    marginTop: 24,
+  },
+  continueText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#fff',
+    fontFamily: 'EBGaramond-Medium',
+    textTransform: 'lowercase',
+  },
+  quizContainer: {
+    flex: 1,
+    width: '100%',
+  },
+  quizTop: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  quizBottom: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  quizText: {
+    fontSize: 18,
+    color: '#fff',
+    fontFamily: 'EBGaramond-Regular',
+  },
+  selectedText: {
+    textDecorationLine: 'underline',
+  },
+  objectGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 24,
+    maxWidth: 300,
+  },
+  objectButton: {
+    padding: 12,
+  },
+  objectText: {
+    fontSize: 18,
+    color: '#fff',
+    fontFamily: 'EBGaramond-Regular',
+  },
+  descriptorGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 12,
+    width: 320,
+  },
+  descriptorButton: {
+    width: 95,
+    padding: 8,
+    alignItems: 'center',
+  },
+  descriptorText: {
+    fontSize: 16,
+    color: '#fff',
+    fontFamily: 'EBGaramond-Regular',
+  },
+  nameInput: {
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.3)',
+    color: '#fff',
+    fontSize: 20,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    textAlign: 'center',
+    width: 250,
+    fontFamily: 'EBGaramond-Regular',
+  },
+  italic: {
+    fontStyle: 'italic',
+  },
+  signInLink: {
+    marginTop: 20,
+    paddingVertical: 10,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: '#1a1a1a',
+    borderRadius: 16,
+    padding: 24,
+    width: 300,
+    alignItems: 'center',
+  },
+  modalTitle: {
+    fontSize: 20,
+    color: '#fff',
+    fontFamily: 'EBGaramond-Medium',
+    marginBottom: 12,
+  },
+  modalMessage: {
+    fontSize: 16,
+    color: '#fff',
+    fontFamily: 'EBGaramond-Regular',
+    textAlign: 'center',
+    marginBottom: 24,
+    lineHeight: 24,
+  },
+  modalYn: {
+    color: '#7f1d1d',
+    fontFamily: 'EBGaramond-Medium',
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    gap: 12,
+    width: '100%',
+  },
+  modalCancelButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+    alignItems: 'center',
+  },
+  modalCancelText: {
+    fontSize: 16,
+    color: '#fff',
+    fontFamily: 'EBGaramond-Regular',
+  },
+  modalSignInButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    backgroundColor: '#2b2b34',
+    alignItems: 'center',
+  },
+  modalSignInText: {
+    fontSize: 16,
+    color: '#fff',
+    fontFamily: 'EBGaramond-Medium',
+  },
+});
