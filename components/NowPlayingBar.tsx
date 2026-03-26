@@ -122,7 +122,7 @@ export const NowPlayingBar = () => {
     <GestureDetector gesture={panGesture}>
     <Animated.View style={[styles.wrapper, animatedBarStyle]}>
       <TouchableOpacity
-        style={[styles.container, { backgroundColor: 'rgba(26, 26, 31, 0.55)' }, Platform.OS === 'web' && { backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)' } as any]}
+        style={[styles.container, { backgroundColor: 'rgba(26, 26, 31, 0.75)' }, Platform.OS === 'web' && { backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' } as any]}
         onPress={handlePress}
         activeOpacity={0.9}
       >

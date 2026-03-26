@@ -12,6 +12,14 @@ const firebaseConfig = {
   appId: Constants.expoConfig?.extra?.FIREBASE_APP_ID || '',
 };
 
+// Debug: log whether config values are present (not the values themselves)
+console.log('[synk-firebase] config check:', {
+  apiKey: firebaseConfig.apiKey ? 'SET' : 'EMPTY',
+  projectId: firebaseConfig.projectId ? 'SET' : 'EMPTY',
+  authDomain: firebaseConfig.authDomain ? 'SET' : 'EMPTY',
+  storageBucket: firebaseConfig.storageBucket ? 'SET' : 'EMPTY',
+});
+
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 export const db = getFirestore(app);
 export const storage = getStorage(app);

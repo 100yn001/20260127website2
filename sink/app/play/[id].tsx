@@ -5,12 +5,13 @@ import { Audio } from 'expo-av';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
-  SafeAreaView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 
 const RECEIVED_IDS_KEY = 'sink_received_ids';
@@ -26,6 +27,13 @@ export default function PlayScreen() {
   const [duration, setDuration] = useState(0);
   const soundRef = useRef<Audio.Sound | null>(null);
   const [currentChunkIndex, setCurrentChunkIndex] = useState(0);
+  const [debugLogs, setDebugLogs] = useState<string[]>([]);
+  const [showDebug, setShowDebug] = useState(false);
+
+  const addLog = (msg: string) => {
+    setDebugLogs(prev => [...prev, `${new Date().toLocaleTimeString()}: ${msg}`]);
+    console.log('[synk]', msg);
+  };
 
   useEffect(() => {
     if (id) loadSharedAudio(id);
@@ -36,12 +44,15 @@ export default function PlayScreen() {
 
   const loadSharedAudio = async (sharedId: string) => {
     try {
+      addLog(`fetching doc: ${sharedId}`);
       const audio = await getSharedAudio(sharedId);
       if (!audio) {
+        addLog('doc not found or null');
         setError('story not found or link expired');
         setLoading(false);
         return;
       }
+      addLog(`got doc: title="${audio.title}", chunks=${audio.audioChunkURLs?.length || 0}, audioUrl=${audio.audioUrl ? 'yes' : 'no'}`);
       setSharedAudio(audio);
 
       // Save to received list
@@ -52,12 +63,19 @@ export default function PlayScreen() {
         await AsyncStorage.setItem(RECEIVED_IDS_KEY, JSON.stringify(ids));
       }
 
-      // Mark as played
-      await markAsPlayed(sharedId);
+      // Mark as played (non-fatal — sink app has no auth)
+      try {
+        await markAsPlayed(sharedId);
+        addLog('marked as played');
+      } catch (markErr: any) {
+        addLog(`markAsPlayed failed (non-fatal): ${markErr?.message || markErr}`);
+      }
       setLoading(false);
-    } catch (err) {
+    } catch (err: any) {
+      const msg = err?.message || String(err);
+      addLog(`LOAD ERROR: ${msg}`);
       console.error('Error loading shared audio:', err);
-      setError('failed to load story');
+      setError(`failed to load story`);
       setLoading(false);
     }
   };
@@ -158,6 +176,19 @@ export default function PlayScreen() {
           <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
             <Text style={styles.backButtonText}>go back</Text>
           </TouchableOpacity>
+          <TouchableOpacity style={[styles.backButton, { marginTop: 12 }]} onPress={() => setShowDebug(!showDebug)}>
+            <Text style={styles.backButtonText}>{showDebug ? 'hide logs' : 'show logs'}</Text>
+          </TouchableOpacity>
+          {showDebug && (
+            <View style={{ marginTop: 16, maxHeight: 200, width: '100%' }}>
+              <ScrollView>
+                {debugLogs.map((log, i) => (
+                  <Text key={i} style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11, fontFamily: 'Courier', marginBottom: 2 }}>{log}</Text>
+                ))}
+                {debugLogs.length === 0 && <Text style={{ color: 'rgba(255,255,255,0.3)', fontSize: 11 }}>no logs</Text>}
+              </ScrollView>
+            </View>
+          )}
         </View>
       </SafeAreaView>
     );
