@@ -172,6 +172,5 @@ export async function getUserSharedAudio(
  * For now, returns a web URL. When you set up a custom domain, update the base.
  */
 export function buildShareUrl(sharedId: string): string {
-  const BASE_URL = 'https://yn.media/app';
-  return `${BASE_URL}/listen/${sharedId}`;
+  return `https://yourname.media/sink/${sharedId}`;
 }

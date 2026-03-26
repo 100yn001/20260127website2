@@ -676,11 +676,11 @@ export default function PlayerScreen() {
     if (isSinking) return;
     const user = auth.currentUser;
     if (!user) {
-      Alert.alert('sign in required', 'please sign in to sink stories.');
+      Alert.alert('sign in required', 'please sign in to synk stories.');
       return;
     }
     if (!audioUrl) {
-      Alert.alert('no audio', 'cannot sink a story without audio.');
+      Alert.alert('no audio', 'cannot synk a story without audio.');
       return;
     }
 
@@ -710,9 +710,9 @@ export default function PlayerScreen() {
       const sharedId = await shareStoryAudio(user.uid, storyData);
       const url = buildShareUrl(sharedId);
 
-      // Copy to clipboard and show feedback
+      // Open the link automatically on web, copy on native
       if (Platform.OS === 'web') {
-        await navigator.clipboard.writeText(url);
+        window.open(url, '_blank');
       } else {
         Clipboard.setString(url);
       }
@@ -720,7 +720,7 @@ export default function PlayerScreen() {
       setTimeout(() => setSinkCopied(false), 3000);
     } catch (error) {
       console.error('Error sinking story:', error);
-      Alert.alert('sink failed', 'unable to create a sink link. please try again.');
+      Alert.alert('synk failed', 'unable to create a synk link. please try again.');
     } finally {
       setIsSinking(false);
     }
@@ -1215,7 +1215,7 @@ export default function PlayerScreen() {
                   <View style={styles.buttonContent}>
                     <IconSymbol name={sinkCopied ? 'checkmark.circle.fill' : 'square.and.arrow.up'} size={16} color={colors.buttonText} />
                     <Text style={[styles.actionButtonTextPrimary, { color: colors.buttonText }]}>
-                      {sinkCopied ? 'link copied!' : 'sink it'}
+                      {sinkCopied ? 'link copied!' : 'synk it'}
                     </Text>
                   </View>
                 </Button>
