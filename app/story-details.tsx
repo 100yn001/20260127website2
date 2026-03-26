@@ -4,6 +4,7 @@ import { auth, db } from '@/config/firebase';
 import { DEFAULT_COVER_COLOR, THEME_COLOR_OPTIONS } from '@/constants/cover-colors';
 import { useTheme } from '@/contexts/ThemeContext';
 import { addPublicStory } from '@/services/public-story-service';
+import { shareStoryToSink } from '@/services/share-service';
 import { DepthLayer } from '@/types/story';
 import { createShadow } from '@/utils/shadow';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -69,6 +70,7 @@ export default function StoryDetailsScreen() {
   const [editTitle, setEditTitle] = useState('');
   const [editDescription, setEditDescription] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [isSynking, setIsSynking] = useState(false);
   
   // Artwork edit
   const [showArtworkModal, setShowArtworkModal] = useState(false);
@@ -122,6 +124,31 @@ export default function StoryDetailsScreen() {
     
     loadStory();
   }, [storyId]);
+
+  const handleSynkIt = async () => {
+    const currentUser = auth.currentUser;
+    if (!currentUser || isSynking) return;
+    setIsSynking(true);
+    try {
+      const deepLink = await shareStoryToSink({
+        userId: currentUser.uid,
+        storyId,
+        title: storyTitle || 'untitled',
+        audioChunkURLs: audioChunkURLs || [],
+        audioUrl,
+        coverColor,
+        duration: duration as any,
+        isNighttime,
+      });
+      if (Platform.OS === 'web') {
+        window.open(deepLink, '_blank');
+      }
+    } catch (error) {
+      console.error('Error synking story:', error);
+    } finally {
+      setIsSynking(false);
+    }
+  };
 
   const handlePlay = () => {
     // Use audioUrl, or fall back to first chunk URL
@@ -368,6 +395,25 @@ export default function StoryDetailsScreen() {
           <IconSymbol name="play.fill" size={24} color="#fff" />
           <Text style={styles.playButtonText}>play story</Text>
         </TouchableOpacity>
+
+        {/* Synk it button (web only) */}
+        {Platform.OS === 'web' && (
+          <TouchableOpacity
+            style={[styles.synkButton, isSynking && { opacity: 0.6 }]}
+            onPress={handleSynkIt}
+            activeOpacity={0.8}
+            disabled={isSynking}
+          >
+            {isSynking ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <>
+                <IconSymbol name="arrow.down.to.line" size={18} color="#fff" />
+                <Text style={styles.synkButtonText}>synk it</Text>
+              </>
+            )}
+          </TouchableOpacity>
+        )}
 
         {isAdminUser && (
           <TouchableOpacity
@@ -788,5 +834,25 @@ const styles = StyleSheet.create({
   colorSwatchSelected: {
     borderColor: '#fff',
     ...createShadow('#000', 0, 2, 4, 0.3, 4),
+  },
+  synkButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    backgroundColor: '#1a1a2e',
+    paddingVertical: 14,
+    paddingHorizontal: 40,
+    borderRadius: 28,
+    marginBottom: 24,
+    alignSelf: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.12)',
+  },
+  synkButtonText: {
+    fontSize: 17,
+    fontFamily: 'EBGaramond-Medium',
+    textTransform: 'lowercase',
+    color: '#fff',
   },
 });

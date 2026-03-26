@@ -5,6 +5,7 @@ import { DEFAULT_COVER_COLOR } from '@/constants/cover-colors';
 import { useAuth } from '@/contexts/AuthContext';
 import { useStoryQueue } from '@/contexts/StoryQueueContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { shareStoryToSink } from '@/services/share-service';
 import { DepthLayer } from '@/types/story';
 import { createShadow } from '@/utils/shadow';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -67,6 +68,8 @@ export default function MyStoriesScreen() {
   const storyCols = Platform.OS === 'web' ? (vw >= 1024 ? 5 : vw >= 600 ? 4 : STORIES_PER_ROW) : STORIES_PER_ROW;
   const STORY_WIDTH = (vw - SHELF_PADDING * 2 - STORY_GAP * (storyCols - 1)) / storyCols;
   const [storedUserName, setStoredUserName] = useState('');
+  const [shareMenuStoryId, setShareMenuStoryId] = useState<string | null>(null);
+  const [copiedStoryId, setCopiedStoryId] = useState<string | null>(null);
   const [completedStories, setCompletedStories] = useState<CompletedStory[]>([]);
   const [groups, setGroups] = useState<StoryGroup[]>([]);
   const [seenStoryIds, setSeenStoryIds] = useState<Set<string>>(new Set());
@@ -530,6 +533,28 @@ export default function MyStoriesScreen() {
     );
   };
 
+  const handleShareToSink = async (story: CompletedStory) => {
+    if (!user) return;
+    try {
+      const deepLink = await shareStoryToSink({
+        userId: user.uid,
+        storyId: story.id,
+        title: story.title || 'untitled',
+        audioChunkURLs: story.audioChunkURLs || [],
+        audioUrl: story.audioUrl,
+        coverColor: story.coverColor,
+        duration: story.duration as any,
+        isNighttime: false,
+      });
+      await navigator.clipboard.writeText(deepLink);
+      setCopiedStoryId(story.id);
+      setShareMenuStoryId(null);
+      setTimeout(() => setCopiedStoryId(null), 2000);
+    } catch (error) {
+      console.error('Error sharing story:', error);
+    }
+  };
+
   // Render a single story item on the shelf
   const renderStoryItem = (story: CompletedStory, index: number, totalInSection: number) => {
     const isSelected = selectedStoryIds.has(story.id);
@@ -584,6 +609,42 @@ export default function MyStoriesScreen() {
           {/* New story badge - rendered after artwork for correct layering */}
           {isNewStory && !isSelectionMode && (
             <View style={[styles.newBadge, { borderColor: colors.background }]} />
+          )}
+          
+          {/* Send to sink button (web only) */}
+          {Platform.OS === 'web' && !isSelectionMode && (
+            <TouchableOpacity
+              style={styles.shareButton}
+              onPress={(e) => {
+                e.stopPropagation();
+                setShareMenuStoryId(shareMenuStoryId === story.id ? null : story.id);
+              }}
+            >
+              <IconSymbol name="ellipsis" size={16} color="#fff" />
+            </TouchableOpacity>
+          )}
+
+          {/* Share menu dropdown */}
+          {Platform.OS === 'web' && shareMenuStoryId === story.id && (
+            <View style={[styles.shareMenu, { backgroundColor: colors.card }]}>
+              <TouchableOpacity
+                style={styles.shareMenuItem}
+                onPress={(e) => {
+                  e.stopPropagation();
+                  handleShareToSink(story);
+                }}
+              >
+                <IconSymbol name="arrow.down.to.line" size={14} color={colors.text} />
+                <Text style={[styles.shareMenuText, { color: colors.text }]}>send to sink</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* Copied toast */}
+          {Platform.OS === 'web' && copiedStoryId === story.id && (
+            <View style={styles.copiedToast}>
+              <Text style={styles.copiedToastText}>link copied!</Text>
+            </View>
           )}
           
           {/* Story title - fixed height container */}
@@ -1084,5 +1145,60 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontFamily: 'EBGaramond-Medium',
     textTransform: 'lowercase',
+  },
+  shareButton: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
+  },
+  shareMenu: {
+    position: 'absolute',
+    top: 36,
+    right: 4,
+    borderRadius: 10,
+    paddingVertical: 6,
+    paddingHorizontal: 4,
+    zIndex: 20,
+    minWidth: 130,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  shareMenuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderRadius: 6,
+  },
+  shareMenuText: {
+    fontSize: 13,
+    fontFamily: 'EBGaramond-Medium',
+    textTransform: 'lowercase',
+  },
+  copiedToast: {
+    position: 'absolute',
+    top: '40%' as any,
+    alignSelf: 'center',
+    backgroundColor: 'rgba(0,0,0,0.75)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    zIndex: 30,
+  },
+  copiedToastText: {
+    color: '#fff',
+    fontSize: 12,
+    fontFamily: 'EBGaramond-Medium',
   },
 });

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>sink · open story</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #000;
+      color: #fff;
+      font-family: 'EB Garamond', serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 24px;
+    }
+    .container { max-width: 360px; }
+    .logo { font-size: 36px; font-weight: 600; margin-bottom: 8px; }
+    .subtitle { font-size: 16px; color: rgba(255,255,255,0.5); margin-bottom: 32px; }
+    .status { font-size: 18px; color: rgba(255,255,255,0.7); margin-bottom: 24px; }
+    .open-btn {
+      display: inline-block;
+      padding: 14px 32px;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 12px;
+      color: #fff;
+      font-family: 'EB Garamond', serif;
+      font-size: 18px;
+      text-decoration: none;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .open-btn:hover { background: rgba(255,255,255,0.18); }
+    .fallback { margin-top: 24px; font-size: 14px; color: rgba(255,255,255,0.35); }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo">{sink}</div>
+    <div class="subtitle">your stories, locally</div>
+
+    <div id="opening" class="status">opening in sink...</div>
+
+    <div id="fallback" class="hidden">
+      <p class="status">couldn't open sink automatically</p>
+      <a id="open-btn" class="open-btn" href="#">tap to open in sink</a>
+      <p class="fallback">if you don't have sink installed, you'll need to install it first</p>
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      // Extract the shared audio ID from the URL path: /sink/{id}
+      var pathParts = window.location.pathname.split('/');
+      var sharedId = pathParts[pathParts.length - 1] || pathParts[pathParts.length - 2];
+
+      if (!sharedId || sharedId === 'sink') {
+        document.getElementById('opening').textContent = 'no story link provided';
+        return;
+      }
+
+      var deepLink = 'sink://play/' + sharedId;
+      var openBtn = document.getElementById('open-btn');
+      openBtn.href = deepLink;
+
+      // Try to open the app automatically
+      window.location.href = deepLink;
+
+      // If still here after 1.5s, show fallback
+      setTimeout(function() {
+        document.getElementById('opening').classList.add('hidden');
+        document.getElementById('fallback').classList.remove('hidden');
+      }, 1500);
+    })();
+  </script>
+</body>
+</html>

@@ -3,6 +3,7 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 import { auth, db } from '@/config/firebase';
 import { DEFAULT_COVER_COLOR } from '@/constants/cover-colors';
 import { useAudioPlayer } from '@/contexts/AudioPlayerContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { DepthLayer, Story } from '@/types/story';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -130,6 +131,9 @@ export default function LibraryScreen() {
   const [isLoadingPublic, setIsLoadingPublic] = useState(true);
   const [seenStoryIds, setSeenStoryIds] = useState<Set<string>>(new Set());
   const artworkCache = useRef<Map<string, DepthLayer[]>>(new Map());
+  const { user } = useAuth();
+  const [shareMenuCardKey, setShareMenuCardKey] = useState<string | null>(null);
+  const [copiedCardKey, setCopiedCardKey] = useState<string | null>(null);
 
   useEffect(() => {
     loadListeningProgress();
@@ -502,6 +506,28 @@ export default function LibraryScreen() {
     });
   };
 
+  const handleShareCardToSink = async (card: KeepListeningCard) => {
+    if (!user) return;
+    try {
+      const deepLink = await shareStoryToSink({
+        userId: user.uid,
+        storyId: card.storyId,
+        title: card.title || 'untitled',
+        audioChunkURLs: card.audioChunkURLs || [],
+        audioUrl: card.audioUrl,
+        coverColor: card.color,
+        duration: card.durationLabel as any,
+        isNighttime: card.isNighttime || false,
+      });
+      await navigator.clipboard.writeText(deepLink);
+      setCopiedCardKey(card.key);
+      setShareMenuCardKey(null);
+      setTimeout(() => setCopiedCardKey(null), 2000);
+    } catch (error) {
+      console.error('Error sharing story:', error);
+    }
+  };
+
   const renderStoryPill = (
     card: KeepListeningCard,
     variant: 'discover' | 'keep',
@@ -544,6 +570,42 @@ export default function LibraryScreen() {
               <IconSymbol name="globe.americas.fill" size={14} color="#F5F3FF" />
             )}
           </View>
+
+          {/* Send to sink button (web only) */}
+          {Platform.OS === 'web' && (
+            <TouchableOpacity
+              style={styles.sinkShareButton}
+              onPress={(e) => {
+                e.stopPropagation();
+                setShareMenuCardKey(shareMenuCardKey === card.key ? null : card.key);
+              }}
+            >
+              <IconSymbol name="ellipsis" size={16} color="#fff" />
+            </TouchableOpacity>
+          )}
+
+          {/* Share menu dropdown */}
+          {Platform.OS === 'web' && shareMenuCardKey === card.key && (
+            <View style={[styles.sinkShareMenu, { backgroundColor: colors.card }]}>
+              <TouchableOpacity
+                style={styles.sinkShareMenuItem}
+                onPress={(e) => {
+                  e.stopPropagation();
+                  handleShareCardToSink(card);
+                }}
+              >
+                <IconSymbol name="arrow.down.to.line" size={14} color={colors.text} />
+                <Text style={[styles.sinkShareMenuText, { color: colors.text }]}>send to sink</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* Copied toast */}
+          {Platform.OS === 'web' && copiedCardKey === card.key && (
+            <View style={styles.sinkCopiedToast}>
+              <Text style={styles.sinkCopiedToastText}>link copied!</Text>
+            </View>
+          )}
           
           
           </View>
@@ -1211,6 +1273,61 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: 'EBGaramond-Regular',
     textTransform: 'lowercase',
+  },
+  sinkShareButton: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
+  },
+  sinkShareMenu: {
+    position: 'absolute',
+    top: 36,
+    right: 4,
+    borderRadius: 10,
+    paddingVertical: 6,
+    paddingHorizontal: 4,
+    zIndex: 20,
+    minWidth: 130,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  sinkShareMenuItem: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderRadius: 6,
+  },
+  sinkShareMenuText: {
+    fontSize: 13,
+    fontFamily: 'EBGaramond-Medium',
+    textTransform: 'lowercase' as const,
+  },
+  sinkCopiedToast: {
+    position: 'absolute' as const,
+    top: '40%' as any,
+    alignSelf: 'center' as const,
+    backgroundColor: 'rgba(0,0,0,0.75)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    zIndex: 30,
+  },
+  sinkCopiedToastText: {
+    color: '#fff',
+    fontSize: 12,
+    fontFamily: 'EBGaramond-Medium',
   },
 });
 

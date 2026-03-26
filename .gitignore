@@ -8,6 +8,8 @@ node_modules/
 dist/
 dist-expo/
 20260127website2-main/node_modules/
+sink/node_modules/
+sink/.expo/
 venv/
 *.pdf
 web-build/
