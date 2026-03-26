@@ -5,6 +5,7 @@ import { DEFAULT_COVER_COLOR } from '@/constants/cover-colors';
 import { useAudioPlayer } from '@/contexts/AudioPlayerContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { shareStoryToSink } from '@/services/share-service';
 import { DepthLayer, Story } from '@/types/story';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -519,7 +520,9 @@ export default function LibraryScreen() {
         duration: card.durationLabel as any,
         isNighttime: card.isNighttime || false,
       });
-      await navigator.clipboard.writeText(deepLink);
+      if (Platform.OS === 'web') {
+        window.open(deepLink, '_blank');
+      }
       setCopiedCardKey(card.key);
       setShareMenuCardKey(null);
       setTimeout(() => setCopiedCardKey(null), 2000);
@@ -595,7 +598,7 @@ export default function LibraryScreen() {
                 }}
               >
                 <IconSymbol name="arrow.down.to.line" size={14} color={colors.text} />
-                <Text style={[styles.sinkShareMenuText, { color: colors.text }]}>send to sink</Text>
+                <Text style={[styles.sinkShareMenuText, { color: colors.text }]}>synk it</Text>
               </TouchableOpacity>
             </View>
           )}

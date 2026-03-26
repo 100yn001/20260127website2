@@ -546,7 +546,9 @@ export default function MyStoriesScreen() {
         duration: story.duration as any,
         isNighttime: false,
       });
-      await navigator.clipboard.writeText(deepLink);
+      if (Platform.OS === 'web') {
+        window.open(deepLink, '_blank');
+      }
       setCopiedStoryId(story.id);
       setShareMenuStoryId(null);
       setTimeout(() => setCopiedStoryId(null), 2000);
@@ -635,7 +637,7 @@ export default function MyStoriesScreen() {
                 }}
               >
                 <IconSymbol name="arrow.down.to.line" size={14} color={colors.text} />
-                <Text style={[styles.shareMenuText, { color: colors.text }]}>send to sink</Text>
+                <Text style={[styles.shareMenuText, { color: colors.text }]}>synk it</Text>
               </TouchableOpacity>
             </View>
           )}
