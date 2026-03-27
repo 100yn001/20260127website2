@@ -516,7 +516,6 @@ export default function LibraryScreen() {
         audioChunkURLs: card.audioChunkURLs || [],
         audioUrl: card.audioUrl,
         coverColor: card.color,
-        topographyLayers: card.layers,
         duration: card.durationLabel as any,
         isNighttime: card.isNighttime || false,
       });

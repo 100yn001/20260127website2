@@ -1,5 +1,6 @@
 import { getSharedAudio } from '@/services/shared-audio-service';
 import { SharedAudio } from '@/types/shared-audio';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
@@ -12,7 +13,6 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const RECEIVED_IDS_KEY = 'sink_received_ids';
 
@@ -90,7 +90,7 @@ export default function HomeScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.logo}>{'{sink}'}</Text>
+        <Text style={styles.logo}>{'{synk}'}</Text>
         <Text style={styles.subtitle}>your stories, locally</Text>
       </View>
 
@@ -100,7 +100,7 @@ export default function HomeScreen() {
         <View style={styles.emptyState}>
           <Text style={styles.emptyTitle}>no stories yet</Text>
           <Text style={styles.emptySubtitle}>
-            open a sink link from the web app to receive a story here
+            open a synk link from the web app to play a story here
           </Text>
         </View>
       ) : (

@@ -12,7 +12,6 @@ interface ShareStoryParams {
   audioUrl?: string;
   narratorId?: string;
   coverColor?: string;
-  topographyLayers?: any[];
   duration?: '5min' | '10min' | '15min';
   isNighttime: boolean;
 }
@@ -36,7 +35,6 @@ export async function shareStoryToSink(params: ShareStoryParams): Promise<string
     createdAt: serverTimestamp(),
     expiresAt: Timestamp.fromDate(expiresAt),
     coverColor: params.coverColor || '',
-    topographyLayers: params.topographyLayers || [],
     duration: params.duration || '10min',
     isNighttime: params.isNighttime,
   };

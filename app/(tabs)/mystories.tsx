@@ -543,7 +543,6 @@ export default function MyStoriesScreen() {
         audioChunkURLs: story.audioChunkURLs || [],
         audioUrl: story.audioUrl,
         coverColor: story.coverColor,
-        topographyLayers: story.topographyLayers,
         duration: story.duration as any,
         isNighttime: false,
       });
