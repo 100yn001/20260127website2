@@ -43,6 +43,7 @@ export async function shareStoryAudio(
       createdAt: now,
       expiresAt,
       coverColor: story.coverColor,
+      topographyLayers: story.topographyLayers || [],
       duration: story.duration,
       isNighttime: story.isNighttime,
     };

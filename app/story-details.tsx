@@ -137,6 +137,7 @@ export default function StoryDetailsScreen() {
         audioChunkURLs: audioChunkURLs || [],
         audioUrl,
         coverColor,
+        topographyLayers,
         duration: duration as any,
         isNighttime,
       });

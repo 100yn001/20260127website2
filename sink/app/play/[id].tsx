@@ -1,3 +1,4 @@
+import TopographicArtwork from '@/components/TopographicArtwork';
 import { getSharedAudio, markAsPlayed } from '@/services/shared-audio-service';
 import { SharedAudio } from '@/types/shared-audio';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -6,6 +7,9 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
+    Dimensions,
+    GestureResponderEvent,
+    LayoutChangeEvent,
     SafeAreaView,
     ScrollView,
     StyleSheet,
@@ -15,6 +19,8 @@ import {
 } from 'react-native';
 
 const RECEIVED_IDS_KEY = 'sink_received_ids';
+const SCREEN_WIDTH = Dimensions.get('window').width;
+const ARTWORK_SIZE = Math.min(SCREEN_WIDTH - 80, 280);
 
 export default function PlayScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -29,6 +35,8 @@ export default function PlayScreen() {
   const [currentChunkIndex, setCurrentChunkIndex] = useState(0);
   const [debugLogs, setDebugLogs] = useState<string[]>([]);
   const [showDebug, setShowDebug] = useState(false);
+  const [isSeeking, setIsSeeking] = useState(false);
+  const progressBarWidth = useRef(0);
 
   const addLog = (msg: string) => {
     setDebugLogs(prev => [...prev, `${new Date().toLocaleTimeString()}: ${msg}`]);
@@ -90,7 +98,6 @@ export default function PlayScreen() {
         : [];
 
     if (chunkIndex >= urls.length) {
-      // All chunks played
       setIsPlaying(false);
       setCurrentChunkIndex(0);
       setPosition(0);
@@ -98,7 +105,6 @@ export default function PlayScreen() {
     }
 
     try {
-      // Unload previous
       if (soundRef.current) {
         await soundRef.current.unloadAsync();
       }
@@ -112,11 +118,10 @@ export default function PlayScreen() {
         { uri: urls[chunkIndex] },
         { shouldPlay: true },
         (status) => {
-          if (status.isLoaded) {
+          if (status.isLoaded && !isSeeking) {
             setPosition(status.positionMillis);
             setDuration(status.durationMillis || 0);
             if (status.didJustFinish) {
-              // Play next chunk
               const nextIndex = chunkIndex + 1;
               setCurrentChunkIndex(nextIndex);
               loadAndPlayChunk(nextIndex);
@@ -131,11 +136,10 @@ export default function PlayScreen() {
       console.error('Error playing audio:', err);
       setError('failed to play audio');
     }
-  }, [sharedAudio]);
+  }, [sharedAudio, isSeeking]);
 
   const handlePlayPause = async () => {
     if (!soundRef.current) {
-      // Start playing from first chunk
       setCurrentChunkIndex(0);
       await loadAndPlayChunk(0);
       return;
@@ -153,6 +157,27 @@ export default function PlayScreen() {
     }
   };
 
+  const handleSeek = async (evt: GestureResponderEvent) => {
+    if (!soundRef.current || duration === 0 || progressBarWidth.current === 0) return;
+    const x = evt.nativeEvent.locationX;
+    const ratio = Math.max(0, Math.min(1, x / progressBarWidth.current));
+    const seekMs = Math.floor(ratio * duration);
+    setPosition(seekMs);
+    await soundRef.current.setPositionAsync(seekMs);
+  };
+
+  const onProgressBarLayout = (evt: LayoutChangeEvent) => {
+    progressBarWidth.current = evt.nativeEvent.layout.width;
+  };
+
+  const handleGoBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/');
+    }
+  };
+
   const formatTime = (ms: number) => {
     const totalSec = Math.floor(ms / 1000);
     const min = Math.floor(totalSec / 60);
@@ -163,7 +188,9 @@ export default function PlayScreen() {
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
-        <ActivityIndicator color="#fff" size="large" />
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator color="#fff" size="large" />
+        </View>
       </SafeAreaView>
     );
   }
@@ -173,11 +200,11 @@ export default function PlayScreen() {
       <SafeAreaView style={styles.container}>
         <View style={styles.errorState}>
           <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-            <Text style={styles.backButtonText}>go back</Text>
+          <TouchableOpacity style={styles.backBtn} onPress={handleGoBack}>
+            <Text style={styles.backBtnText}>go back</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.backButton, { marginTop: 12 }]} onPress={() => setShowDebug(!showDebug)}>
-            <Text style={styles.backButtonText}>{showDebug ? 'hide logs' : 'show logs'}</Text>
+          <TouchableOpacity style={[styles.backBtn, { marginTop: 12 }]} onPress={() => setShowDebug(!showDebug)}>
+            <Text style={styles.backBtnText}>{showDebug ? 'hide logs' : 'show logs'}</Text>
           </TouchableOpacity>
           {showDebug && (
             <View style={{ marginTop: 16, maxHeight: 200, width: '100%' }}>
@@ -200,14 +227,18 @@ export default function PlayScreen() {
   return (
     <SafeAreaView style={styles.container}>
       {/* Back button */}
-      <TouchableOpacity style={styles.navBack} onPress={() => router.back()}>
+      <TouchableOpacity style={styles.navBack} onPress={handleGoBack}>
         <Text style={styles.navBackText}>← back</Text>
       </TouchableOpacity>
 
       <View style={styles.content}>
-        {/* Cover art placeholder */}
-        <View style={[styles.coverArt, { backgroundColor: sharedAudio?.coverColor || '#1a1a2e' }]}>
-          <Text style={styles.coverText}>{'{sink}'}</Text>
+        {/* Artwork */}
+        <View style={styles.artworkWrap}>
+          <TopographicArtwork
+            baseColor={sharedAudio?.coverColor || '#1a1a2e'}
+            layers={sharedAudio?.topographyLayers}
+            size={ARTWORK_SIZE}
+          />
         </View>
 
         {/* Title */}
@@ -216,10 +247,29 @@ export default function PlayScreen() {
           {sharedAudio?.duration || ''}{chunkCount > 1 ? ` · ${chunkCount} parts` : ''}
         </Text>
 
-        {/* Progress bar */}
-        <View style={styles.progressBar}>
-          <View style={[styles.progressFill, { width: `${progressPercent}%` }]} />
+        {/* Seekable progress bar */}
+        <View
+          style={styles.progressBarTouch}
+          onLayout={onProgressBarLayout}
+          onStartShouldSetResponder={() => true}
+          onMoveShouldSetResponder={() => true}
+          onResponderGrant={(evt) => {
+            setIsSeeking(true);
+            handleSeek(evt);
+          }}
+          onResponderMove={handleSeek}
+          onResponderRelease={(evt) => {
+            handleSeek(evt);
+            setIsSeeking(false);
+          }}
+        >
+          <View style={styles.progressBarTrack}>
+            <View style={[styles.progressFill, { width: `${progressPercent}%` }]} />
+          </View>
+          {/* Thumb indicator */}
+          <View style={[styles.progressThumb, { left: `${progressPercent}%` }]} />
         </View>
+
         <View style={styles.timeRow}>
           <Text style={styles.timeText}>{formatTime(position)}</Text>
           <Text style={styles.timeText}>{formatTime(duration)}</Text>
@@ -263,18 +313,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 32,
   },
-  coverArt: {
-    width: 220,
-    height: 220,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
+  artworkWrap: {
     marginBottom: 32,
-  },
-  coverText: {
-    fontSize: 28,
-    color: 'rgba(255,255,255,0.3)',
-    fontFamily: 'EBGaramond-Medium',
+    borderRadius: 20,
+    overflow: 'hidden',
   },
   title: {
     fontSize: 26,
@@ -291,18 +333,32 @@ const styles = StyleSheet.create({
     textTransform: 'lowercase',
     marginBottom: 24,
   },
-  progressBar: {
+  progressBarTouch: {
+    width: '100%',
+    height: 32,
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  progressBarTrack: {
     width: '100%',
     height: 4,
     backgroundColor: 'rgba(255,255,255,0.15)',
     borderRadius: 999,
     overflow: 'hidden',
-    marginBottom: 8,
   },
   progressFill: {
     height: '100%',
     backgroundColor: '#fff',
     borderRadius: 999,
+  },
+  progressThumb: {
+    position: 'absolute',
+    top: 10,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: '#fff',
+    marginLeft: -6,
   },
   timeRow: {
     width: '100%',
@@ -349,13 +405,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 20,
   },
-  backButton: {
+  backBtn: {
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 10,
     backgroundColor: 'rgba(255,255,255,0.1)',
   },
-  backButtonText: {
+  backBtnText: {
     fontSize: 16,
     color: '#fff',
     fontFamily: 'EBGaramond-Medium',

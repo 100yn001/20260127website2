@@ -22,6 +22,7 @@ export async function getSharedAudio(id: string): Promise<SharedAudio | null> {
     createdAt: data.createdAt?.toDate?.() || new Date(),
     expiresAt: data.expiresAt?.toDate?.() || new Date(),
     coverColor: data.coverColor || '',
+    topographyLayers: data.topographyLayers || [],
     duration: data.duration,
     isNighttime: data.isNighttime || false,
   };

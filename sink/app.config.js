@@ -18,6 +18,12 @@ export default {
         UIBackgroundModes: ["audio"],
       },
     },
+    updates: {
+      url: "https://u.expo.dev/48870673-7265-4e87-8aba-54c5053a567f",
+    },
+    runtimeVersion: {
+      policy: "appVersion",
+    },
     plugins: [
       "expo-router",
       [
