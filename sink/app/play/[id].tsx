@@ -6,6 +6,8 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
+    GestureResponderEvent,
+    LayoutChangeEvent,
     SafeAreaView,
     ScrollView,
     StyleSheet,
@@ -27,6 +29,8 @@ export default function PlayScreen() {
   const [duration, setDuration] = useState(0);
   const soundRef = useRef<Audio.Sound | null>(null);
   const [currentChunkIndex, setCurrentChunkIndex] = useState(0);
+  const isSeeking = useRef(false);
+  const barWidth = useRef(0);
   const [debugLogs, setDebugLogs] = useState<string[]>([]);
   const [showDebug, setShowDebug] = useState(false);
 
@@ -113,7 +117,9 @@ export default function PlayScreen() {
         { shouldPlay: true },
         (status) => {
           if (status.isLoaded) {
-            setPosition(status.positionMillis);
+            if (!isSeeking.current) {
+              setPosition(status.positionMillis);
+            }
             setDuration(status.durationMillis || 0);
             if (status.didJustFinish) {
               // Play next chunk
@@ -151,6 +157,19 @@ export default function PlayScreen() {
         setIsPlaying(true);
       }
     }
+  };
+
+  const handleSeek = async (evt: GestureResponderEvent) => {
+    if (!soundRef.current || duration <= 0 || barWidth.current <= 0) return;
+    const x = evt.nativeEvent.locationX;
+    const ratio = Math.max(0, Math.min(1, x / barWidth.current));
+    const seekMs = Math.floor(ratio * duration);
+    setPosition(seekMs);
+    await soundRef.current.setPositionAsync(seekMs);
+  };
+
+  const onBarLayout = (e: LayoutChangeEvent) => {
+    barWidth.current = e.nativeEvent.layout.width;
   };
 
   const formatTime = (ms: number) => {
@@ -216,9 +235,21 @@ export default function PlayScreen() {
           {sharedAudio?.duration || ''}{chunkCount > 1 ? ` · ${chunkCount} parts` : ''}
         </Text>
 
-        {/* Progress bar */}
-        <View style={styles.progressBar}>
-          <View style={[styles.progressFill, { width: `${progressPercent}%` }]} />
+        {/* Progress bar (seekable) */}
+        <View
+          style={styles.progressBarHitArea}
+          onLayout={onBarLayout}
+          onStartShouldSetResponder={() => true}
+          onMoveShouldSetResponder={() => true}
+          onResponderGrant={(e) => { isSeeking.current = true; handleSeek(e); }}
+          onResponderMove={handleSeek}
+          onResponderRelease={(e) => { handleSeek(e); isSeeking.current = false; }}
+          onResponderTerminate={() => { isSeeking.current = false; }}
+        >
+          <View style={styles.progressBar}>
+            <View style={[styles.progressFill, { width: `${progressPercent}%` }]} />
+          </View>
+          <View style={[styles.scrubber, { left: `${progressPercent}%` }]} />
         </View>
         <View style={styles.timeRow}>
           <Text style={styles.timeText}>{formatTime(position)}</Text>
@@ -291,13 +322,27 @@ const styles = StyleSheet.create({
     textTransform: 'lowercase',
     marginBottom: 24,
   },
+  progressBarHitArea: {
+    width: '100%',
+    height: 30,
+    justifyContent: 'center',
+    marginBottom: 0,
+  },
   progressBar: {
     width: '100%',
     height: 4,
     backgroundColor: 'rgba(255,255,255,0.15)',
     borderRadius: 999,
     overflow: 'hidden',
-    marginBottom: 8,
+  },
+  scrubber: {
+    position: 'absolute',
+    top: 9,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: '#fff',
+    marginLeft: -7,
   },
   progressFill: {
     height: '100%',
