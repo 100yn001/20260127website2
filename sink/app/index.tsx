@@ -32,7 +32,7 @@ export default function HomeScreen() {
   const handleDeepLink = (event: { url: string }) => {
     const sharedId = parseSharedId(event.url);
     if (sharedId) {
-      router.push({ pathname: '/play/[id]', params: { id: sharedId } });
+      router.replace({ pathname: '/play/[id]', params: { id: sharedId } });
     }
   };
 
@@ -43,7 +43,7 @@ export default function HomeScreen() {
       const sharedId = parseSharedId(url);
       if (sharedId) {
         initialUrlHandled.current = true;
-        router.push({ pathname: '/play/[id]', params: { id: sharedId } });
+        router.replace({ pathname: '/play/[id]', params: { id: sharedId } });
       }
     }
   };
@@ -75,7 +75,7 @@ export default function HomeScreen() {
     <TouchableOpacity
       style={styles.card}
       activeOpacity={0.7}
-      onPress={() => router.push({ pathname: '/play/[id]', params: { id: item.id } })}
+      onPress={() => router.replace({ pathname: '/play/[id]', params: { id: item.id } })}
     >
       <View style={[styles.colorDot, { backgroundColor: item.coverColor || '#333' }]} />
       <View style={styles.cardContent}>
