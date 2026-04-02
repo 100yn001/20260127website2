@@ -125,7 +125,7 @@ export default function CreateScreen() {
             <Text style={[styles.selectionSubtitle, { color: colors.textSecondary }]}>choose how you&apos;d like to create your story</Text>
           </View>
 
-          <View style={[styles.selectionOptions, { maxWidth: tileWidth * 2 + 12, alignSelf: 'center' as const, width: '100%' as const }]}>
+          <View style={[styles.selectionOptions, { maxWidth: Platform.OS === 'web' && vw >= 600 ? tileWidth * 2 + 12 : vw - 48, alignSelf: 'center' as const, width: '100%' as const }]}>
             <Animated.View entering={FadeInDown.duration(300).delay(50)}>
               <Pressable
                 style={({ pressed }) => [
