@@ -103,6 +103,7 @@ export default function PlayerScreen() {
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [isSinking, setIsSinking] = useState(false);
   const [sinkCopied, setSinkCopied] = useState(false);
+  const [synkLogs, setSynkLogs] = useState<string[]>([]);
   const [narrators, setNarrators] = useState<Array<{ id: string; name: string; voiceId: string }>>([]);
   const [selectedNarratorId, setSelectedNarratorId] = useState<string | undefined>(undefined);
   const [isLoadingNarrators, setIsLoadingNarrators] = useState(false);
@@ -685,12 +686,16 @@ export default function PlayerScreen() {
     }
 
     setIsSinking(true);
+    setSynkLogs([]);
+    const log = (msg: string) => setSynkLogs(prev => [...prev, msg]);
 
     // Open window immediately to preserve user gesture (browsers block async popups)
     let popup: Window | null = null;
     if (Platform.OS === 'web') {
       popup = window.open('about:blank', '_blank');
     }
+
+    log(`color: ${coverColor || 'NONE'}, layers: ${topographyLayers?.length || 0}`);
 
     try {
       const storyData = {
@@ -715,7 +720,9 @@ export default function PlayerScreen() {
         topographyLayers,
       };
 
+      log('calling shareStoryAudio...');
       const sharedId = await shareStoryAudio(user.uid, storyData);
+      log(`shared ok, id: ${sharedId}`);
       const url = buildShareUrl(sharedId);
 
       if (popup) {
@@ -725,7 +732,8 @@ export default function PlayerScreen() {
       }
       setSinkCopied(true);
       setTimeout(() => setSinkCopied(false), 3000);
-    } catch (error) {
+    } catch (error: any) {
+      log(`ERROR: ${error?.message || error}`);
       console.error('Error sinking story:', error);
       if (popup) popup.close();
       Alert.alert('synk failed', 'unable to create a synk link. please try again.');
@@ -1228,6 +1236,13 @@ export default function PlayerScreen() {
                   </View>
                 </Button>
               </View>
+              {synkLogs.length > 0 && (
+                <View style={{ marginTop: 8, padding: 10, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 8 }}>
+                  {synkLogs.map((l, i) => (
+                    <Text key={i} style={{ color: 'rgba(255,255,255,0.7)', fontSize: 11, fontFamily: 'Courier', marginBottom: 2 }}>{l}</Text>
+                  ))}
+                </View>
+              )}
             </>
           )}
         </ScrollView>
