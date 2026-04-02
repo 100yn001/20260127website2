@@ -38,14 +38,20 @@ export async function shareStoryAudio(
     let artworkUrl = '';
     if (Platform.OS === 'web' && story.coverColor) {
       try {
+        console.log('[synk-art] rendering PNG, color:', story.coverColor, 'layers:', story.topographyLayers?.length || 0);
         const blob = await renderArtworkToPng(story.coverColor, story.topographyLayers, 440);
+        console.log('[synk-art] blob created, size:', blob.size);
         const path = `sharedArtwork/${userId}/${story.id}_${Date.now()}.png`;
         const storageRef = ref(storage, path);
+        console.log('[synk-art] uploading to:', path);
         await uploadBytes(storageRef, blob);
         artworkUrl = await getDownloadURL(storageRef);
-      } catch (err) {
-        console.warn('Artwork upload failed (non-fatal):', err);
+        console.log('[synk-art] upload success, url:', artworkUrl.substring(0, 80));
+      } catch (err: any) {
+        console.error('[synk-art] UPLOAD FAILED:', err?.message || err, err);
       }
+    } else {
+      console.log('[synk-art] skipped: platform=', Platform.OS, 'coverColor=', story.coverColor || 'NONE');
     }
 
     const shared: SharedAudio = {

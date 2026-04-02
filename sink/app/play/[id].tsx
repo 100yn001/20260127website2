@@ -1,4 +1,4 @@
-import { getSharedAudio, markAsPlayed } from '@/services/shared-audio-service';
+import { getSharedAudio } from '@/services/shared-audio-service';
 import { SharedAudio } from '@/types/shared-audio';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Audio } from 'expo-av';
@@ -68,13 +68,6 @@ export default function PlayScreen() {
         await AsyncStorage.setItem(RECEIVED_IDS_KEY, JSON.stringify(ids));
       }
 
-      // Mark as played (non-fatal — sink app has no auth)
-      try {
-        await markAsPlayed(sharedId);
-        addLog('marked as played');
-      } catch (markErr: any) {
-        addLog(`markAsPlayed failed (non-fatal): ${markErr?.message || markErr}`);
-      }
       setLoading(false);
     } catch (err: any) {
       const msg = err?.message || String(err);
