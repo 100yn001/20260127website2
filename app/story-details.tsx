@@ -71,6 +71,7 @@ export default function StoryDetailsScreen() {
   const [editDescription, setEditDescription] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [isSynking, setIsSynking] = useState(false);
+  const [synkLogs, setSynkLogs] = useState<string[]>([]);
   
   // Artwork edit
   const [showArtworkModal, setShowArtworkModal] = useState(false);
@@ -129,6 +130,8 @@ export default function StoryDetailsScreen() {
     const currentUser = auth.currentUser;
     if (!currentUser || isSynking) return;
     setIsSynking(true);
+    setSynkLogs([]);
+    const log = (msg: string) => setSynkLogs(prev => [...prev, msg]);
 
     // Open window immediately to preserve user gesture (browsers block async popups)
     let popup: Window | null = null;
@@ -136,7 +139,32 @@ export default function StoryDetailsScreen() {
       popup = window.open('about:blank', '_blank');
     }
 
+    log(`coverColor: ${coverColor || 'NONE'}, layers: ${topographyLayers?.length || 0}`);
+
     try {
+      // Test artwork generation inline
+      if (Platform.OS === 'web' && coverColor) {
+        try {
+          const { renderArtworkToPng } = await import('@/utils/artwork-to-png');
+          log('rendering PNG...');
+          const blob = await renderArtworkToPng(coverColor, topographyLayers, 440);
+          log(`blob ok, size: ${blob.size}`);
+
+          const { storage } = await import('@/config/firebase');
+          const { ref, uploadBytes, getDownloadURL } = await import('firebase/storage');
+          const path = `sharedArtwork/${currentUser.uid}/${storyId}_${Date.now()}.png`;
+          log(`uploading to: ${path}`);
+          const storageRef = ref(storage, path);
+          await uploadBytes(storageRef, blob);
+          const url = await getDownloadURL(storageRef);
+          log(`upload ok: ${url.substring(0, 60)}...`);
+        } catch (artErr: any) {
+          log(`ART ERROR: ${artErr?.message || artErr}`);
+        }
+      } else {
+        log(`art skipped: web=${Platform.OS === 'web'}, color=${coverColor || 'NONE'}`);
+      }
+
       const deepLink = await shareStoryToSink({
         userId: currentUser.uid,
         storyId,
@@ -148,10 +176,12 @@ export default function StoryDetailsScreen() {
         duration: duration as any,
         isNighttime,
       });
+      log(`share ok: ${deepLink.substring(0, 50)}...`);
       if (popup) {
         popup.location.href = deepLink;
       }
-    } catch (error) {
+    } catch (error: any) {
+      log(`SHARE ERROR: ${error?.message || error}`);
       console.error('Error synking story:', error);
       if (popup) popup.close();
     } finally {
@@ -422,6 +452,13 @@ export default function StoryDetailsScreen() {
               </>
             )}
           </TouchableOpacity>
+        )}
+        {synkLogs.length > 0 && (
+          <View style={{ marginTop: 12, padding: 12, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 8, width: '100%' }}>
+            {synkLogs.map((l, i) => (
+              <Text key={i} style={{ color: 'rgba(255,255,255,0.7)', fontSize: 11, fontFamily: 'monospace', marginBottom: 2 }}>{l}</Text>
+            ))}
+          </View>
         )}
 
         {isAdminUser && (
