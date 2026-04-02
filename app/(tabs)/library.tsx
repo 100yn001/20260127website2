@@ -509,6 +509,7 @@ export default function LibraryScreen() {
 
   const handleShareCardToSink = async (card: KeepListeningCard) => {
     if (!user) return;
+    const popup = Platform.OS === 'web' ? window.open('about:blank', '_blank') : null;
     try {
       const deepLink = await shareStoryToSink({
         userId: user.uid,
@@ -521,12 +522,13 @@ export default function LibraryScreen() {
         duration: card.durationLabel as any,
         isNighttime: card.isNighttime || false,
       });
-      await navigator.clipboard.writeText(deepLink);
+      if (popup) popup.location.href = deepLink;
       setCopiedCardKey(card.key);
       setShareMenuCardKey(null);
       setTimeout(() => setCopiedCardKey(null), 2000);
     } catch (error) {
       console.error('Error sharing story:', error);
+      if (popup) popup.close();
     }
   };
 

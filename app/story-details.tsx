@@ -129,6 +129,13 @@ export default function StoryDetailsScreen() {
     const currentUser = auth.currentUser;
     if (!currentUser || isSynking) return;
     setIsSynking(true);
+
+    // Open window immediately to preserve user gesture (browsers block async popups)
+    let popup: Window | null = null;
+    if (Platform.OS === 'web') {
+      popup = window.open('about:blank', '_blank');
+    }
+
     try {
       const deepLink = await shareStoryToSink({
         userId: currentUser.uid,
@@ -141,11 +148,12 @@ export default function StoryDetailsScreen() {
         duration: duration as any,
         isNighttime,
       });
-      if (Platform.OS === 'web') {
-        window.open(deepLink, '_blank');
+      if (popup) {
+        popup.location.href = deepLink;
       }
     } catch (error) {
       console.error('Error synking story:', error);
+      if (popup) popup.close();
     } finally {
       setIsSynking(false);
     }

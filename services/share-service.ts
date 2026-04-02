@@ -60,6 +60,5 @@ export async function shareStoryToSink(params: ShareStoryParams): Promise<string
   };
 
   const docRef = await addDoc(collection(db, SHARED_AUDIO_COLLECTION), sharedDoc);
-  const deepLink = `sink://play/${docRef.id}`;
-  return deepLink;
+  return `https://yourname.media/sink/${docRef.id}`;
 }

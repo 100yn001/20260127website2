@@ -535,6 +535,7 @@ export default function MyStoriesScreen() {
 
   const handleShareToSink = async (story: CompletedStory) => {
     if (!user) return;
+    const popup = Platform.OS === 'web' ? window.open('about:blank', '_blank') : null;
     try {
       const deepLink = await shareStoryToSink({
         userId: user.uid,
@@ -547,14 +548,13 @@ export default function MyStoriesScreen() {
         duration: story.duration as any,
         isNighttime: false,
       });
-      if (Platform.OS === 'web') {
-        window.open(deepLink, '_blank');
-      }
+      if (popup) popup.location.href = deepLink;
       setCopiedStoryId(story.id);
       setShareMenuStoryId(null);
       setTimeout(() => setCopiedStoryId(null), 2000);
     } catch (error) {
       console.error('Error sharing story:', error);
+      if (popup) popup.close();
     }
   };
 

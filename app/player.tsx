@@ -685,6 +685,13 @@ export default function PlayerScreen() {
     }
 
     setIsSinking(true);
+
+    // Open window immediately to preserve user gesture (browsers block async popups)
+    let popup: Window | null = null;
+    if (Platform.OS === 'web') {
+      popup = window.open('about:blank', '_blank');
+    }
+
     try {
       const storyData = {
         id: effectiveStoryId || '',
@@ -705,21 +712,22 @@ export default function PlayerScreen() {
         narratorId,
         createdAt: new Date(),
         coverColor,
+        topographyLayers,
       };
 
       const sharedId = await shareStoryAudio(user.uid, storyData);
       const url = buildShareUrl(sharedId);
 
-      // Open the link automatically on web, copy on native
-      if (Platform.OS === 'web') {
-        window.open(url, '_blank');
-      } else {
+      if (popup) {
+        popup.location.href = url;
+      } else if (Platform.OS !== 'web') {
         Clipboard.setString(url);
       }
       setSinkCopied(true);
       setTimeout(() => setSinkCopied(false), 3000);
     } catch (error) {
       console.error('Error sinking story:', error);
+      if (popup) popup.close();
       Alert.alert('synk failed', 'unable to create a synk link. please try again.');
     } finally {
       setIsSinking(false);
