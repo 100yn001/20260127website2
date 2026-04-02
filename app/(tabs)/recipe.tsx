@@ -847,7 +847,7 @@ export default function RecipeScreen() {
           <ScrollView style={styles.scrollView} contentContainerStyle={[styles.scrollContent, { paddingTop: 40, paddingBottom: 100 }]}>
             {/* Duration Selection */}
             <View style={[styles.durationCard, { backgroundColor: colors.card }]}>
-              <Text style={[styles.durationCardLabel, { color: colors.text }]}>duration</Text>
+              <Text style={[styles.durationCardLabel, { color: colors.text }]}>approx duration</Text>
               <View style={styles.durationButtons}>
                 {(['5min', '10min', '15min'] as const).map((option) => (
                   <TouchableOpacity

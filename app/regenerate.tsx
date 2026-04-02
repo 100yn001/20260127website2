@@ -270,7 +270,7 @@ export default function RegenerateScreen() {
         </View>
 
         <View style={[styles.durationCard, { backgroundColor: colors.card }]}>
-          <Text style={[styles.durationLabel, { color: colors.text }]}>duration</Text>
+          <Text style={[styles.durationLabel, { color: colors.text }]}>approx duration</Text>
           <View style={styles.durationRow}>
             {(['5min', '10min', '15min'] as const).map((option) => (
               <TouchableOpacity
