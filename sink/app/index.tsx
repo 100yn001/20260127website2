@@ -81,7 +81,7 @@ export default function HomeScreen() {
       <View style={styles.cardContent}>
         <Text style={styles.cardTitle} numberOfLines={1}>{item.title}</Text>
         <Text style={styles.cardMeta}>
-          {item.duration || ''} {item.played ? '· played' : '· new'}
+          {item.played ? 'played' : 'new'}
         </Text>
       </View>
       <View style={styles.playIcon}>

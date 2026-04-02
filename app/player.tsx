@@ -176,14 +176,11 @@ export default function PlayerScreen() {
   };
 
   const durationLabel = () => {
-    if (typeof params.duration === 'string' && params.duration.trim().length > 0) {
-      return params.duration;
-    }
     if (duration) {
       const minutes = Math.max(1, Math.round(duration / 60000));
       return `${minutes} min`;
     }
-    return '10 min';
+    return '';
   };
 
   const resolveIsNighttime = () => {

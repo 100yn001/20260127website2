@@ -249,7 +249,7 @@ export default function PlayScreen() {
         {/* Title */}
         <Text style={styles.title}>{sharedAudio?.title || 'untitled'}</Text>
         <Text style={styles.meta}>
-          {sharedAudio?.duration || ''}{chunkCount > 1 ? ` · ${chunkCount} parts` : ''}
+          {duration > 0 ? `${Math.max(1, Math.round(duration / 60000))} min` : ''}{chunkCount > 1 ? ` · ${chunkCount} parts` : ''}
         </Text>
 
         {/* Progress bar (seekable) */}

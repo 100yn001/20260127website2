@@ -267,6 +267,9 @@ export default function StoryDetailsScreen() {
     return createdAt.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
   }, [createdAt]);
 
+  // Don't show preset duration labels (5min/10min/15min) — actual duration shows in the player
+  const audioDurationDisplay = '';
+
   const handleCharacterPress = () => {
     if (!narratorId || !character) return;
     router.push({
@@ -509,9 +512,9 @@ export default function StoryDetailsScreen() {
               {formattedDate && (
                 <Text style={[styles.metadataText, { color: colors.text }]}>{formattedDate}</Text>
               )}
-              {formattedDate && duration && <View style={styles.metadataDivider} />}
-              {duration && (
-                <Text style={[styles.metadataText, { color: colors.text }]}>{duration}</Text>
+              {formattedDate && audioDurationDisplay && <View style={styles.metadataDivider} />}
+              {audioDurationDisplay && (
+                <Text style={[styles.metadataText, { color: colors.text }]}>{audioDurationDisplay}</Text>
               )}
             </View>
           )}

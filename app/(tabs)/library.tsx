@@ -636,7 +636,7 @@ export default function LibraryScreen() {
                 </View>
               )}
               <Text style={[styles.timeTextBelow, { color: colors.textSecondary }]}>
-                {card.durationLabel || ''}
+                {''}
               </Text>
             </View>
             {/* Line 3: Tags */}
@@ -675,7 +675,7 @@ export default function LibraryScreen() {
             <Text style={[styles.timeTextBelow, { color: colors.textSecondary }]}>
               {(card.progressPercent ?? 0) > 0 
                 ? `${card.remainingMinutes ?? 0} min left`
-                : card.durationLabel || ''}
+                : ''}
             </Text>
             
             {/* Line 3: Title */}
@@ -790,7 +790,7 @@ export default function LibraryScreen() {
           
           {/* Duration */}
           <Text style={[styles.exploreDuration, { color: colors.textSecondary }]}>
-            {card.durationLabel || ''}
+            {''}
           </Text>
         </View>
       </TouchableOpacity>
