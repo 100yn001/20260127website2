@@ -1,5 +1,6 @@
-import { db } from '@/config/firebase';
+import { db, storage } from '@/config/firebase';
 import { SharedAudio, Story } from '@/types/story';
+import { renderArtworkToPng } from '@/utils/artwork-to-png';
 import {
     collection,
     deleteDoc,
@@ -11,6 +12,8 @@ import {
     Timestamp,
     where,
 } from 'firebase/firestore';
+import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
+import { Platform } from 'react-native';
 
 const COLLECTION = 'sharedAudio';
 
@@ -30,6 +33,20 @@ export async function shareStoryAudio(
     const sharedRef = doc(collection(db, COLLECTION));
     const now = new Date();
     const expiresAt = new Date(now.getTime() + ttlMs);
+
+    // Upload artwork PNG on web
+    let artworkUrl = '';
+    if (Platform.OS === 'web' && story.coverColor) {
+      try {
+        const blob = await renderArtworkToPng(story.coverColor, story.topographyLayers, 440);
+        const path = `sharedArtwork/${userId}/${story.id}_${Date.now()}.png`;
+        const storageRef = ref(storage, path);
+        await uploadBytes(storageRef, blob);
+        artworkUrl = await getDownloadURL(storageRef);
+      } catch (err) {
+        console.warn('Artwork upload failed (non-fatal):', err);
+      }
+    }
 
     const shared: SharedAudio = {
       id: sharedRef.id,
@@ -51,6 +68,7 @@ export async function shareStoryAudio(
       ...shared,
       createdAt: Timestamp.fromDate(now),
       expiresAt: Timestamp.fromDate(expiresAt),
+      artworkUrl,
     });
 
     console.log('🔗 Shared audio created:', sharedRef.id);

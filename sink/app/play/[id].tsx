@@ -7,6 +7,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
     GestureResponderEvent,
+    Image,
     LayoutChangeEvent,
     SafeAreaView,
     ScrollView,
@@ -224,9 +225,17 @@ export default function PlayScreen() {
       </TouchableOpacity>
 
       <View style={styles.content}>
-        {/* Cover art placeholder */}
+        {/* Cover art */}
         <View style={[styles.coverArt, { backgroundColor: sharedAudio?.coverColor || '#1a1a2e' }]}>
-          <Text style={styles.coverText}>{'{synk}'}</Text>
+          {sharedAudio?.artworkUrl ? (
+            <Image
+              source={{ uri: sharedAudio.artworkUrl }}
+              style={styles.coverImage}
+              resizeMode="cover"
+            />
+          ) : (
+            <Text style={styles.coverText}>{'{synk}'}</Text>
+          )}
         </View>
 
         {/* Title */}
@@ -301,6 +310,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 32,
+    overflow: 'hidden',
+  },
+  coverImage: {
+    width: '100%',
+    height: '100%',
   },
   coverText: {
     fontSize: 28,

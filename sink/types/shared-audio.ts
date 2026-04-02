@@ -10,6 +10,7 @@ export interface SharedAudio {
   createdAt: Date;
   expiresAt: Date;
   coverColor?: string;
+  artworkUrl?: string;
   duration?: '5min' | '10min' | '15min';
   isNighttime: boolean;
 }

@@ -5,6 +5,7 @@ import { DEFAULT_COVER_COLOR } from '@/constants/cover-colors';
 import { useAudioPlayer } from '@/contexts/AudioPlayerContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { shareStoryToSink } from '@/services/share-service';
 import { DepthLayer, Story } from '@/types/story';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -516,6 +517,7 @@ export default function LibraryScreen() {
         audioChunkURLs: card.audioChunkURLs || [],
         audioUrl: card.audioUrl,
         coverColor: card.color,
+        topographyLayers: card.layers,
         duration: card.durationLabel as any,
         isNighttime: card.isNighttime || false,
       });
