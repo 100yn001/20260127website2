@@ -92,6 +92,11 @@ export default function HomeScreen() {
   // Filter out any that have expired since last load
   const visibleAudios = receivedAudios.filter(a => (Date.now() - a.createdAt.getTime()) < ONE_HOUR_MS);
 
+  const clearAll = async () => {
+    await AsyncStorage.removeItem(RECEIVED_IDS_KEY);
+    setReceivedAudios([]);
+  };
+
   const renderItem = ({ item }: { item: SharedAudio }) => (
     <TouchableOpacity
       style={styles.card}
@@ -115,6 +120,11 @@ export default function HomeScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.logo}>{'{synk}'}</Text>
+        {visibleAudios.length > 0 && (
+          <TouchableOpacity onPress={clearAll} style={styles.clearButton}>
+            <Text style={styles.clearButtonText}>clear</Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       {loading ? (
@@ -145,9 +155,24 @@ const styles = StyleSheet.create({
     backgroundColor: '#000',
   },
   header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: 24,
     paddingTop: 16,
     paddingBottom: 24,
+  },
+  clearButton: {
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+    borderRadius: 999,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+  },
+  clearButtonText: {
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.5)',
+    fontFamily: 'EBGaramond-Regular',
+    textTransform: 'lowercase',
   },
   logo: {
     fontSize: 32,

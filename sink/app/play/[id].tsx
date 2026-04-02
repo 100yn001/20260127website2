@@ -10,11 +10,10 @@ import {
     Image,
     LayoutChangeEvent,
     SafeAreaView,
-    ScrollView,
     StyleSheet,
     Text,
     TouchableOpacity,
-    View,
+    View
 } from 'react-native';
 
 const RECEIVED_IDS_KEY = 'sink_received_ids';
@@ -32,13 +31,6 @@ export default function PlayScreen() {
   const [currentChunkIndex, setCurrentChunkIndex] = useState(0);
   const isSeeking = useRef(false);
   const barWidth = useRef(0);
-  const [debugLogs, setDebugLogs] = useState<string[]>([]);
-  const [showDebug, setShowDebug] = useState(false);
-
-  const addLog = (msg: string) => {
-    setDebugLogs(prev => [...prev, `${new Date().toLocaleTimeString()}: ${msg}`]);
-    console.log('[synk]', msg);
-  };
 
   useEffect(() => {
     if (id) loadSharedAudio(id);
@@ -49,15 +41,12 @@ export default function PlayScreen() {
 
   const loadSharedAudio = async (sharedId: string) => {
     try {
-      addLog(`fetching doc: ${sharedId}`);
       const audio = await getSharedAudio(sharedId);
       if (!audio) {
-        addLog('doc not found or null');
         setError('story not found or link expired');
         setLoading(false);
         return;
       }
-      addLog(`got doc: title="${audio.title}", chunks=${audio.audioChunkURLs?.length || 0}, audioUrl=${audio.audioUrl ? 'yes' : 'no'}, artworkUrl=${audio.artworkUrl ? audio.artworkUrl.substring(0, 60) + '...' : 'EMPTY'}`);
       setSharedAudio(audio);
 
       // Save to received list
@@ -70,8 +59,6 @@ export default function PlayScreen() {
 
       setLoading(false);
     } catch (err: any) {
-      const msg = err?.message || String(err);
-      addLog(`LOAD ERROR: ${msg}`);
       console.error('Error loading shared audio:', err);
       setError(`failed to load story`);
       setLoading(false);
@@ -189,19 +176,6 @@ export default function PlayScreen() {
           <TouchableOpacity style={styles.backButton} onPress={() => router.replace('/')}>
             <Text style={styles.backButtonText}>go back</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.backButton, { marginTop: 12 }]} onPress={() => setShowDebug(!showDebug)}>
-            <Text style={styles.backButtonText}>{showDebug ? 'hide logs' : 'show logs'}</Text>
-          </TouchableOpacity>
-          {showDebug && (
-            <View style={{ marginTop: 16, maxHeight: 200, width: '100%' }}>
-              <ScrollView>
-                {debugLogs.map((log, i) => (
-                  <Text key={i} style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11, fontFamily: 'Courier', marginBottom: 2 }}>{log}</Text>
-                ))}
-                {debugLogs.length === 0 && <Text style={{ color: 'rgba(255,255,255,0.3)', fontSize: 11 }}>no logs</Text>}
-              </ScrollView>
-            </View>
-          )}
         </View>
       </SafeAreaView>
     );
@@ -212,25 +186,12 @@ export default function PlayScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Back button + debug toggle */}
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 24, paddingTop: 12, paddingBottom: 8 }}>
+      {/* Back button */}
+      <View style={{ paddingHorizontal: 24, paddingTop: 12, paddingBottom: 8 }}>
         <TouchableOpacity onPress={() => router.replace('/')}>
           <Text style={styles.navBackText}>← back</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => setShowDebug(!showDebug)}>
-          <Text style={styles.navBackText}>{showDebug ? 'hide logs' : 'logs'}</Text>
-        </TouchableOpacity>
       </View>
-      {showDebug && (
-        <View style={{ maxHeight: 150, paddingHorizontal: 16, marginBottom: 8 }}>
-          <ScrollView>
-            {debugLogs.map((log, i) => (
-              <Text key={i} style={{ color: 'rgba(255,255,255,0.6)', fontSize: 10, fontFamily: 'Courier', marginBottom: 1 }}>{log}</Text>
-            ))}
-            {debugLogs.length === 0 && <Text style={{ color: 'rgba(255,255,255,0.3)', fontSize: 10 }}>no logs yet</Text>}
-          </ScrollView>
-        </View>
-      )}
 
       <View style={styles.content}>
         {/* Cover art */}
