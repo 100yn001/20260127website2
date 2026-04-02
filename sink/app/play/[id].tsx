@@ -57,7 +57,7 @@ export default function PlayScreen() {
         setLoading(false);
         return;
       }
-      addLog(`got doc: title="${audio.title}", chunks=${audio.audioChunkURLs?.length || 0}, audioUrl=${audio.audioUrl ? 'yes' : 'no'}`);
+      addLog(`got doc: title="${audio.title}", chunks=${audio.audioChunkURLs?.length || 0}, audioUrl=${audio.audioUrl ? 'yes' : 'no'}, artworkUrl=${audio.artworkUrl ? audio.artworkUrl.substring(0, 60) + '...' : 'EMPTY'}`);
       setSharedAudio(audio);
 
       // Save to received list
@@ -219,10 +219,25 @@ export default function PlayScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Back button */}
-      <TouchableOpacity style={styles.navBack} onPress={() => router.replace('/')}>
-        <Text style={styles.navBackText}>← back</Text>
-      </TouchableOpacity>
+      {/* Back button + debug toggle */}
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 24, paddingTop: 12, paddingBottom: 8 }}>
+        <TouchableOpacity onPress={() => router.replace('/')}>
+          <Text style={styles.navBackText}>← back</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => setShowDebug(!showDebug)}>
+          <Text style={styles.navBackText}>{showDebug ? 'hide logs' : 'logs'}</Text>
+        </TouchableOpacity>
+      </View>
+      {showDebug && (
+        <View style={{ maxHeight: 150, paddingHorizontal: 16, marginBottom: 8 }}>
+          <ScrollView>
+            {debugLogs.map((log, i) => (
+              <Text key={i} style={{ color: 'rgba(255,255,255,0.6)', fontSize: 10, fontFamily: 'Courier', marginBottom: 1 }}>{log}</Text>
+            ))}
+            {debugLogs.length === 0 && <Text style={{ color: 'rgba(255,255,255,0.3)', fontSize: 10 }}>no logs yet</Text>}
+          </ScrollView>
+        </View>
+      )}
 
       <View style={styles.content}>
         {/* Cover art */}
