@@ -61,7 +61,7 @@ export async function shareStoryAudio(
       title: story.title,
       audioChunkURLs: story.audioChunkURLs || [],
       audioUrl: story.audioUrl,
-      narratorId: story.narratorId,
+      narratorId: story.narratorId || '',
       played: false,
       createdAt: now,
       expiresAt,
