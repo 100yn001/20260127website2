@@ -15,18 +15,29 @@ import {
 } from 'react-native';
 
 const RECEIVED_IDS_KEY = 'sink_received_ids';
+const ONE_HOUR_MS = 60 * 60 * 1000;
+
+function timeAgo(date: Date): string {
+  const mins = Math.floor((Date.now() - date.getTime()) / 60000);
+  if (mins < 1) return 'just now';
+  if (mins === 1) return '1 minute ago';
+  return `${mins} minutes ago`;
+}
 
 export default function HomeScreen() {
   const router = useRouter();
   const [receivedAudios, setReceivedAudios] = useState<SharedAudio[]>([]);
   const [loading, setLoading] = useState(true);
   const initialUrlHandled = useRef(false);
+  const [, setTick] = useState(0);
 
   useEffect(() => {
     loadReceivedAudios();
     handleInitialURL();
     const sub = Linking.addEventListener('url', handleDeepLink);
-    return () => sub.remove();
+    // Refresh "X minutes ago" labels every 30 seconds
+    const timer = setInterval(() => setTick(t => t + 1), 30000);
+    return () => { sub.remove(); clearInterval(timer); };
   }, []);
 
   const handleDeepLink = (event: { url: string }) => {
@@ -58,11 +69,18 @@ export default function HomeScreen() {
     try {
       const stored = await AsyncStorage.getItem(RECEIVED_IDS_KEY);
       const ids: string[] = stored ? JSON.parse(stored) : [];
+      const now = Date.now();
       const audios: SharedAudio[] = [];
+      const validIds: string[] = [];
       for (const id of ids) {
         const audio = await getSharedAudio(id);
-        if (audio) audios.push(audio);
+        if (audio && (now - audio.createdAt.getTime()) < ONE_HOUR_MS) {
+          audios.push(audio);
+          validIds.push(id);
+        }
       }
+      // Prune expired IDs from storage
+      await AsyncStorage.setItem(RECEIVED_IDS_KEY, JSON.stringify(validIds));
       setReceivedAudios(audios.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()));
     } catch (error) {
       console.error('Error loading received audios:', error);
@@ -70,6 +88,9 @@ export default function HomeScreen() {
       setLoading(false);
     }
   };
+
+  // Filter out any that have expired since last load
+  const visibleAudios = receivedAudios.filter(a => (Date.now() - a.createdAt.getTime()) < ONE_HOUR_MS);
 
   const renderItem = ({ item }: { item: SharedAudio }) => (
     <TouchableOpacity
@@ -81,7 +102,7 @@ export default function HomeScreen() {
       <View style={styles.cardContent}>
         <Text style={styles.cardTitle} numberOfLines={1}>{item.title}</Text>
         <Text style={styles.cardMeta}>
-          {item.played ? 'played' : 'new'}
+          {timeAgo(item.createdAt)}
         </Text>
       </View>
       <View style={styles.playIcon}>
@@ -94,12 +115,11 @@ export default function HomeScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.logo}>{'{synk}'}</Text>
-        <Text style={styles.subtitle}>your stories, locally</Text>
       </View>
 
       {loading ? (
         <ActivityIndicator color="#fff" style={{ marginTop: 40 }} />
-      ) : receivedAudios.length === 0 ? (
+      ) : visibleAudios.length === 0 ? (
         <View style={styles.emptyState}>
           <Text style={styles.emptyTitle}>no stories yet</Text>
           <Text style={styles.emptySubtitle}>
@@ -108,7 +128,7 @@ export default function HomeScreen() {
         </View>
       ) : (
         <FlatList
-          data={receivedAudios}
+          data={visibleAudios}
           renderItem={renderItem}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.list}
@@ -134,13 +154,6 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontFamily: 'EBGaramond-SemiBold',
     textTransform: 'lowercase',
-  },
-  subtitle: {
-    fontSize: 16,
-    color: 'rgba(255,255,255,0.5)',
-    fontFamily: 'EBGaramond-Regular',
-    textTransform: 'lowercase',
-    marginTop: 2,
   },
   list: {
     paddingHorizontal: 24,
