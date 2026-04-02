@@ -723,6 +723,33 @@ export default function PlayerScreen() {
       log('calling shareStoryAudio...');
       const sharedId = await shareStoryAudio(user.uid, storyData);
       log(`shared ok, id: ${sharedId}`);
+
+      // Upload artwork separately with visible logging
+      if (Platform.OS === 'web' && coverColor) {
+        try {
+          log('rendering artwork PNG...');
+          const { renderArtworkToPng } = await import('@/utils/artwork-to-png');
+          const blob = await renderArtworkToPng(coverColor, topographyLayers, 440);
+          log(`blob: ${blob.size} bytes`);
+
+          const { ref: storageRef, uploadBytes: upload, getDownloadURL: getUrl } = await import('firebase/storage');
+          const { storage } = await import('@/config/firebase');
+          const path = `sharedArtwork/${user.uid}/${effectiveStoryId}_${Date.now()}.png`;
+          log(`uploading to: ${path.substring(0, 50)}...`);
+          const sRef = storageRef(storage, path);
+          await upload(sRef, blob);
+          const artUrl = await getUrl(sRef);
+          log(`upload ok: ${artUrl.substring(0, 50)}...`);
+
+          // Patch the Firestore doc with artworkUrl
+          const { doc: docRef, updateDoc: update2 } = await import('firebase/firestore');
+          await update2(docRef(db, 'sharedAudio', sharedId), { artworkUrl: artUrl });
+          log('doc patched with artworkUrl');
+        } catch (artErr: any) {
+          log(`ART FAIL: ${artErr?.code || ''} ${artErr?.message || artErr}`);
+        }
+      }
+
       const url = buildShareUrl(sharedId);
 
       if (popup) {
