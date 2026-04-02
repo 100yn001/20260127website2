@@ -3,7 +3,7 @@ import { SharedAudio } from '@/types/shared-audio';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -20,6 +20,7 @@ export default function HomeScreen() {
   const router = useRouter();
   const [receivedAudios, setReceivedAudios] = useState<SharedAudio[]>([]);
   const [loading, setLoading] = useState(true);
+  const initialUrlHandled = useRef(false);
 
   useEffect(() => {
     loadReceivedAudios();
@@ -36,10 +37,12 @@ export default function HomeScreen() {
   };
 
   const handleInitialURL = async () => {
+    if (initialUrlHandled.current) return;
     const url = await Linking.getInitialURL();
     if (url) {
       const sharedId = parseSharedId(url);
       if (sharedId) {
+        initialUrlHandled.current = true;
         router.push({ pathname: '/play/[id]', params: { id: sharedId } });
       }
     }
