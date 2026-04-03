@@ -6,6 +6,9 @@
     { "source": "/about", "destination": "/index.html" },
     { "source": "/support", "destination": "/index.html" },
     { "source": "/privacy", "destination": "/index.html" },
+    { "source": "/thesynk", "destination": "/index.html" },
+    { "source": "/thesynk/support", "destination": "/index.html" },
+    { "source": "/thesynk/privacy", "destination": "/index.html" },
     { "source": "/sink/:id", "destination": "/sink/index.html" },
     { "source": "/app", "destination": "/app/index.html" },
     { "source": "/app/(.*)", "destination": "/app/index.html" }
