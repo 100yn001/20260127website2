@@ -16,6 +16,7 @@ export default {
       bundleIdentifier: "com.yn.sink",
       infoPlist: {
         UIBackgroundModes: ["audio"],
+        ITSAppUsesNonExemptEncryption: false,
       },
     },
     updates: {
