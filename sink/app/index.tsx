@@ -101,7 +101,7 @@ export default function HomeScreen() {
     <TouchableOpacity
       style={styles.card}
       activeOpacity={0.7}
-      onPress={() => router.replace({ pathname: '/play/[id]', params: { id: item.id } })}
+      onPress={() => router.push({ pathname: '/play/[id]', params: { id: item.id } })}
     >
       <View style={[styles.colorDot, { backgroundColor: item.coverColor || '#333' }]} />
       <View style={styles.cardContent}>

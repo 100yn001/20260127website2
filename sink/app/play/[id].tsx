@@ -173,7 +173,13 @@ export default function PlayScreen() {
       <SafeAreaView style={styles.container}>
         <View style={styles.errorState}>
           <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity style={styles.backButton} onPress={() => router.replace('/')}>
+          <TouchableOpacity style={styles.backButton} onPress={() => {
+            if (router.canGoBack()) {
+              router.back();
+            } else {
+              router.replace('/');
+            }
+          }}>
             <Text style={styles.backButtonText}>go back</Text>
           </TouchableOpacity>
         </View>
@@ -188,7 +194,15 @@ export default function PlayScreen() {
     <SafeAreaView style={styles.container}>
       {/* Back button */}
       <View style={{ paddingHorizontal: 24, paddingTop: 12, paddingBottom: 8 }}>
-        <TouchableOpacity onPress={() => router.replace('/')}>
+        <TouchableOpacity onPress={async () => {
+          await soundRef.current?.stopAsync().catch(() => {});
+          await soundRef.current?.unloadAsync().catch(() => {});
+          if (router.canGoBack()) {
+            router.back();
+          } else {
+            router.replace('/');
+          }
+        }}>
           <Text style={styles.navBackText}>← back</Text>
         </TouchableOpacity>
       </View>
