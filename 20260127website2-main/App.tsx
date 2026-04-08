@@ -22,13 +22,13 @@ const TheSynk: React.FC = () => (
       />
       <h1 className="text-4xl md:text-5xl text-white font-light">the synk</h1>
       <p className="text-lg md:text-xl text-gray-400 font-light max-w-md">
-        coming soon to the App Store
+        available now on the App Store
       </p>
       <a
-        href="#"
-        onClick={(e) => e.preventDefault()}
-        className="inline-block opacity-50 cursor-not-allowed"
-        title="Available when the app is published"
+        href="https://apps.apple.com/app/the-synk/id6761191876"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-block hover:opacity-80 transition-opacity duration-300"
       >
         <img
           src="https://tools.applemediaservices.com/api/badges/download-on-the-app-store/black/en-us?size=250x83"
