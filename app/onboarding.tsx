@@ -131,6 +131,7 @@ export default function OnboardingScreen() {
   const recapTailOpacity = useSharedValue(0);
   const recapButtonOpacity = useSharedValue(0);
   const recapOverlayOpacity = useSharedValue(1);
+  const cardWrapOpacity = useSharedValue(0);
   const cardTitleOpacity = useSharedValue(0);
   const cardContinueOpacity = useSharedValue(0);
 
@@ -213,6 +214,7 @@ export default function OnboardingScreen() {
     revealedRef.current = true;
     setReveal(true);
     recapOverlayOpacity.value = withTiming(0, { duration: 900 });
+    cardWrapOpacity.value = withTiming(1, { duration: 900 });
     cardTitleOpacity.value = withDelay(700, withTiming(1, { duration: 900 }));
     cardContinueOpacity.value = withDelay(1300, withTiming(1, { duration: 900 }));
     setTimeout(() => setOverlayMounted(false), 950);
@@ -512,6 +514,7 @@ export default function OnboardingScreen() {
   const recapTailStyle = useAnimatedStyle(() => ({ opacity: recapTailOpacity.value }));
   const recapButtonStyle = useAnimatedStyle(() => ({ opacity: recapButtonOpacity.value }));
   const recapOverlayStyle = useAnimatedStyle(() => ({ opacity: recapOverlayOpacity.value }));
+  const cardWrapStyle = useAnimatedStyle(() => ({ opacity: cardWrapOpacity.value }));
   const cardTitleStyle = useAnimatedStyle(() => ({ opacity: cardTitleOpacity.value }));
   const cardContinueStyle = useAnimatedStyle(() => ({ opacity: cardContinueOpacity.value }));
 
@@ -873,10 +876,14 @@ export default function OnboardingScreen() {
       <View style={styles.container}>
         <Animated.View style={[styles.fullScreen, animatedStyle]}>
           {/* 3D card: mounts as soon as we have the svg so it paints while
-              the user is still looking at the storyteller description. */}
+              the user is still looking at the storyteller description.
+              Wrapped in an Animated.View pinned to opacity 0 until the user
+              taps "reveal" — this keeps the WebGL canvas composited but
+              visually hidden, so its mount/first-paint can never flash
+              through even if the overlay has a one-frame opacity hiccup. */}
           {sceneReady ? (
-            <View
-              style={StyleSheet.absoluteFill}
+            <Animated.View
+              style={[StyleSheet.absoluteFill, cardWrapStyle]}
               pointerEvents={reveal && !overlayMounted ? 'auto' : 'none'}
             >
               <CardScene
@@ -884,7 +891,7 @@ export default function OnboardingScreen() {
                 aspectRatio={aspectRatio}
                 onReady={() => setCardPainted(true)}
               />
-            </View>
+            </Animated.View>
           ) : null}
 
           {/* Archetype title + continue button: fade in once reveal pressed. */}
