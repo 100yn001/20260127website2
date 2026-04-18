@@ -39,15 +39,43 @@ function extractText(response: Anthropic.Message): string {
   return '';
 }
 
+function collectUserWords(answers: Record<string, unknown>): string[] {
+  const words = new Set<string>();
+  for (const value of Object.values(answers)) {
+    if (Array.isArray(value)) {
+      for (const v of value) {
+        if (typeof v === 'string') {
+          v.split(/[\s,]+/).forEach((w) => {
+            const clean = w.toLowerCase().trim();
+            if (clean) words.add(clean);
+          });
+        }
+      }
+    } else if (typeof value === 'string') {
+      value.split(/[\s,]+/).forEach((w) => {
+        const clean = w.toLowerCase().trim();
+        if (clean) words.add(clean);
+      });
+    }
+  }
+  return Array.from(words);
+}
+
 export async function describeStorytellingStyle(
   answers: Record<string, unknown>,
 ): Promise<string> {
+  const forbidden = collectUserWords(answers);
+  const forbiddenClause = forbidden.length
+    ? ` You must NOT use any of these words (the person already picked them): ${forbidden.join(', ')}. Pick fresh, distinct vocabulary.`
+    : '';
+
   const response = await getClient().messages.create({
     model: MODEL,
     max_tokens: 64,
-    temperature: 0.9,
+    temperature: 0.95,
     system:
-      "Return exactly three words, comma-separated, describing this person's storytelling style. No preamble, no punctuation beyond the commas, lowercase only.",
+      "Return exactly three words, comma-separated, describing this person's storytelling style. No preamble, no punctuation beyond the commas, lowercase only." +
+      forbiddenClause,
     messages: [{ role: 'user', content: formatAnswers(answers) }],
   });
 

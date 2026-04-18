@@ -8,7 +8,7 @@ import {
 } from '@/services/claude-service';
 import { generateTarotCard } from '@/services/replicate-service';
 import { saveSilverCard, saveUserProfile } from '@/services/user-service';
-import CardStage from '@/components/silver-card/CardStage';
+import CardScene from '@/components/silver-card/CardScene';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { collection, getDocs, query, where } from 'firebase/firestore';
@@ -45,7 +45,6 @@ type Step =
   | 'descriptors2'
   | 'name'
   | 'storyteller-recap'
-  | 'silvercard'
   | 'secretcode'
   | 'signup';
 
@@ -113,12 +112,27 @@ export default function OnboardingScreen() {
   const [showExistingAccountModal, setShowExistingAccountModal] = useState(false);
   const [pipeline, setPipeline] = useState<Pipeline>({});
   const pipelineStarted = useRef(false);
+  const [cardPainted, setCardPainted] = useState(false);
+  const [reveal, setReveal] = useState(false);
+  const [overlayMounted, setOverlayMounted] = useState(true);
+  const revealedRef = useRef(false);
 
   const opacity = useSharedValue(0);
   const welcomeOpacity = useSharedValue(0);
   const toOpacity = useSharedValue(0);
   const ynOpacity = useSharedValue(0);
   const buttonOpacity = useSharedValue(0);
+
+  // Storyteller-recap staggered fade-in values
+  const recapLeadOpacity = useSharedValue(0);
+  const recapWord1Opacity = useSharedValue(0);
+  const recapWord2Opacity = useSharedValue(0);
+  const recapWord3Opacity = useSharedValue(0);
+  const recapTailOpacity = useSharedValue(0);
+  const recapButtonOpacity = useSharedValue(0);
+  const recapOverlayOpacity = useSharedValue(1);
+  const cardTitleOpacity = useSharedValue(0);
+  const cardContinueOpacity = useSharedValue(0);
 
   useEffect(() => {
     const fetchOnboardingStatus = async () => {
@@ -168,6 +182,41 @@ export default function OnboardingScreen() {
       return () => clearTimeout(timer);
     }
   }, [step]);
+
+  // Trigger the staggered fade-in once the full pipeline has finished AND
+  // the 3D card has painted its textures. Until then the overlay shows a
+  // spinner; once ready the storyteller sentence reveals word-by-word and
+  // the "reveal" button fades in last.
+  const fullyReady =
+    !!pipeline.words && !!pipeline.archetype && !!pipeline.svg && !!pipeline.dims && cardPainted;
+
+  useEffect(() => {
+    if (!fullyReady) return;
+    recapLeadOpacity.value = withTiming(1, { duration: 800 });
+    recapWord1Opacity.value = withDelay(700, withTiming(1, { duration: 700 }));
+    recapWord2Opacity.value = withDelay(1300, withTiming(1, { duration: 700 }));
+    recapWord3Opacity.value = withDelay(1900, withTiming(1, { duration: 700 }));
+    recapTailOpacity.value = withDelay(2600, withTiming(1, { duration: 800 }));
+    recapButtonOpacity.value = withDelay(3400, withTiming(1, { duration: 900 }));
+  }, [
+    fullyReady,
+    recapLeadOpacity,
+    recapWord1Opacity,
+    recapWord2Opacity,
+    recapWord3Opacity,
+    recapTailOpacity,
+    recapButtonOpacity,
+  ]);
+
+  const handleReveal = () => {
+    if (revealedRef.current) return;
+    revealedRef.current = true;
+    setReveal(true);
+    recapOverlayOpacity.value = withTiming(0, { duration: 900 });
+    cardTitleOpacity.value = withDelay(700, withTiming(1, { duration: 900 }));
+    cardContinueOpacity.value = withDelay(1300, withTiming(1, { duration: 900 }));
+    setTimeout(() => setOverlayMounted(false), 950);
+  };
 
   // Kick off the silver-card pipeline as soon as the user lands on the
   // storyteller-recap screen so the slow Replicate generation overlaps with
@@ -456,6 +505,15 @@ export default function OnboardingScreen() {
     opacity: buttonOpacity.value,
   }));
 
+  const recapLeadStyle = useAnimatedStyle(() => ({ opacity: recapLeadOpacity.value }));
+  const recapWord1Style = useAnimatedStyle(() => ({ opacity: recapWord1Opacity.value }));
+  const recapWord2Style = useAnimatedStyle(() => ({ opacity: recapWord2Opacity.value }));
+  const recapWord3Style = useAnimatedStyle(() => ({ opacity: recapWord3Opacity.value }));
+  const recapTailStyle = useAnimatedStyle(() => ({ opacity: recapTailOpacity.value }));
+  const recapButtonStyle = useAnimatedStyle(() => ({ opacity: recapButtonOpacity.value }));
+  const recapOverlayStyle = useAnimatedStyle(() => ({ opacity: recapOverlayOpacity.value }));
+  const cardTitleStyle = useAnimatedStyle(() => ({ opacity: cardTitleOpacity.value }));
+  const cardContinueStyle = useAnimatedStyle(() => ({ opacity: cardContinueOpacity.value }));
 
   const handleWelcomeContinue = () => {
     // Fade out welcome screen elements
@@ -799,33 +857,98 @@ export default function OnboardingScreen() {
   }
 
   if (step === 'storyteller-recap') {
+    const sceneReady =
+      Platform.OS === 'web'
+        ? !!(pipeline.svg && pipeline.dims)
+        : !!(pipeline.imageUrl && pipeline.dims);
+    const aspectRatio = pipeline.dims
+      ? pipeline.dims.width / pipeline.dims.height
+      : 2 / 3;
+    const words = (pipeline.words || '')
+      .split(',')
+      .map((w) => w.trim())
+      .filter(Boolean);
+
     return (
       <View style={styles.container}>
         <Animated.View style={[styles.fullScreen, animatedStyle]}>
-          <View style={styles.centered}>
-            {pipeline.error ? (
-              <View style={{ alignItems: 'center', gap: 12 }}>
-                <Text style={styles.subtitle}>something broke</Text>
-                <Text style={styles.errorDetailInline}>{pipeline.error}</Text>
+          {/* 3D card: mounts as soon as we have the svg so it paints while
+              the user is still looking at the storyteller description. */}
+          {sceneReady ? (
+            <View
+              style={StyleSheet.absoluteFill}
+              pointerEvents={reveal && !overlayMounted ? 'auto' : 'none'}
+            >
+              <CardScene
+                svgString={pipeline.svg ?? ''}
+                aspectRatio={aspectRatio}
+                onReady={() => setCardPainted(true)}
+              />
+            </View>
+          ) : null}
+
+          {/* Archetype title + continue button: fade in once reveal pressed. */}
+          {reveal && pipeline.archetype ? (
+            <Animated.View style={[styles.recapTitleWrap, cardTitleStyle]} pointerEvents="none">
+              <Text style={styles.recapTitleText}>{pipeline.archetype}</Text>
+            </Animated.View>
+          ) : null}
+          {reveal ? (
+            <Animated.View style={[styles.recapContinueWrap, cardContinueStyle]}>
+              <TouchableOpacity onPress={() => advanceStepWithFade('secretcode')}>
+                <Text style={styles.continueText}>continue →</Text>
+              </TouchableOpacity>
+            </Animated.View>
+          ) : null}
+
+          {/* Opaque overlay on top: spinner until pipeline ready, then the
+              staggered storyteller sentence. Fades out on reveal. */}
+          {overlayMounted ? (
+            <Animated.View
+              style={[StyleSheet.absoluteFill, styles.recapOverlay, recapOverlayStyle]}
+              pointerEvents={reveal ? 'none' : 'auto'}
+            >
+              <View style={styles.centered}>
+                {pipeline.error ? (
+                  <View style={{ alignItems: 'center', gap: 12 }}>
+                    <Text style={styles.subtitle}>something broke</Text>
+                    <Text style={styles.errorDetailInline}>{pipeline.error}</Text>
+                  </View>
+                ) : !fullyReady ? (
+                  <ActivityIndicator size="small" color="rgba(255,255,255,0.6)" />
+                ) : (
+                  <>
+                    <Animated.Text style={[styles.recapLine, recapLeadStyle]}>
+                      {nameInput.trim()}, you are a
+                    </Animated.Text>
+                    {words[0] ? (
+                      <Animated.Text style={[styles.recapWord, recapWord1Style]}>
+                        {words[0]}
+                      </Animated.Text>
+                    ) : null}
+                    {words[1] ? (
+                      <Animated.Text style={[styles.recapWord, recapWord2Style]}>
+                        {words[1]}
+                      </Animated.Text>
+                    ) : null}
+                    {words[2] ? (
+                      <Animated.Text style={[styles.recapWord, recapWord3Style]}>
+                        {words[2]}
+                      </Animated.Text>
+                    ) : null}
+                    <Animated.Text style={[styles.recapLine, recapTailStyle]}>
+                      kind of storyteller
+                    </Animated.Text>
+                    <Animated.View style={[styles.revealButtonWrap, recapButtonStyle]}>
+                      <TouchableOpacity onPress={handleReveal}>
+                        <Text style={styles.revealText}>reveal →</Text>
+                      </TouchableOpacity>
+                    </Animated.View>
+                  </>
+                )}
               </View>
-            ) : !pipeline.words ? (
-              <ActivityIndicator size="small" color="rgba(255,255,255,0.6)" />
-            ) : (
-              <>
-                <Text style={styles.recapStoryteller}>
-                  {nameInput.trim()}, you are a
-                </Text>
-                <Text style={styles.recapStoryWords}>{pipeline.words}</Text>
-                <Text style={styles.recapStoryteller}>kind of storyteller</Text>
-                <TouchableOpacity
-                  style={styles.revealButton}
-                  onPress={() => advanceStepWithFade('silvercard')}
-                >
-                  <Text style={styles.revealText}>reveal your archetype →</Text>
-                </TouchableOpacity>
-              </>
-            )}
-          </View>
+            </Animated.View>
+          ) : null}
         </Animated.View>
       </View>
     );
@@ -962,23 +1085,6 @@ export default function OnboardingScreen() {
             </View>
           </View>
         </Modal>
-      </View>
-    );
-  }
-
-  if (step === 'silvercard') {
-    return (
-      <View style={styles.container}>
-        <Animated.View style={[styles.fullScreen, { backgroundColor: '#000' }, animatedStyle]}>
-          <CardStage
-            svgString={pipeline.svg ?? null}
-            imageUrl={pipeline.imageUrl ?? null}
-            dims={pipeline.dims ?? null}
-            archetypeTitle={pipeline.archetype ?? null}
-            error={pipeline.error ?? null}
-            onContinue={() => advanceStepWithFade('secretcode')}
-          />
-        </Animated.View>
       </View>
     );
   }
@@ -1246,8 +1352,57 @@ const styles = StyleSheet.create({
     marginVertical: 8,
     paddingHorizontal: 16,
   },
+  recapLine: {
+    fontSize: 22,
+    color: '#fff',
+    fontFamily: 'EBGaramond-Regular',
+    textAlign: 'center',
+    lineHeight: 30,
+  },
+  recapWord: {
+    fontSize: 28,
+    color: '#fff',
+    fontFamily: 'EBGaramond-Italic',
+    fontStyle: 'italic',
+    textAlign: 'center',
+    marginVertical: 4,
+    paddingHorizontal: 16,
+  },
+  recapOverlay: {
+    backgroundColor: '#000',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  recapTitleWrap: {
+    position: 'absolute',
+    bottom: 96,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    paddingHorizontal: 24,
+  },
+  recapTitleText: {
+    color: '#fff',
+    fontFamily: 'EBGaramond-Italic',
+    fontStyle: 'italic',
+    fontSize: 24,
+    textAlign: 'center',
+    letterSpacing: 1.5,
+  },
+  recapContinueWrap: {
+    position: 'absolute',
+    bottom: 32,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+  },
   revealButton: {
     marginTop: 56,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+  },
+  revealButtonWrap: {
+    marginTop: 48,
     paddingHorizontal: 24,
     paddingVertical: 12,
   },

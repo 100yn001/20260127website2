@@ -1,6 +1,6 @@
 export type BinaryQuestion = { top: string; bottom: string };
 
-// Surface set — shown in order, 8 questions
+// Surface set — shown in order
 export const personalityInitial: BinaryQuestion[] = [
   { top: 'dinner date', bottom: 'coffee date' },
   { top: 'slow burn', bottom: 'instant spark' },
@@ -9,7 +9,9 @@ export const personalityInitial: BinaryQuestion[] = [
   { top: 'hand in hand', bottom: 'arm around shoulder' },
   { top: 'first asleep', bottom: 'last awake' },
   { top: 'arrive together', bottom: 'meet there' },
-  { top: 'love', bottom: 'lust' },
+  { top: 'dressed up', bottom: 'dressed down' },
+  { top: 'first kiss', bottom: 'second kiss' },
+  { top: 'right now', bottom: 'forever' },
 ];
 
 // Deep set — shuffled and sliced to 10 per session
