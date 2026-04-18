@@ -12,16 +12,14 @@
 import Anthropic from '@anthropic-ai/sdk';
 import Constants from 'expo-constants';
 
-const ANTHROPIC_API_KEY = Constants.expoConfig?.extra?.ANTHROPIC_API_KEY || '';
-
-if (!ANTHROPIC_API_KEY) {
-  console.warn('⚠️ ANTHROPIC_API_KEY not found in environment');
+let _client: Anthropic | null = null;
+function getClient(): Anthropic {
+  if (_client) return _client;
+  const apiKey = Constants.expoConfig?.extra?.ANTHROPIC_API_KEY || '';
+  if (!apiKey) console.warn('⚠️ ANTHROPIC_API_KEY not found in environment');
+  _client = new Anthropic({ apiKey, dangerouslyAllowBrowser: true });
+  return _client;
 }
-
-const client = new Anthropic({
-  apiKey: ANTHROPIC_API_KEY,
-  dangerouslyAllowBrowser: true,
-});
 
 const MODEL = 'claude-haiku-4-5-20251001';
 
@@ -44,7 +42,7 @@ function extractText(response: Anthropic.Message): string {
 export async function describeStorytellingStyle(
   answers: Record<string, unknown>,
 ): Promise<string> {
-  const response = await client.messages.create({
+  const response = await getClient().messages.create({
     model: MODEL,
     max_tokens: 64,
     temperature: 0.9,
@@ -58,7 +56,7 @@ export async function describeStorytellingStyle(
 }
 
 export async function describeLandscapeFromStyle(threeWords: string): Promise<string> {
-  const response = await client.messages.create({
+  const response = await getClient().messages.create({
     model: MODEL,
     max_tokens: 128,
     temperature: 0.9,

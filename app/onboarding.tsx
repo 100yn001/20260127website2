@@ -1,4 +1,3 @@
-import CardStage from '@/components/silver-card/CardStage';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { auth, db } from '@/config/firebase';
 import { personalityInitial, personalityReally } from '@/constants/personality-sets';
@@ -7,7 +6,9 @@ import { saveUserProfile } from '@/services/user-service';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { collection, getDocs, query, where } from 'firebase/firestore';
-import React, { useEffect, useState } from 'react';
+import React, { Suspense, lazy, useEffect, useState } from 'react';
+
+const CardStage = lazy(() => import('@/components/silver-card/CardStage'));
 import {
     ActivityIndicator,
     Alert,
@@ -28,8 +29,8 @@ import Animated, {
 type Step =
   | 'welcome'
   | 'intro-audio'
-  | 'intro-initial'
   | 'initial-quiz'
+  | 'initial-recap'
   | 'intro-really'
   | 'quiz'
   | 'object'
@@ -135,15 +136,15 @@ export default function OnboardingScreen() {
   // Auto-transition for black-screen intro steps
   useEffect(() => {
     if (step === 'intro-audio') {
-      const timer = setTimeout(() => advanceStepWithFade('intro-initial'), 2500);
+      const timer = setTimeout(() => advanceStepWithFade('initial-quiz'), 3500);
       return () => clearTimeout(timer);
     }
-    if (step === 'intro-initial') {
-      const timer = setTimeout(() => advanceStepWithFade('initial-quiz'), 2500);
+    if (step === 'initial-recap') {
+      const timer = setTimeout(() => advanceStepWithFade('intro-really'), 4500);
       return () => clearTimeout(timer);
     }
     if (step === 'intro-really') {
-      const timer = setTimeout(() => advanceStepWithFade('quiz'), 2500);
+      const timer = setTimeout(() => advanceStepWithFade('quiz'), 3000);
       return () => clearTimeout(timer);
     }
   }, [step]);
@@ -171,7 +172,7 @@ export default function OnboardingScreen() {
           setSelectedInitialChoice(null);
           opacity.value = withTiming(1, { duration: 700 });
         } else {
-          setStep('intro-really');
+          setStep('initial-recap');
           opacity.value = withTiming(1, { duration: 700 });
         }
       }, 550);
@@ -435,20 +436,11 @@ export default function OnboardingScreen() {
         <Animated.View style={[styles.fullScreen, animatedStyle]}>
           <View style={styles.centered}>
             <Text style={styles.subtitle}>
-              <Text style={styles.bracket}>{'{'}yn{'}'}</Text> creates personalized{'\n'}audio experience
+              <Text style={styles.bracket}>{'{'}yn{'}'}</Text> creates personalized{'\n'}audio experiences
             </Text>
-          </View>
-        </Animated.View>
-      </View>
-    );
-  }
-
-  if (step === 'intro-initial') {
-    return (
-      <View style={styles.container}>
-        <Animated.View style={[styles.fullScreen, animatedStyle]}>
-          <View style={styles.centered}>
-            <Text style={styles.subtitle}>let&apos;s get to know you</Text>
+            <Text style={[styles.subtitle, { marginTop: 32 }]}>
+              let&apos;s get to know <Text style={styles.italic}>you</Text>
+            </Text>
           </View>
         </Animated.View>
       </View>
@@ -472,7 +464,6 @@ export default function OnboardingScreen() {
               styles.quizText,
               isTopSelected && styles.selectedText,
               animatedStyle,
-              isBottomSelected && { opacity: 0 }
             ]}>
               {currentQuestion.top}
             </Animated.Text>
@@ -487,12 +478,34 @@ export default function OnboardingScreen() {
               styles.quizText,
               isBottomSelected && styles.selectedText,
               animatedStyle,
-              isTopSelected && { opacity: 0 }
             ]}>
               {currentQuestion.bottom}
             </Animated.Text>
           </TouchableOpacity>
         </View>
+      </View>
+    );
+  }
+
+  if (step === 'initial-recap') {
+    const chosen = initialQuestions
+      .map((q) => initialAnswers[`initial_${q.top}_${q.bottom}`])
+      .filter((v): v is string => typeof v === 'string');
+
+    return (
+      <View style={styles.container}>
+        <Animated.View style={[styles.fullScreen, animatedStyle]}>
+          <View style={styles.centered}>
+            <Text style={styles.recapLead}>so you&apos;re a</Text>
+            {chosen.map((choice, i) => (
+              <Text key={`${choice}_${i}`} style={styles.recapChoice}>
+                <Text style={styles.italic}>{choice}</Text>
+                {i < chosen.length - 1 ? ',' : ''}
+              </Text>
+            ))}
+            <Text style={styles.recapTail}>kind of person...</Text>
+          </View>
+        </Animated.View>
       </View>
     );
   }
@@ -503,7 +516,7 @@ export default function OnboardingScreen() {
         <Animated.View style={[styles.fullScreen, animatedStyle]}>
           <View style={styles.centered}>
             <Text style={styles.subtitle}>
-              who are you <Text style={styles.italic}>really</Text>
+              ...but who are you <Text style={styles.italic}>really</Text>?
             </Text>
           </View>
         </Animated.View>
@@ -515,7 +528,7 @@ export default function OnboardingScreen() {
     const currentQuestion = questions[questionIndex];
     const isTopSelected = selectedChoice === currentQuestion.top;
     const isBottomSelected = selectedChoice === currentQuestion.bottom;
-    
+
     return (
       <View style={styles.container}>
         <View style={styles.quizContainer}>
@@ -528,7 +541,6 @@ export default function OnboardingScreen() {
               styles.quizText,
               isTopSelected && styles.selectedText,
               animatedStyle,
-              isBottomSelected && { opacity: 0 }
             ]}>
               {currentQuestion.top}
             </Animated.Text>
@@ -543,7 +555,6 @@ export default function OnboardingScreen() {
               styles.quizText,
               isBottomSelected && styles.selectedText,
               animatedStyle,
-              isTopSelected && { opacity: 0 }
             ]}>
               {currentQuestion.bottom}
             </Animated.Text>
@@ -863,11 +874,17 @@ export default function OnboardingScreen() {
     return (
       <View style={styles.container}>
         <Animated.View style={[styles.fullScreen, animatedStyle]}>
-          <CardStage
-            answers={answers}
-            uid={auth.currentUser?.uid ?? null}
-            onContinue={() => router.replace('/(tabs)/library')}
-          />
+          <Suspense fallback={
+            <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+              <ActivityIndicator size="small" color="#fff" />
+            </View>
+          }>
+            <CardStage
+              answers={answers}
+              uid={auth.currentUser?.uid ?? null}
+              onContinue={() => router.replace('/(tabs)/library')}
+            />
+          </Suspense>
         </Animated.View>
       </View>
     );
@@ -989,6 +1006,27 @@ const styles = StyleSheet.create({
   },
   selectedText: {
     textDecorationLine: 'underline',
+  },
+  recapLead: {
+    fontSize: 22,
+    color: '#fff',
+    fontFamily: 'EBGaramond-Regular',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  recapChoice: {
+    fontSize: 20,
+    color: '#fff',
+    fontFamily: 'EBGaramond-Regular',
+    textAlign: 'center',
+    lineHeight: 28,
+  },
+  recapTail: {
+    fontSize: 22,
+    color: '#fff',
+    fontFamily: 'EBGaramond-Regular',
+    marginTop: 12,
+    textAlign: 'center',
   },
   objectGrid: {
     flexDirection: 'row',
