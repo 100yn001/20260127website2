@@ -1,7 +1,7 @@
 import { Stack, usePathname } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
+import { Component, ReactNode, useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import 'react-native-reanimated';
 
@@ -16,7 +16,36 @@ import { StoryQueueProvider } from '@/contexts/StoryQueueContext';
 import { ThemeProvider, useTheme } from '@/contexts/ThemeContext';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useLoadedFonts } from '@/hooks/use-loaded-fonts';
-import { Platform, TouchableOpacity, View } from 'react-native';
+import { Platform, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+
+class RootErrorBoundary extends Component<
+  { children: ReactNode },
+  { err: Error | null }
+> {
+  state = { err: null as Error | null };
+  static getDerivedStateFromError(err: Error) {
+    return { err };
+  }
+  componentDidCatch(err: Error, info: unknown) {
+    console.error('[RootErrorBoundary]', err, info);
+  }
+  render() {
+    if (!this.state.err) return this.props.children;
+    const msg = this.state.err.message || String(this.state.err);
+    const stack = this.state.err.stack || '';
+    return (
+      <View style={{ flex: 1, backgroundColor: '#000', padding: 24, paddingTop: 64 }}>
+        <ScrollView>
+          <Text style={{ color: '#fff', fontSize: 20, marginBottom: 12 }}>something broke</Text>
+          <Text selectable style={{ color: '#ff8888', fontSize: 14, marginBottom: 16 }}>{msg}</Text>
+          <Text selectable style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11, fontFamily: Platform.OS === 'web' ? 'monospace' : undefined }}>
+            {stack}
+          </Text>
+        </ScrollView>
+      </View>
+    );
+  }
+}
 
 // Keep splash screen visible while loading fonts
 SplashScreen.preventAutoHideAsync();
@@ -79,6 +108,7 @@ export default function RootLayout() {
   }
 
   return (
+    <RootErrorBoundary>
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ThemeProvider>
         <AuthProvider>
@@ -113,5 +143,6 @@ export default function RootLayout() {
         </AuthProvider>
       </ThemeProvider>
     </GestureHandlerRootView>
+    </RootErrorBoundary>
   );
 }
