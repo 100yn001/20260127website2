@@ -36,6 +36,31 @@ export async function saveUserProfile(
 }
 
 /**
+ * Save the silver-card metadata for a user. Merged under users/{uid}.silverCard.
+ * Called from CardStage after the Replicate generation succeeds.
+ */
+export async function saveSilverCard(
+  uid: string,
+  card: { storytellingWords: string; landscapePrompt: string; imageUrl?: string }
+): Promise<void> {
+  try {
+    const userRef = doc(db, 'users', uid);
+    const now = Timestamp.fromDate(new Date());
+    await setDoc(
+      userRef,
+      {
+        silverCard: { ...card, generatedAt: now },
+        updatedAt: now,
+      },
+      { merge: true }
+    );
+  } catch (error) {
+    console.error('Error saving silver card:', error);
+    throw error;
+  }
+}
+
+/**
  * Get user profile from Firestore
  */
 export async function getUserProfile(uid: string): Promise<UserProfile | null> {

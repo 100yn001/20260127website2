@@ -1,5 +1,7 @@
+import CardStage from '@/components/silver-card/CardStage';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { auth, db } from '@/config/firebase';
+import { personalityInitial, personalityReally } from '@/constants/personality-sets';
 import { useAuth } from '@/contexts/AuthContext';
 import { saveUserProfile } from '@/services/user-service';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -23,27 +25,21 @@ import Animated, {
     withTiming,
 } from 'react-native-reanimated';
 
-type Step = 'welcome' | 'instruction' | 'quiz' | 'object' | 'animal' | 'descriptors' | 'descriptors2' | 'name' | 'secretcode' | 'signup';
-
-const allQuestions = [
-  { top: 'moon', bottom: 'sun' },
-  { top: 'up', bottom: 'down' },
-  { top: 'sea', bottom: 'stars' },
-  { top: 'lung', bottom: 'heart' },
-  { top: 'eclipse', bottom: 'solstice' },
-  { top: 'snow', bottom: 'amber' },
-  { top: 'vine', bottom: 'wire' },
-  { top: 'tide', bottom: 'wind' },
-  { top: 'predator', bottom: 'prey' },
-  { top: 'linen', bottom: 'leather' },
-  { top: 'moth', bottom: 'flame' },
-  { top: 'inhale', bottom: 'exhale' },
-  { top: 'compass', bottom: 'anchor' },
-  { top: 'needle', bottom: 'thread' },
-  { top: 'comet', bottom: 'nebula' },
-  { top: 'chorus', bottom: 'solo' },
-  { top: 'question', bottom: 'answer' },
-];
+type Step =
+  | 'welcome'
+  | 'intro-audio'
+  | 'intro-initial'
+  | 'initial-quiz'
+  | 'intro-really'
+  | 'quiz'
+  | 'object'
+  | 'animal'
+  | 'descriptors'
+  | 'descriptors2'
+  | 'name'
+  | 'secretcode'
+  | 'signup'
+  | 'silvercard';
 
 // Shuffle and pick 10 random questions
 const shuffleArray = <T,>(array: T[]): T[] => {
@@ -76,12 +72,17 @@ export default function OnboardingScreen() {
   const { user, signUp, signIn: _signIn } = useAuth();
   const [step, setStep] = useState<Step>('welcome');
   const [questionIndex, setQuestionIndex] = useState(0);
+  const [initialIndex, setInitialIndex] = useState(0);
   const [selectedChoice, setSelectedChoice] = useState<string | null>(null);
+  const [selectedInitialChoice, setSelectedInitialChoice] = useState<string | null>(null);
   const [selectedObject, setSelectedObject] = useState<string | null>(null);
   const [selectedAnimal, setSelectedAnimal] = useState<string | null>(null);
   const [selectedDescriptors, setSelectedDescriptors] = useState<string[]>([]);
   const [selectedDescriptors2, setSelectedDescriptors2] = useState<string[]>([]);
-  const [questions] = useState(() => shuffleArray(allQuestions).slice(0, 10));
+  const [questions] = useState(() => shuffleArray(personalityReally).slice(0, 10));
+  const [initialQuestions] = useState(() => personalityInitial);
+  const [initialAnswers, setInitialAnswers] = useState<Record<string, string>>({});
+  const [reallyAnswers, setReallyAnswers] = useState<Record<string, string>>({});
   const [nameInput, setNameInput] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -131,21 +132,58 @@ export default function OnboardingScreen() {
     }
   }, [step]);
 
-  // Auto-transition for instruction step
+  // Auto-transition for black-screen intro steps
   useEffect(() => {
-    if (step === 'instruction') {
-      const timer = setTimeout(() => {
-        handleInstructionContinue();
-      }, 2500);
+    if (step === 'intro-audio') {
+      const timer = setTimeout(() => advanceStepWithFade('intro-initial'), 2500);
+      return () => clearTimeout(timer);
+    }
+    if (step === 'intro-initial') {
+      const timer = setTimeout(() => advanceStepWithFade('initial-quiz'), 2500);
+      return () => clearTimeout(timer);
+    }
+    if (step === 'intro-really') {
+      const timer = setTimeout(() => advanceStepWithFade('quiz'), 2500);
       return () => clearTimeout(timer);
     }
   }, [step]);
 
+  const advanceStepWithFade = (next: Step) => {
+    opacity.value = withTiming(0, { duration: 600 });
+    setTimeout(() => {
+      setStep(next);
+      opacity.value = withTiming(1, { duration: 800 });
+    }, 650);
+  };
+
+  const handleInitialChoice = (choice: string) => {
+    setSelectedInitialChoice(choice);
+    const currentQuestion = initialQuestions[initialIndex];
+    const questionKey = `initial_${currentQuestion.top}_${currentQuestion.bottom}`;
+    setInitialAnswers((prev) => ({ ...prev, [questionKey]: choice }));
+    setAnswers((prev) => ({ ...prev, [questionKey]: choice }));
+
+    setTimeout(() => {
+      opacity.value = withTiming(0, { duration: 500 });
+      setTimeout(() => {
+        if (initialIndex < initialQuestions.length - 1) {
+          setInitialIndex(initialIndex + 1);
+          setSelectedInitialChoice(null);
+          opacity.value = withTiming(1, { duration: 700 });
+        } else {
+          setStep('intro-really');
+          opacity.value = withTiming(1, { duration: 700 });
+        }
+      }, 550);
+    }, 1000);
+  };
+
   const handleChoice = (choice: string) => {
     setSelectedChoice(choice);
     const currentQuestion = questions[questionIndex];
-    const questionKey = `${currentQuestion.top}_${currentQuestion.bottom}`;
-    setAnswers({ ...answers, [questionKey]: choice });
+    const questionKey = `really_${currentQuestion.top}_${currentQuestion.bottom}`;
+    setReallyAnswers((prev) => ({ ...prev, [questionKey]: choice }));
+    setAnswers((prev) => ({ ...prev, [questionKey]: choice }));
 
     setTimeout(() => {
       opacity.value = withTiming(0, { duration: 500 });
@@ -295,7 +333,10 @@ export default function OnboardingScreen() {
 
       // Save user profile with onboarding answers to Firestore
       await saveUserProfile(currentUser.uid, email, nameInput, {
+        personalityInitial: initialAnswers,
+        personalityReally: reallyAnswers,
         object: selectedObject || undefined,
+        animal: selectedAnimal || undefined,
         descriptors: selectedDescriptors,
         descriptors2: selectedDescriptors2,
       } as any);
@@ -304,9 +345,13 @@ export default function OnboardingScreen() {
       await AsyncStorage.setItem('hasCompletedOnboarding', 'true');
       await AsyncStorage.setItem('userName', nameInput);
       await AsyncStorage.setItem('onboardingAnswers', JSON.stringify(answers));
-      
+
       setIsLoading(false);
-      router.replace('/(tabs)/library');
+      opacity.value = withTiming(0, { duration: 500 });
+      setTimeout(() => {
+        setStep('silvercard');
+        opacity.value = withTiming(1, { duration: 700 });
+      }, 550);
       
     } catch (error: any) {
       setIsLoading(false);
@@ -349,17 +394,9 @@ export default function OnboardingScreen() {
     toOpacity.value = withTiming(0, { duration: 900 });
     ynOpacity.value = withTiming(0, { duration: 900 });
     setTimeout(() => {
-      setStep('instruction');
+      setStep('intro-audio');
       opacity.value = withTiming(1, { duration: 900 });
     }, 1000);
-  };
-
-  const handleInstructionContinue = () => {
-    opacity.value = withTiming(0, { duration: 600 });
-    setTimeout(() => {
-      setStep('quiz');
-      opacity.value = withTiming(1, { duration: 800 });
-    }, 650);
   };
 
   if (step === 'welcome') {
@@ -392,12 +429,82 @@ export default function OnboardingScreen() {
   }
 
 
-  if (step === 'instruction') {
+  if (step === 'intro-audio') {
     return (
       <View style={styles.container}>
         <Animated.View style={[styles.fullScreen, animatedStyle]}>
           <View style={styles.centered}>
-            <Text style={styles.subtitle}>pick the word{'\n'}that most calls to you</Text>
+            <Text style={styles.subtitle}>
+              <Text style={styles.bracket}>{'{'}yn{'}'}</Text> creates personalized{'\n'}audio experience
+            </Text>
+          </View>
+        </Animated.View>
+      </View>
+    );
+  }
+
+  if (step === 'intro-initial') {
+    return (
+      <View style={styles.container}>
+        <Animated.View style={[styles.fullScreen, animatedStyle]}>
+          <View style={styles.centered}>
+            <Text style={styles.subtitle}>let&apos;s get to know you</Text>
+          </View>
+        </Animated.View>
+      </View>
+    );
+  }
+
+  if (step === 'initial-quiz') {
+    const currentQuestion = initialQuestions[initialIndex];
+    const isTopSelected = selectedInitialChoice === currentQuestion.top;
+    const isBottomSelected = selectedInitialChoice === currentQuestion.bottom;
+
+    return (
+      <View style={styles.container}>
+        <View style={styles.quizContainer}>
+          <TouchableOpacity
+            style={styles.quizTop}
+            onPress={() => handleInitialChoice(currentQuestion.top)}
+            disabled={selectedInitialChoice !== null}
+          >
+            <Animated.Text style={[
+              styles.quizText,
+              isTopSelected && styles.selectedText,
+              animatedStyle,
+              isBottomSelected && { opacity: 0 }
+            ]}>
+              {currentQuestion.top}
+            </Animated.Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.quizBottom}
+            onPress={() => handleInitialChoice(currentQuestion.bottom)}
+            disabled={selectedInitialChoice !== null}
+          >
+            <Animated.Text style={[
+              styles.quizText,
+              isBottomSelected && styles.selectedText,
+              animatedStyle,
+              isTopSelected && { opacity: 0 }
+            ]}>
+              {currentQuestion.bottom}
+            </Animated.Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
+  if (step === 'intro-really') {
+    return (
+      <View style={styles.container}>
+        <Animated.View style={[styles.fullScreen, animatedStyle]}>
+          <View style={styles.centered}>
+            <Text style={styles.subtitle}>
+              who are you <Text style={styles.italic}>really</Text>
+            </Text>
           </View>
         </Animated.View>
       </View>
@@ -748,6 +855,20 @@ export default function OnboardingScreen() {
             </View>
           </View>
         </Modal>
+      </View>
+    );
+  }
+
+  if (step === 'silvercard') {
+    return (
+      <View style={styles.container}>
+        <Animated.View style={[styles.fullScreen, animatedStyle]}>
+          <CardStage
+            answers={answers}
+            uid={auth.currentUser?.uid ?? null}
+            onContinue={() => router.replace('/(tabs)/library')}
+          />
+        </Animated.View>
       </View>
     );
   }

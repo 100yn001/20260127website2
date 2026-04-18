@@ -3,6 +3,9 @@ import 'dotenv/config';
 // Debug: Check if environment variables are loaded
 console.log('📝 Environment check:', {
   XAI: process.env.XAI ? '✓ exists' : '✗ missing',
+  OPENAI_API_KEY: process.env.OPENAI_API_KEY ? '✓ exists' : '✗ missing',
+  ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY ? '✓ exists' : '✗ missing',
+  REPLICATE_API_TOKEN: process.env.REPLICATE_API_TOKEN ? '✓ exists' : '✗ missing',
   FIREBASE_API_KEY: process.env.FIREBASE_API_KEY ? '✓ exists' : '✗ missing',
   FIREBASE_PROJECT_ID: process.env.FIREBASE_PROJECT_ID || 'missing',
 });
@@ -83,6 +86,9 @@ export default {
       },
       XAI: process.env.XAI,
       ELEVENLABS: process.env.ELEVENLABS,
+      OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+      ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
+      REPLICATE_API_TOKEN: process.env.REPLICATE_API_TOKEN,
       FIREBASE_API_KEY: process.env.FIREBASE_API_KEY,
       FIREBASE_AUTH_DOMAIN: process.env.FIREBASE_AUTH_DOMAIN,
       FIREBASE_PROJECT_ID: process.env.FIREBASE_PROJECT_ID,
