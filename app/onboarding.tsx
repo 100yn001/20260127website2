@@ -948,7 +948,7 @@ export default function OnboardingScreen() {
                     </Animated.Text>
                     <Animated.View style={[styles.revealButtonWrap, recapButtonStyle]}>
                       <TouchableOpacity onPress={handleReveal}>
-                        <Text style={styles.revealText}>reveal →</Text>
+                        <Text style={styles.revealText}>reveal my archetype →</Text>
                       </TouchableOpacity>
                     </Animated.View>
                   </>
