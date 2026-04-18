@@ -31,6 +31,8 @@ export default function Root({ children }: PropsWithChildren) {
             __html: `
               html, body, #root { background-color: #000 !important; }
               html, body { color-scheme: dark; }
+              input, textarea, select, button { outline: none !important; -webkit-tap-highlight-color: transparent; }
+              input:focus, textarea:focus, select:focus, button:focus { outline: none !important; box-shadow: none !important; }
             `,
           }}
         />
