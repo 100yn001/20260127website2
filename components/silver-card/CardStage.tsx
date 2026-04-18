@@ -10,6 +10,12 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withDelay,
+  withTiming,
+} from 'react-native-reanimated';
 import CardScene from './CardScene';
 
 export type SilverCardResult = {
@@ -35,15 +41,6 @@ class SceneErrorBoundary extends Component<
   }
 }
 
-type Stage = 'styling' | 'landscape' | 'painting' | 'tracing' | 'ready' | 'error';
-
-const STAGE_COPY: Record<Exclude<Stage, 'ready' | 'error'>, string> = {
-  styling: 'finding your voice',
-  landscape: 'dreaming a landscape',
-  painting: 'painting your card',
-  tracing: 'pouring the silver',
-};
-
 export default function CardStage({
   answers,
   onContinue,
@@ -51,7 +48,6 @@ export default function CardStage({
   answers: Record<string, unknown>;
   onContinue: (result: SilverCardResult) => void;
 }) {
-  const [stage, setStage] = useState<Stage>('styling');
   const [svgString, setSvgString] = useState<string | null>(null);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [storyWords, setStoryWords] = useState<string | null>(null);
@@ -59,30 +55,32 @@ export default function CardStage({
   const [remoteImageUrl, setRemoteImageUrl] = useState<string | null>(null);
   const [dims, setDims] = useState<{ width: number; height: number } | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [cardReady, setCardReady] = useState(false);
+
+  const headerOpacity = useSharedValue(0);
+  const cardOpacity = useSharedValue(0);
+  const buttonOpacity = useSharedValue(0);
 
   useEffect(() => {
     let cancelled = false;
 
     async function run() {
       try {
-        setStage('styling');
         const styleWords = await describeStorytellingStyle(answers);
         if (cancelled) return;
         setStoryWords(styleWords);
+        headerOpacity.value = withTiming(1, { duration: 1400 });
 
-        setStage('landscape');
         const landscapePrompt = await describeLandscapeFromStyle(styleWords);
         if (cancelled) return;
         setLandscape(landscapePrompt);
 
-        setStage('painting');
         const { dataUrl, remoteUrl } = await generateTarotCard(landscapePrompt);
         if (cancelled) return;
         setImageUrl(dataUrl);
         setRemoteImageUrl(remoteUrl);
 
         if (Platform.OS === 'web') {
-          setStage('tracing');
           const { vectorizeImage } = await import('@/services/vectorize');
           const { svg, width, height } = await vectorizeImage(dataUrl);
           if (cancelled) return;
@@ -100,12 +98,15 @@ export default function CardStage({
           setDims(imgDims);
         }
 
-        if (!cancelled) setStage('ready');
+        if (!cancelled) {
+          setCardReady(true);
+          cardOpacity.value = withDelay(300, withTiming(1, { duration: 1600 }));
+          buttonOpacity.value = withDelay(2100, withTiming(1, { duration: 900 }));
+        }
       } catch (err) {
         if (cancelled) return;
         console.error('[CardStage] pipeline failed:', err);
         setErrorMsg(err instanceof Error ? err.message : String(err));
-        setStage('error');
       }
     }
 
@@ -114,6 +115,10 @@ export default function CardStage({
       cancelled = true;
     };
   }, [answers]);
+
+  const headerStyle = useAnimatedStyle(() => ({ opacity: headerOpacity.value }));
+  const cardAnimStyle = useAnimatedStyle(() => ({ opacity: cardOpacity.value }));
+  const buttonStyle = useAnimatedStyle(() => ({ opacity: buttonOpacity.value }));
 
   const handleContinue = () => {
     if (!storyWords || !landscape || !remoteImageUrl) return;
@@ -124,21 +129,20 @@ export default function CardStage({
     });
   };
 
-  if (stage === 'error') {
+  if (errorMsg) {
     return (
       <View style={styles.center}>
         <Text style={styles.errorTitle}>something broke</Text>
-        {errorMsg ? <Text style={styles.errorDetail}>{errorMsg}</Text> : null}
+        <Text style={styles.errorDetail}>{errorMsg}</Text>
       </View>
     );
   }
 
-  if (stage !== 'ready') {
-    const copy = STAGE_COPY[stage];
+  if (!storyWords) {
     return (
       <View style={styles.center}>
         <ActivityIndicator size="small" color="#ffffff" />
-        <Text style={styles.loadingText}>{copy}</Text>
+        <Text style={styles.loadingText}>finding your voice</Text>
       </View>
     );
   }
@@ -160,27 +164,43 @@ export default function CardStage({
 
   return (
     <View style={styles.container}>
-      {storyWords ? (
+      <Animated.View style={[styles.headerWrap, headerStyle]}>
         <Text style={styles.styleHeader}>
-          you&apos;re a <Text style={styles.styleWords}>{storyWords}</Text> kind of storyteller
+          you&apos;re a <Text style={styles.styleWords}>{storyWords}</Text>
+          {'\n'}kind of storyteller
         </Text>
-      ) : null}
+      </Animated.View>
+
       <View style={styles.sceneWrap}>
-        <SceneErrorBoundary fallback={sceneFallback}>
-          {Platform.OS === 'web' && svgString ? (
-            <CardScene svgString={svgString} aspectRatio={aspectRatio} />
-          ) : (
-            <CardScene
-              svgString={svgString ?? undefined}
-              imageUrl={imageUrl ?? undefined}
-              aspectRatio={aspectRatio}
-            />
-          )}
-        </SceneErrorBoundary>
+        {cardReady ? (
+          <Animated.View style={[styles.sceneFill, cardAnimStyle]}>
+            <SceneErrorBoundary fallback={sceneFallback}>
+              {Platform.OS === 'web' && svgString ? (
+                <CardScene svgString={svgString} aspectRatio={aspectRatio} />
+              ) : (
+                <CardScene
+                  svgString={svgString ?? undefined}
+                  imageUrl={imageUrl ?? undefined}
+                  aspectRatio={aspectRatio}
+                />
+              )}
+            </SceneErrorBoundary>
+          </Animated.View>
+        ) : (
+          <View style={styles.center}>
+            <ActivityIndicator size="small" color="rgba(255,255,255,0.6)" />
+            <Text style={styles.subtleText}>painting your card…</Text>
+          </View>
+        )}
       </View>
-      <TouchableOpacity style={styles.button} onPress={handleContinue}>
-        <Text style={styles.buttonText}>continue →</Text>
-      </TouchableOpacity>
+
+      {cardReady ? (
+        <Animated.View style={[styles.buttonWrap, buttonStyle]}>
+          <TouchableOpacity style={styles.button} onPress={handleContinue}>
+            <Text style={styles.buttonText}>continue →</Text>
+          </TouchableOpacity>
+        </Animated.View>
+      ) : null}
     </View>
   );
 }
@@ -191,20 +211,28 @@ const styles = StyleSheet.create({
     width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingTop: 32,
+    paddingTop: 48,
+    paddingBottom: 48,
+  },
+  headerWrap: {
+    paddingHorizontal: 24,
+    marginBottom: 12,
   },
   styleHeader: {
     color: '#fff',
     fontFamily: 'EBGaramond-Regular',
-    fontSize: 18,
+    fontSize: 20,
     textAlign: 'center',
-    paddingHorizontal: 24,
-    marginBottom: 8,
+    lineHeight: 28,
   },
   styleWords: {
     fontStyle: 'italic',
   },
   sceneWrap: {
+    flex: 1,
+    width: '100%',
+  },
+  sceneFill: {
     flex: 1,
     width: '100%',
   },
@@ -219,6 +247,11 @@ const styles = StyleSheet.create({
     fontFamily: 'EBGaramond-Regular',
     fontSize: 18,
   },
+  subtleText: {
+    color: 'rgba(255,255,255,0.6)',
+    fontFamily: 'EBGaramond-Regular',
+    fontSize: 14,
+  },
   errorTitle: {
     color: '#fff',
     fontFamily: 'EBGaramond-Medium',
@@ -231,9 +264,11 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     paddingHorizontal: 32,
   },
-  button: {
+  buttonWrap: {
     position: 'absolute',
     bottom: 48,
+  },
+  button: {
     paddingHorizontal: 24,
     paddingVertical: 12,
   },
