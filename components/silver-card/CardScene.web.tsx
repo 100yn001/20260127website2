@@ -220,7 +220,7 @@ export default function CardScene({
       camera={{ position: [0, 0, 4.41], fov: 35 }}
       gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, alpha: true, premultipliedAlpha: false }}
       frameloop="always"
-      style={{ background: 'transparent' }}
+      style={{ background: '#000' }}
     >
       <ambientLight intensity={0.3} />
       <directionalLight position={[4, 4, 6]} intensity={1.5} castShadow />

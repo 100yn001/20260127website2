@@ -55,22 +55,24 @@ export default function CardStage({
   onContinue: () => void;
 }) {
   const [painted, setPainted] = useState(false);
+  const [overlayMounted, setOverlayMounted] = useState(true);
 
-  const cardOpacity = useSharedValue(0);
-  const placeholderOpacity = useSharedValue(1);
+  const overlayOpacity = useSharedValue(1);
   const titleOpacity = useSharedValue(0);
   const buttonOpacity = useSharedValue(0);
 
   useEffect(() => {
     if (!painted) return;
-    cardOpacity.value = withTiming(1, { duration: 1200 });
-    placeholderOpacity.value = withTiming(0, { duration: 700 });
-    titleOpacity.value = withDelay(900, withTiming(1, { duration: 1100 }));
-    buttonOpacity.value = withDelay(1800, withTiming(1, { duration: 900 }));
-  }, [painted, cardOpacity, placeholderOpacity, titleOpacity, buttonOpacity]);
+    // Hold the opaque overlay over the canvas until WebGL has actually
+    // drawn the textured card — then fade the overlay out to reveal it.
+    overlayOpacity.value = withDelay(120, withTiming(0, { duration: 900 }));
+    titleOpacity.value = withDelay(900, withTiming(1, { duration: 900 }));
+    buttonOpacity.value = withDelay(1500, withTiming(1, { duration: 800 }));
+    const t = setTimeout(() => setOverlayMounted(false), 1100);
+    return () => clearTimeout(t);
+  }, [painted, overlayOpacity, titleOpacity, buttonOpacity]);
 
-  const cardStyle = useAnimatedStyle(() => ({ opacity: cardOpacity.value }));
-  const placeholderStyle = useAnimatedStyle(() => ({ opacity: placeholderOpacity.value }));
+  const overlayStyle = useAnimatedStyle(() => ({ opacity: overlayOpacity.value }));
   const titleStyle = useAnimatedStyle(() => ({ opacity: titleOpacity.value }));
   const buttonStyle = useAnimatedStyle(() => ({ opacity: buttonOpacity.value }));
 
@@ -96,10 +98,13 @@ export default function CardStage({
   return (
     <View style={styles.container}>
       <View style={styles.sceneWrap}>
+        {/* The 3D canvas sits at the bottom and renders as soon as it can,
+            but it stays hidden behind the opaque black overlay until WebGL
+            has finished drawing the textured mesh. */}
         {sceneReady ? (
-          <Animated.View
-            style={[StyleSheet.absoluteFill, cardStyle]}
-            pointerEvents={painted ? 'auto' : 'none'}
+          <View
+            style={StyleSheet.absoluteFill}
+            pointerEvents={overlayMounted ? 'none' : 'auto'}
           >
             <SceneErrorBoundary fallback={sceneFallback}>
               {Platform.OS === 'web' && svgString ? (
@@ -117,12 +122,12 @@ export default function CardStage({
                 />
               )}
             </SceneErrorBoundary>
-          </Animated.View>
+          </View>
         ) : null}
 
-        {!painted && (
+        {overlayMounted && (
           <Animated.View
-            style={[StyleSheet.absoluteFill, styles.center, placeholderStyle]}
+            style={[StyleSheet.absoluteFill, styles.overlay, overlayStyle]}
             pointerEvents="none"
           >
             <ActivityIndicator size="small" color="rgba(255,255,255,0.6)" />
@@ -141,7 +146,7 @@ export default function CardStage({
         style={[styles.buttonWrap, buttonStyle]}
         pointerEvents={painted ? 'auto' : 'none'}
       >
-        <TouchableOpacity style={styles.button} onPress={onContinue}>
+        <TouchableOpacity onPress={onContinue} activeOpacity={0.6}>
           <Text style={styles.buttonText}>continue →</Text>
         </TouchableOpacity>
       </Animated.View>
@@ -155,14 +160,18 @@ const styles = StyleSheet.create({
     width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingTop: 32,
-    paddingBottom: 32,
     backgroundColor: '#000',
   },
   sceneWrap: {
     flex: 1,
     width: '100%',
     position: 'relative',
+  },
+  overlay: {
+    backgroundColor: '#000',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 16,
   },
   center: {
     flex: 1,
@@ -188,9 +197,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
   },
   titleWrap: {
+    position: 'absolute',
+    bottom: 96,
     paddingHorizontal: 24,
-    marginTop: 8,
-    marginBottom: 16,
   },
   titleText: {
     color: '#fff',
@@ -203,10 +212,6 @@ const styles = StyleSheet.create({
   buttonWrap: {
     position: 'absolute',
     bottom: 32,
-  },
-  button: {
-    paddingHorizontal: 24,
-    paddingVertical: 12,
   },
   buttonText: {
     color: '#fff',

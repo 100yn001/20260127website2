@@ -61,7 +61,7 @@ export async function describeLandscapeFromStyle(threeWords: string): Promise<st
     max_tokens: 128,
     temperature: 0.9,
     system:
-      'Invent a landscape (no people, no text, no letters) that evokes the given storytelling style. Respond with one vivid sentence under 30 words. Lowercase. No preamble.',
+      'Invent a tarot-card scene with a single mysterious figure (silhouette or robed/cloaked person, face obscured or turned away) inside a vivid landscape that evokes the given storytelling style. No text, no letters, no readable faces. Respond with one vivid sentence under 35 words. Lowercase. No preamble.',
     messages: [{ role: 'user', content: threeWords }],
   });
 
