@@ -874,13 +874,14 @@ export default function OnboardingScreen() {
 
     return (
       <View style={styles.container}>
+        {/* Everything that's part of the step fade sits inside this
+            Animated.View. The black overlay lives OUTSIDE it so the step
+            fade-in can't momentarily pull its opacity below 1. */}
         <Animated.View style={[styles.fullScreen, animatedStyle]}>
           {/* 3D card: mounts as soon as we have the svg so it paints while
               the user is still looking at the storyteller description.
               Wrapped in an Animated.View pinned to opacity 0 until the user
-              taps "reveal" — this keeps the WebGL canvas composited but
-              visually hidden, so its mount/first-paint can never flash
-              through even if the overlay has a one-frame opacity hiccup. */}
+              taps "reveal". */}
           {sceneReady ? (
             <Animated.View
               style={[StyleSheet.absoluteFill, cardWrapStyle]}
@@ -907,15 +908,17 @@ export default function OnboardingScreen() {
               </TouchableOpacity>
             </Animated.View>
           ) : null}
+        </Animated.View>
 
-          {/* Opaque overlay on top: spinner until pipeline ready, then the
-              staggered storyteller sentence. Fades out on reveal. */}
-          {overlayMounted ? (
-            <Animated.View
-              style={[StyleSheet.absoluteFill, styles.recapOverlay, recapOverlayStyle]}
-              pointerEvents={reveal ? 'none' : 'auto'}
-            >
-              <View style={styles.centered}>
+        {/* Opaque overlay: always fully black, independent of any step fade.
+            Shows spinner until pipeline ready, then the staggered storyteller
+            sentence. Only ever fades OUT — when the user taps "reveal". */}
+        {overlayMounted ? (
+          <Animated.View
+            style={[StyleSheet.absoluteFill, styles.recapOverlay, recapOverlayStyle]}
+            pointerEvents={reveal ? 'none' : 'auto'}
+          >
+            <View style={styles.centered}>
                 {pipeline.error ? (
                   <View style={{ alignItems: 'center', gap: 12 }}>
                     <Text style={styles.subtitle}>something broke</Text>
@@ -944,7 +947,7 @@ export default function OnboardingScreen() {
                       </Animated.Text>
                     ) : null}
                     <Animated.Text style={[styles.recapLine, recapTailStyle]}>
-                      kind of storyteller
+                      storyteller
                     </Animated.Text>
                     <Animated.View style={[styles.revealButtonWrap, recapButtonStyle]}>
                       <TouchableOpacity onPress={handleReveal}>
@@ -956,7 +959,6 @@ export default function OnboardingScreen() {
               </View>
             </Animated.View>
           ) : null}
-        </Animated.View>
       </View>
     );
   }
