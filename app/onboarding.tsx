@@ -2,7 +2,8 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 import { auth, db } from '@/config/firebase';
 import { personalityInitial, personalityReally } from '@/constants/personality-sets';
 import { useAuth } from '@/contexts/AuthContext';
-import { saveUserProfile } from '@/services/user-service';
+import { saveSilverCard, saveUserProfile } from '@/services/user-service';
+import type { SilverCardResult } from '@/components/silver-card/CardStage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { collection, getDocs, query, where } from 'firebase/firestore';
@@ -93,6 +94,7 @@ export default function OnboardingScreen() {
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState<boolean>(false);
   const [showExistingAccountModal, setShowExistingAccountModal] = useState(false);
+  const [silverCardData, setSilverCardData] = useState<SilverCardResult | null>(null);
 
   const opacity = useSharedValue(0);
   const welcomeOpacity = useSharedValue(0);
@@ -293,7 +295,7 @@ export default function OnboardingScreen() {
       setIsLoading(false);
       opacity.value = withTiming(0, { duration: 500 });
       setTimeout(() => {
-        setStep('signup');
+        setStep('silvercard');
         opacity.value = withTiming(1, { duration: 700 });
       }, 550);
     } catch (error) {
@@ -342,17 +344,20 @@ export default function OnboardingScreen() {
         descriptors2: selectedDescriptors2,
       } as any);
 
+      // Persist the silver card alongside the user profile
+      if (silverCardData) {
+        await saveSilverCard(currentUser.uid, silverCardData).catch((err) =>
+          console.warn('saveSilverCard failed:', err)
+        );
+      }
+
       // Also save to AsyncStorage for offline access
       await AsyncStorage.setItem('hasCompletedOnboarding', 'true');
       await AsyncStorage.setItem('userName', nameInput);
       await AsyncStorage.setItem('onboardingAnswers', JSON.stringify(answers));
 
       setIsLoading(false);
-      opacity.value = withTiming(0, { duration: 500 });
-      setTimeout(() => {
-        setStep('silvercard');
-        opacity.value = withTiming(1, { duration: 700 });
-      }, 550);
+      router.replace('/(tabs)/library');
       
     } catch (error: any) {
       setIsLoading(false);
@@ -873,7 +878,7 @@ export default function OnboardingScreen() {
   if (step === 'silvercard') {
     return (
       <View style={styles.container}>
-        <Animated.View style={[styles.fullScreen, animatedStyle]}>
+        <Animated.View style={[styles.fullScreen, { backgroundColor: '#000' }, animatedStyle]}>
           <Suspense fallback={
             <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
               <ActivityIndicator size="small" color="#fff" />
@@ -881,8 +886,14 @@ export default function OnboardingScreen() {
           }>
             <CardStage
               answers={answers}
-              uid={auth.currentUser?.uid ?? null}
-              onContinue={() => router.replace('/(tabs)/library')}
+              onContinue={(result) => {
+                setSilverCardData(result);
+                opacity.value = withTiming(0, { duration: 500 });
+                setTimeout(() => {
+                  setStep('signup');
+                  opacity.value = withTiming(1, { duration: 700 });
+                }, 550);
+              }}
             />
           </Suspense>
         </Animated.View>

@@ -1,8 +1,6 @@
-import { auth } from '@/config/firebase';
 import { describeLandscapeFromStyle, describeStorytellingStyle } from '@/services/claude-service';
 import { generateTarotCard } from '@/services/replicate-service';
-import { saveSilverCard } from '@/services/user-service';
-import { useEffect, useState } from 'react';
+import { Component, ReactNode, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -13,6 +11,29 @@ import {
   View,
 } from 'react-native';
 import CardScene from './CardScene';
+
+export type SilverCardResult = {
+  storytellingWords: string;
+  landscapePrompt: string;
+  imageUrl: string;
+};
+
+class SceneErrorBoundary extends Component<
+  { fallback: (msg: string) => ReactNode; children: ReactNode },
+  { msg: string | null }
+> {
+  state = { msg: null as string | null };
+  static getDerivedStateFromError(err: unknown) {
+    return { msg: err instanceof Error ? err.message : String(err) };
+  }
+  componentDidCatch(err: unknown) {
+    console.error('[CardScene] render failed:', err);
+  }
+  render() {
+    if (this.state.msg) return this.props.fallback(this.state.msg);
+    return this.props.children;
+  }
+}
 
 type Stage = 'styling' | 'landscape' | 'painting' | 'tracing' | 'ready' | 'error';
 
@@ -25,16 +46,17 @@ const STAGE_COPY: Record<Exclude<Stage, 'ready' | 'error'>, string> = {
 
 export default function CardStage({
   answers,
-  uid,
   onContinue,
 }: {
   answers: Record<string, unknown>;
-  uid: string | null;
-  onContinue: () => void;
+  onContinue: (result: SilverCardResult) => void;
 }) {
   const [stage, setStage] = useState<Stage>('styling');
   const [svgString, setSvgString] = useState<string | null>(null);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [storyWords, setStoryWords] = useState<string | null>(null);
+  const [landscape, setLandscape] = useState<string | null>(null);
+  const [remoteImageUrl, setRemoteImageUrl] = useState<string | null>(null);
   const [dims, setDims] = useState<{ width: number; height: number } | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -46,24 +68,18 @@ export default function CardStage({
         setStage('styling');
         const styleWords = await describeStorytellingStyle(answers);
         if (cancelled) return;
+        setStoryWords(styleWords);
 
         setStage('landscape');
-        const landscape = await describeLandscapeFromStyle(styleWords);
+        const landscapePrompt = await describeLandscapeFromStyle(styleWords);
         if (cancelled) return;
+        setLandscape(landscapePrompt);
 
         setStage('painting');
-        const { dataUrl, remoteUrl } = await generateTarotCard(landscape);
+        const { dataUrl, remoteUrl } = await generateTarotCard(landscapePrompt);
         if (cancelled) return;
         setImageUrl(dataUrl);
-
-        const activeUid = uid ?? auth.currentUser?.uid ?? null;
-        if (activeUid) {
-          saveSilverCard(activeUid, {
-            storytellingWords: styleWords,
-            landscapePrompt: landscape,
-            imageUrl: remoteUrl,
-          }).catch((err) => console.warn('saveSilverCard failed:', err));
-        }
+        setRemoteImageUrl(remoteUrl);
 
         if (Platform.OS === 'web') {
           setStage('tracing');
@@ -97,16 +113,22 @@ export default function CardStage({
     return () => {
       cancelled = true;
     };
-  }, [answers, uid]);
+  }, [answers]);
+
+  const handleContinue = () => {
+    if (!storyWords || !landscape || !remoteImageUrl) return;
+    onContinue({
+      storytellingWords: storyWords,
+      landscapePrompt: landscape,
+      imageUrl: remoteImageUrl,
+    });
+  };
 
   if (stage === 'error') {
     return (
       <View style={styles.center}>
         <Text style={styles.errorTitle}>something broke</Text>
         {errorMsg ? <Text style={styles.errorDetail}>{errorMsg}</Text> : null}
-        <TouchableOpacity style={styles.button} onPress={onContinue}>
-          <Text style={styles.buttonText}>continue →</Text>
-        </TouchableOpacity>
       </View>
     );
   }
@@ -123,20 +145,40 @@ export default function CardStage({
 
   const aspectRatio = dims ? dims.width / dims.height : 2 / 3;
 
+  const sceneFallback = (msg: string) => (
+    <View style={styles.center}>
+      <Text style={styles.errorDetail}>3D render failed: {msg}</Text>
+      {imageUrl ? (
+        <Image
+          source={{ uri: imageUrl }}
+          style={{ width: 240, aspectRatio, borderRadius: 12, marginTop: 16 }}
+          resizeMode="contain"
+        />
+      ) : null}
+    </View>
+  );
+
   return (
     <View style={styles.container}>
+      {storyWords ? (
+        <Text style={styles.styleHeader}>
+          you&apos;re a <Text style={styles.styleWords}>{storyWords}</Text> kind of storyteller
+        </Text>
+      ) : null}
       <View style={styles.sceneWrap}>
-        {Platform.OS === 'web' && svgString ? (
-          <CardScene svgString={svgString} aspectRatio={aspectRatio} />
-        ) : (
-          <CardScene
-            svgString={svgString ?? undefined}
-            imageUrl={imageUrl ?? undefined}
-            aspectRatio={aspectRatio}
-          />
-        )}
+        <SceneErrorBoundary fallback={sceneFallback}>
+          {Platform.OS === 'web' && svgString ? (
+            <CardScene svgString={svgString} aspectRatio={aspectRatio} />
+          ) : (
+            <CardScene
+              svgString={svgString ?? undefined}
+              imageUrl={imageUrl ?? undefined}
+              aspectRatio={aspectRatio}
+            />
+          )}
+        </SceneErrorBoundary>
       </View>
-      <TouchableOpacity style={styles.button} onPress={onContinue}>
+      <TouchableOpacity style={styles.button} onPress={handleContinue}>
         <Text style={styles.buttonText}>continue →</Text>
       </TouchableOpacity>
     </View>
@@ -149,6 +191,18 @@ const styles = StyleSheet.create({
     width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
+    paddingTop: 32,
+  },
+  styleHeader: {
+    color: '#fff',
+    fontFamily: 'EBGaramond-Regular',
+    fontSize: 18,
+    textAlign: 'center',
+    paddingHorizontal: 24,
+    marginBottom: 8,
+  },
+  styleWords: {
+    fontStyle: 'italic',
   },
   sceneWrap: {
     flex: 1,
