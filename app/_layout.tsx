@@ -103,18 +103,34 @@ export default function RootLayout() {
     }
   }, [fontsLoaded]);
 
+  // Force <html>/<body> to black on web so the page never flashes white
+  // through any view that hasn't fully painted its background yet.
+  useEffect(() => {
+    if (Platform.OS !== 'web' || typeof document === 'undefined') return;
+    const html = document.documentElement;
+    const body = document.body;
+    const prevHtmlBg = html.style.backgroundColor;
+    const prevBodyBg = body.style.backgroundColor;
+    html.style.backgroundColor = '#000';
+    body.style.backgroundColor = '#000';
+    return () => {
+      html.style.backgroundColor = prevHtmlBg;
+      body.style.backgroundColor = prevBodyBg;
+    };
+  }, []);
+
   if (!fontsLoaded) {
     return null;
   }
 
   return (
     <RootErrorBoundary>
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#000' }}>
       <ThemeProvider>
         <AuthProvider>
           <AudioPlayerProvider>
             <StoryQueueProvider>
-              <View style={{ flex: 1 }}>
+              <View style={{ flex: 1, backgroundColor: '#000' }}>
                 <Stack screenOptions={{ headerShown: false }}>
                   <Stack.Screen name="index" options={{ headerShown: false }} />
                   <Stack.Screen name="onboarding" options={{ headerShown: false }} />

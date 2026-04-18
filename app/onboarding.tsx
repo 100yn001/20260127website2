@@ -1,4 +1,3 @@
-import { IconSymbol } from '@/components/ui/icon-symbol';
 import { auth, db } from '@/config/firebase';
 import { personalityInitial, personalityReally } from '@/constants/personality-sets';
 import { useAuth } from '@/contexts/AuthContext';
@@ -721,8 +720,7 @@ export default function OnboardingScreen() {
                 style={styles.continueButton}
                 onPress={handleDescriptorsContinue}
               >
-                <Text style={styles.continueText}>continue</Text>
-                <IconSymbol name="arrow.right" size={20} color="#fff" />
+                <Text style={styles.continueText}>continue →</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -760,8 +758,7 @@ export default function OnboardingScreen() {
                 style={styles.continueButton}
                 onPress={handleDescriptors2Continue}
               >
-                <Text style={styles.continueText}>continue</Text>
-                <IconSymbol name="arrow.right" size={20} color="#fff" />
+                <Text style={styles.continueText}>continue →</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -792,8 +789,7 @@ export default function OnboardingScreen() {
                 style={styles.continueButton}
                 onPress={handleNameSubmit}
               >
-                <Text style={styles.continueText}>continue</Text>
-                <IconSymbol name="arrow.right" size={20} color="#fff" />
+                <Text style={styles.continueText}>continue →</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -813,10 +809,7 @@ export default function OnboardingScreen() {
                 <Text style={styles.errorDetailInline}>{pipeline.error}</Text>
               </View>
             ) : !pipeline.words ? (
-              <View style={{ alignItems: 'center', gap: 16 }}>
-                <ActivityIndicator size="small" color="rgba(255,255,255,0.6)" />
-                <Text style={styles.findingVoice}>finding your voice…</Text>
-              </View>
+              <ActivityIndicator size="small" color="rgba(255,255,255,0.6)" />
             ) : (
               <>
                 <Text style={styles.recapStoryteller}>
@@ -864,10 +857,7 @@ export default function OnboardingScreen() {
                 {isLoading ? (
                   <ActivityIndicator size="small" color="#fff" />
                 ) : (
-                  <>
-                    <Text style={styles.continueText}>continue</Text>
-                    <IconSymbol name="arrow.right" size={20} color="#fff" />
-                  </>
+                  <Text style={styles.continueText}>continue →</Text>
                 )}
               </TouchableOpacity>
             )}
