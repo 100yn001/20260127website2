@@ -1,9 +1,6 @@
-import { describeLandscapeFromStyle, describeStorytellingStyle } from '@/services/claude-service';
-import { generateTarotCard } from '@/services/replicate-service';
 import { Component, ReactNode, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  Image,
   Platform,
   StyleSheet,
   Text,
@@ -22,6 +19,7 @@ export type SilverCardResult = {
   storytellingWords: string;
   landscapePrompt: string;
   imageUrl: string;
+  archetypeTitle?: string;
 };
 
 class SceneErrorBoundary extends Component<
@@ -42,165 +40,111 @@ class SceneErrorBoundary extends Component<
 }
 
 export default function CardStage({
-  answers,
+  svgString,
+  imageUrl,
+  dims,
+  archetypeTitle,
+  error,
   onContinue,
 }: {
-  answers: Record<string, unknown>;
-  onContinue: (result: SilverCardResult) => void;
+  svgString: string | null;
+  imageUrl: string | null;
+  dims: { width: number; height: number } | null;
+  archetypeTitle: string | null;
+  error: string | null;
+  onContinue: () => void;
 }) {
-  const [svgString, setSvgString] = useState<string | null>(null);
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
-  const [storyWords, setStoryWords] = useState<string | null>(null);
-  const [landscape, setLandscape] = useState<string | null>(null);
-  const [remoteImageUrl, setRemoteImageUrl] = useState<string | null>(null);
-  const [dims, setDims] = useState<{ width: number; height: number } | null>(null);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [cardReady, setCardReady] = useState(false);
+  const [painted, setPainted] = useState(false);
 
-  const headerOpacity = useSharedValue(0);
   const cardOpacity = useSharedValue(0);
+  const placeholderOpacity = useSharedValue(1);
+  const titleOpacity = useSharedValue(0);
   const buttonOpacity = useSharedValue(0);
 
   useEffect(() => {
-    let cancelled = false;
+    if (!painted) return;
+    cardOpacity.value = withTiming(1, { duration: 1200 });
+    placeholderOpacity.value = withTiming(0, { duration: 700 });
+    titleOpacity.value = withDelay(900, withTiming(1, { duration: 1100 }));
+    buttonOpacity.value = withDelay(1800, withTiming(1, { duration: 900 }));
+  }, [painted, cardOpacity, placeholderOpacity, titleOpacity, buttonOpacity]);
 
-    async function run() {
-      try {
-        const styleWords = await describeStorytellingStyle(answers);
-        if (cancelled) return;
-        setStoryWords(styleWords);
-        headerOpacity.value = withTiming(1, { duration: 1400 });
-
-        const landscapePrompt = await describeLandscapeFromStyle(styleWords);
-        if (cancelled) return;
-        setLandscape(landscapePrompt);
-
-        const { dataUrl, remoteUrl } = await generateTarotCard(landscapePrompt);
-        if (cancelled) return;
-        setImageUrl(dataUrl);
-        setRemoteImageUrl(remoteUrl);
-
-        if (Platform.OS === 'web') {
-          const { vectorizeImage } = await import('@/services/vectorize');
-          const { svg, width, height } = await vectorizeImage(dataUrl);
-          if (cancelled) return;
-          setSvgString(svg);
-          setDims({ width, height });
-        } else {
-          const imgDims = await new Promise<{ width: number; height: number }>((resolve) => {
-            Image.getSize(
-              dataUrl,
-              (width, height) => resolve({ width, height }),
-              () => resolve({ width: 2, height: 3 }),
-            );
-          });
-          if (cancelled) return;
-          setDims(imgDims);
-        }
-
-        if (!cancelled) {
-          setCardReady(true);
-          cardOpacity.value = withDelay(300, withTiming(1, { duration: 1600 }));
-          buttonOpacity.value = withDelay(2100, withTiming(1, { duration: 900 }));
-        }
-      } catch (err) {
-        if (cancelled) return;
-        console.error('[CardStage] pipeline failed:', err);
-        setErrorMsg(err instanceof Error ? err.message : String(err));
-      }
-    }
-
-    run();
-    return () => {
-      cancelled = true;
-    };
-  }, [answers]);
-
-  const headerStyle = useAnimatedStyle(() => ({ opacity: headerOpacity.value }));
-  const cardAnimStyle = useAnimatedStyle(() => ({ opacity: cardOpacity.value }));
+  const cardStyle = useAnimatedStyle(() => ({ opacity: cardOpacity.value }));
+  const placeholderStyle = useAnimatedStyle(() => ({ opacity: placeholderOpacity.value }));
+  const titleStyle = useAnimatedStyle(() => ({ opacity: titleOpacity.value }));
   const buttonStyle = useAnimatedStyle(() => ({ opacity: buttonOpacity.value }));
 
-  const handleContinue = () => {
-    if (!storyWords || !landscape || !remoteImageUrl) return;
-    onContinue({
-      storytellingWords: storyWords,
-      landscapePrompt: landscape,
-      imageUrl: remoteImageUrl,
-    });
-  };
-
-  if (errorMsg) {
+  if (error) {
     return (
       <View style={styles.center}>
         <Text style={styles.errorTitle}>something broke</Text>
-        <Text style={styles.errorDetail}>{errorMsg}</Text>
-      </View>
-    );
-  }
-
-  if (!storyWords) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator size="small" color="#ffffff" />
-        <Text style={styles.loadingText}>finding your voice</Text>
+        <Text style={styles.errorDetail}>{error}</Text>
       </View>
     );
   }
 
   const aspectRatio = dims ? dims.width / dims.height : 2 / 3;
+  const sceneReady =
+    Platform.OS === 'web' ? !!(svgString && dims) : !!(imageUrl && dims);
 
   const sceneFallback = (msg: string) => (
     <View style={styles.center}>
       <Text style={styles.errorDetail}>3D render failed: {msg}</Text>
-      {imageUrl ? (
-        <Image
-          source={{ uri: imageUrl }}
-          style={{ width: 240, aspectRatio, borderRadius: 12, marginTop: 16 }}
-          resizeMode="contain"
-        />
-      ) : null}
     </View>
   );
 
   return (
     <View style={styles.container}>
-      <Animated.View style={[styles.headerWrap, headerStyle]}>
-        <Text style={styles.styleHeader}>
-          you&apos;re a <Text style={styles.styleWords}>{storyWords}</Text>
-          {'\n'}kind of storyteller
-        </Text>
-      </Animated.View>
-
       <View style={styles.sceneWrap}>
-        {cardReady ? (
-          <Animated.View style={[styles.sceneFill, cardAnimStyle]}>
+        {sceneReady ? (
+          <Animated.View
+            style={[StyleSheet.absoluteFill, cardStyle]}
+            pointerEvents={painted ? 'auto' : 'none'}
+          >
             <SceneErrorBoundary fallback={sceneFallback}>
               {Platform.OS === 'web' && svgString ? (
-                <CardScene svgString={svgString} aspectRatio={aspectRatio} />
+                <CardScene
+                  svgString={svgString}
+                  aspectRatio={aspectRatio}
+                  onReady={() => setPainted(true)}
+                />
               ) : (
                 <CardScene
                   svgString={svgString ?? undefined}
                   imageUrl={imageUrl ?? undefined}
                   aspectRatio={aspectRatio}
+                  onReady={() => setPainted(true)}
                 />
               )}
             </SceneErrorBoundary>
           </Animated.View>
-        ) : (
-          <View style={styles.center}>
+        ) : null}
+
+        {!painted && (
+          <Animated.View
+            style={[StyleSheet.absoluteFill, styles.center, placeholderStyle]}
+            pointerEvents="none"
+          >
             <ActivityIndicator size="small" color="rgba(255,255,255,0.6)" />
             <Text style={styles.subtleText}>painting your card…</Text>
-          </View>
+          </Animated.View>
         )}
       </View>
 
-      {cardReady ? (
-        <Animated.View style={[styles.buttonWrap, buttonStyle]}>
-          <TouchableOpacity style={styles.button} onPress={handleContinue}>
-            <Text style={styles.buttonText}>continue →</Text>
-          </TouchableOpacity>
+      {archetypeTitle ? (
+        <Animated.View style={[styles.titleWrap, titleStyle]} pointerEvents="none">
+          <Text style={styles.titleText}>{archetypeTitle}</Text>
         </Animated.View>
       ) : null}
+
+      <Animated.View
+        style={[styles.buttonWrap, buttonStyle]}
+        pointerEvents={painted ? 'auto' : 'none'}
+      >
+        <TouchableOpacity style={styles.button} onPress={onContinue}>
+          <Text style={styles.buttonText}>continue →</Text>
+        </TouchableOpacity>
+      </Animated.View>
     </View>
   );
 }
@@ -211,41 +155,20 @@ const styles = StyleSheet.create({
     width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingTop: 48,
-    paddingBottom: 48,
-  },
-  headerWrap: {
-    paddingHorizontal: 24,
-    marginBottom: 12,
-  },
-  styleHeader: {
-    color: '#fff',
-    fontFamily: 'EBGaramond-Regular',
-    fontSize: 20,
-    textAlign: 'center',
-    lineHeight: 28,
-  },
-  styleWords: {
-    fontStyle: 'italic',
+    paddingTop: 32,
+    paddingBottom: 32,
+    backgroundColor: '#000',
   },
   sceneWrap: {
     flex: 1,
     width: '100%',
-  },
-  sceneFill: {
-    flex: 1,
-    width: '100%',
+    position: 'relative',
   },
   center: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 16,
-  },
-  loadingText: {
-    color: '#fff',
-    fontFamily: 'EBGaramond-Regular',
-    fontSize: 18,
   },
   subtleText: {
     color: 'rgba(255,255,255,0.6)',
@@ -264,9 +187,22 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     paddingHorizontal: 32,
   },
+  titleWrap: {
+    paddingHorizontal: 24,
+    marginTop: 8,
+    marginBottom: 16,
+  },
+  titleText: {
+    color: '#fff',
+    fontFamily: 'EBGaramond-Italic',
+    fontStyle: 'italic',
+    fontSize: 24,
+    textAlign: 'center',
+    letterSpacing: 1.5,
+  },
   buttonWrap: {
     position: 'absolute',
-    bottom: 48,
+    bottom: 32,
   },
   button: {
     paddingHorizontal: 24,

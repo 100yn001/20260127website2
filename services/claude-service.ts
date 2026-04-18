@@ -67,3 +67,17 @@ export async function describeLandscapeFromStyle(threeWords: string): Promise<st
 
   return extractText(response);
 }
+
+export async function describeStorytellerArchetype(threeWords: string): Promise<string> {
+  const response = await getClient().messages.create({
+    model: MODEL,
+    max_tokens: 24,
+    temperature: 0.95,
+    system:
+      'Given three words describing a storyteller, return a tarot-card-style archetype title for them in the form "the [noun]" — like "the pioneer", "the wanderer", "the alchemist", "the discoverer". Lowercase only. Two or three words max. No preamble, no quotes, no punctuation.',
+    messages: [{ role: 'user', content: threeWords }],
+  });
+
+  const raw = extractText(response).toLowerCase().trim();
+  return raw.replace(/[^a-z\s]/g, '').replace(/\s+/g, ' ').trim();
+}

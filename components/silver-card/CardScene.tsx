@@ -1,13 +1,20 @@
+import { useEffect } from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
 
 export default function CardScene({
   imageUrl,
   aspectRatio,
+  onReady,
 }: {
   svgString?: string;
   imageUrl?: string;
   aspectRatio: number;
+  onReady?: () => void;
 }) {
+  useEffect(() => {
+    if (imageUrl) onReady?.();
+  }, [imageUrl, onReady]);
+
   return (
     <View style={styles.container}>
       {imageUrl ? (

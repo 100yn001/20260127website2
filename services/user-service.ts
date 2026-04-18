@@ -41,7 +41,12 @@ export async function saveUserProfile(
  */
 export async function saveSilverCard(
   uid: string,
-  card: { storytellingWords: string; landscapePrompt: string; imageUrl?: string }
+  card: {
+    storytellingWords: string;
+    landscapePrompt: string;
+    imageUrl?: string;
+    archetypeTitle?: string;
+  }
 ): Promise<void> {
   try {
     const userRef = doc(db, 'users', uid);

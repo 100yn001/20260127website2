@@ -2,16 +2,24 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 import { auth, db } from '@/config/firebase';
 import { personalityInitial, personalityReally } from '@/constants/personality-sets';
 import { useAuth } from '@/contexts/AuthContext';
+import {
+    describeLandscapeFromStyle,
+    describeStorytellerArchetype,
+    describeStorytellingStyle,
+} from '@/services/claude-service';
+import { generateTarotCard } from '@/services/replicate-service';
 import { saveSilverCard, saveUserProfile } from '@/services/user-service';
-import CardStage, { type SilverCardResult } from '@/components/silver-card/CardStage';
+import CardStage from '@/components/silver-card/CardStage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { collection, getDocs, query, where } from 'firebase/firestore';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
+    Image,
     Modal,
+    Platform,
     StyleSheet,
     Text,
     TextInput,
@@ -37,9 +45,21 @@ type Step =
   | 'descriptors'
   | 'descriptors2'
   | 'name'
+  | 'storyteller-recap'
+  | 'silvercard'
   | 'secretcode'
-  | 'signup'
-  | 'silvercard';
+  | 'signup';
+
+type Pipeline = {
+  words?: string;
+  archetype?: string;
+  landscape?: string;
+  imageUrl?: string;
+  remoteUrl?: string;
+  svg?: string;
+  dims?: { width: number; height: number };
+  error?: string;
+};
 
 // Shuffle and pick 10 random questions
 const shuffleArray = <T,>(array: T[]): T[] => {
@@ -92,7 +112,8 @@ export default function OnboardingScreen() {
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState<boolean>(false);
   const [showExistingAccountModal, setShowExistingAccountModal] = useState(false);
-  const [silverCardData, setSilverCardData] = useState<SilverCardResult | null>(null);
+  const [pipeline, setPipeline] = useState<Pipeline>({});
+  const pipelineStarted = useRef(false);
 
   const opacity = useSharedValue(0);
   const welcomeOpacity = useSharedValue(0);
@@ -148,6 +169,51 @@ export default function OnboardingScreen() {
       return () => clearTimeout(timer);
     }
   }, [step]);
+
+  // Kick off the silver-card pipeline as soon as the user lands on the
+  // storyteller-recap screen so the slow Replicate generation overlaps with
+  // the time the user spends reading their archetype.
+  useEffect(() => {
+    if (step !== 'storyteller-recap' || pipelineStarted.current) return;
+    pipelineStarted.current = true;
+
+    (async () => {
+      try {
+        const words = await describeStorytellingStyle(answers);
+        setPipeline((p) => ({ ...p, words }));
+
+        const [archetype, landscape] = await Promise.all([
+          describeStorytellerArchetype(words),
+          describeLandscapeFromStyle(words),
+        ]);
+        setPipeline((p) => ({ ...p, archetype, landscape }));
+
+        const { dataUrl, remoteUrl } = await generateTarotCard(landscape);
+        setPipeline((p) => ({ ...p, imageUrl: dataUrl, remoteUrl }));
+
+        if (Platform.OS === 'web') {
+          const { vectorizeImage } = await import('@/services/vectorize');
+          const { svg, width, height } = await vectorizeImage(dataUrl);
+          setPipeline((p) => ({ ...p, svg, dims: { width, height } }));
+        } else {
+          const dims = await new Promise<{ width: number; height: number }>((resolve) => {
+            Image.getSize(
+              dataUrl,
+              (width, height) => resolve({ width, height }),
+              () => resolve({ width: 2, height: 3 }),
+            );
+          });
+          setPipeline((p) => ({ ...p, dims }));
+        }
+      } catch (err) {
+        console.error('[silver-card pipeline] failed:', err);
+        setPipeline((p) => ({
+          ...p,
+          error: err instanceof Error ? err.message : String(err),
+        }));
+      }
+    })();
+  }, [step, answers]);
 
   const advanceStepWithFade = (next: Step) => {
     opacity.value = withTiming(0, { duration: 600 });
@@ -262,10 +328,10 @@ export default function OnboardingScreen() {
 
   const handleNameSubmit = async () => {
     if (!nameInput.trim()) return;
-    
+
     opacity.value = withTiming(0, { duration: 500 });
     setTimeout(() => {
-      setStep('secretcode');
+      setStep('storyteller-recap');
       opacity.value = withTiming(1, { duration: 700 });
     }, 550);
   };
@@ -275,25 +341,23 @@ export default function OnboardingScreen() {
       Alert.alert('Error', 'Please enter a secret code');
       return;
     }
-    
+
     setIsLoading(true);
     try {
-      // Query betapasswords collection for matching password
       const betaPasswordsRef = collection(db, 'betapasswords');
       const q = query(betaPasswordsRef, where('password', '==', secretCode.toLowerCase().trim()));
       const snapshot = await getDocs(q);
-      
+
       if (snapshot.empty) {
         Alert.alert('Error', 'Invalid secret code');
         setIsLoading(false);
         return;
       }
-      
-      // Valid password found
+
       setIsLoading(false);
       opacity.value = withTiming(0, { duration: 500 });
       setTimeout(() => {
-        setStep('silvercard');
+        setStep('signup');
         opacity.value = withTiming(1, { duration: 700 });
       }, 550);
     } catch (error) {
@@ -343,10 +407,13 @@ export default function OnboardingScreen() {
       } as any);
 
       // Persist the silver card alongside the user profile
-      if (silverCardData) {
-        await saveSilverCard(currentUser.uid, silverCardData).catch((err) =>
-          console.warn('saveSilverCard failed:', err)
-        );
+      if (pipeline.words && pipeline.landscape) {
+        await saveSilverCard(currentUser.uid, {
+          storytellingWords: pipeline.words,
+          landscapePrompt: pipeline.landscape,
+          imageUrl: pipeline.remoteUrl,
+          archetypeTitle: pipeline.archetype,
+        }).catch((err) => console.warn('saveSilverCard failed:', err));
       }
 
       // Also save to AsyncStorage for offline access
@@ -735,6 +802,42 @@ export default function OnboardingScreen() {
     );
   }
 
+  if (step === 'storyteller-recap') {
+    return (
+      <View style={styles.container}>
+        <Animated.View style={[styles.fullScreen, animatedStyle]}>
+          <View style={styles.centered}>
+            {pipeline.error ? (
+              <View style={{ alignItems: 'center', gap: 12 }}>
+                <Text style={styles.subtitle}>something broke</Text>
+                <Text style={styles.errorDetailInline}>{pipeline.error}</Text>
+              </View>
+            ) : !pipeline.words ? (
+              <View style={{ alignItems: 'center', gap: 16 }}>
+                <ActivityIndicator size="small" color="rgba(255,255,255,0.6)" />
+                <Text style={styles.findingVoice}>finding your voice…</Text>
+              </View>
+            ) : (
+              <>
+                <Text style={styles.recapStoryteller}>
+                  {nameInput.trim()}, you are a
+                </Text>
+                <Text style={styles.recapStoryWords}>{pipeline.words}</Text>
+                <Text style={styles.recapStoryteller}>kind of storyteller</Text>
+                <TouchableOpacity
+                  style={styles.revealButton}
+                  onPress={() => advanceStepWithFade('silvercard')}
+                >
+                  <Text style={styles.revealText}>reveal your archetype →</Text>
+                </TouchableOpacity>
+              </>
+            )}
+          </View>
+        </Animated.View>
+      </View>
+    );
+  }
+
   if (step === 'secretcode') {
     return (
       <View style={styles.container}>
@@ -878,15 +981,12 @@ export default function OnboardingScreen() {
       <View style={styles.container}>
         <Animated.View style={[styles.fullScreen, { backgroundColor: '#000' }, animatedStyle]}>
           <CardStage
-            answers={answers}
-            onContinue={(result) => {
-              setSilverCardData(result);
-              opacity.value = withTiming(0, { duration: 500 });
-              setTimeout(() => {
-                setStep('signup');
-                opacity.value = withTiming(1, { duration: 700 });
-              }, 550);
-            }}
+            svgString={pipeline.svg ?? null}
+            imageUrl={pipeline.imageUrl ?? null}
+            dims={pipeline.dims ?? null}
+            archetypeTitle={pipeline.archetype ?? null}
+            error={pipeline.error ?? null}
+            onContinue={() => advanceStepWithFade('secretcode')}
           />
         </Animated.View>
       </View>
@@ -1141,5 +1241,43 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#fff',
     fontFamily: 'EBGaramond-Medium',
+  },
+  recapStoryteller: {
+    fontSize: 22,
+    color: '#fff',
+    fontFamily: 'EBGaramond-Regular',
+    textAlign: 'center',
+    lineHeight: 30,
+  },
+  recapStoryWords: {
+    fontSize: 26,
+    color: '#fff',
+    fontFamily: 'EBGaramond-Italic',
+    fontStyle: 'italic',
+    textAlign: 'center',
+    marginVertical: 8,
+    paddingHorizontal: 16,
+  },
+  revealButton: {
+    marginTop: 56,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+  },
+  revealText: {
+    fontSize: 16,
+    color: '#fff',
+    fontFamily: 'EBGaramond-Medium',
+  },
+  findingVoice: {
+    fontSize: 16,
+    color: 'rgba(255,255,255,0.6)',
+    fontFamily: 'EBGaramond-Regular',
+  },
+  errorDetailInline: {
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.6)',
+    fontFamily: 'EBGaramond-Regular',
+    textAlign: 'center',
+    paddingHorizontal: 32,
   },
 });

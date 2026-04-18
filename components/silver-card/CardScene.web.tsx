@@ -1,6 +1,6 @@
 import { ContactShadows, Environment, OrbitControls } from '@react-three/drei';
 import { Canvas, useThree } from '@react-three/fiber';
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 
@@ -83,11 +83,15 @@ function createCardTextures(
 function SilverCard({
   svgString,
   aspectRatio,
+  onReady,
 }: {
   svgString: string;
   aspectRatio: number;
+  onReady?: () => void;
 }) {
   const matRef = useRef<THREE.MeshPhysicalMaterial>(null);
+  const meshRef = useRef<THREE.Mesh>(null);
+  const [texturesReady, setTexturesReady] = useState(false);
   const { invalidate } = useThree();
 
   const maxExtent = 1.8;
@@ -129,22 +133,34 @@ function SilverCard({
   useEffect(() => {
     const texW = 1024;
     const texH = Math.round(1024 / aspectRatio);
+    let cancelled = false;
 
     createCardTextures(svgString, texW, texH)
       .then(({ bumpTex, colorTex }) => {
-        if (matRef.current) {
-          matRef.current.bumpMap = bumpTex;
-          matRef.current.bumpScale = 0.06;
-          matRef.current.map = colorTex;
-          matRef.current.needsUpdate = true;
-          invalidate();
-        }
+        if (cancelled || !matRef.current) return;
+        matRef.current.bumpMap = bumpTex;
+        matRef.current.bumpScale = 0.06;
+        matRef.current.map = colorTex;
+        matRef.current.needsUpdate = true;
+        setTexturesReady(true);
+        invalidate();
+        // Wait two frames so the textured mesh is actually on screen before
+        // the parent crossfades the loading placeholder out.
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            if (!cancelled) onReady?.();
+          });
+        });
       })
       .catch((err) => console.error('Texture creation failed:', err));
-  }, [svgString, aspectRatio, invalidate]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [svgString, aspectRatio, invalidate, onReady]);
 
   return (
-    <mesh geometry={cardGeo}>
+    <mesh ref={meshRef} geometry={cardGeo} visible={texturesReady}>
       <meshPhysicalMaterial
         ref={matRef}
         color="#b8b8b8"
@@ -193,14 +209,16 @@ function CardControls() {
 export default function CardScene({
   svgString,
   aspectRatio,
+  onReady,
 }: {
   svgString: string;
   aspectRatio: number;
+  onReady?: () => void;
 }) {
   return (
     <Canvas
       camera={{ position: [0, 0, 4.41], fov: 35 }}
-      gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping }}
+      gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, alpha: true, premultipliedAlpha: false }}
       frameloop="always"
       style={{ background: 'transparent' }}
     >
@@ -209,7 +227,7 @@ export default function CardScene({
       <directionalLight position={[-3, 2, 4]} intensity={0.4} />
       <directionalLight position={[0, -3, 3]} intensity={0.2} />
 
-      <SilverCard svgString={svgString} aspectRatio={aspectRatio} />
+      <SilverCard svgString={svgString} aspectRatio={aspectRatio} onReady={onReady} />
 
       <ContactShadows position={[0, -1.5, 0]} opacity={0.25} blur={2.5} far={4} />
 
