@@ -1,15 +1,20 @@
 /**
  * Replicate Service
- * Generates a tarot-style card image from a landscape prompt. Calls Replicate's
- * REST API directly (no Node SDK) so it runs from the browser / Expo client,
- * then polls until the prediction succeeds and returns a base64 data URL.
+ * Calls our Vercel serverless proxy at /api/replicate (which injects the
+ * REPLICATE_API_TOKEN server-side and forwards to Replicate). Direct browser
+ * calls to api.replicate.com are blocked by CORS.
  */
 
-import Constants from 'expo-constants';
-
-const REPLICATE_API_TOKEN = Constants.expoConfig?.extra?.REPLICATE_API_TOKEN || '';
-
 const MODEL_VERSION = '6c4ebdf049df552f8c02b3a7bbb3afec3d37b20924282bab8744f1168b6de470';
+
+// Resolve the proxy URL relative to the current origin so it works under
+// the /app baseUrl on Vercel as well as during local dev.
+function proxyUrl(path: string) {
+  if (typeof window !== 'undefined' && window.location?.origin) {
+    return `${window.location.origin}${path}`;
+  }
+  return path;
+}
 
 function wrapPrompt(landscape: string) {
   return `${landscape.trim()}, no text, in the style of TOK a trtcrd, tarot style`;
@@ -27,18 +32,9 @@ async function blobToDataUrl(blob: Blob): Promise<string> {
 export async function generateTarotCard(
   landscapePrompt: string,
 ): Promise<{ dataUrl: string; remoteUrl: string }> {
-  if (!REPLICATE_API_TOKEN || !REPLICATE_API_TOKEN.startsWith('r8_')) {
-    throw new Error(
-      'REPLICATE_API_TOKEN is missing or looks invalid. Check app.config.js extras and .env.',
-    );
-  }
-
-  const createRes = await fetch('https://api.replicate.com/v1/predictions', {
+  const createRes = await fetch(proxyUrl('/api/replicate'), {
     method: 'POST',
-    headers: {
-      Authorization: `Token ${REPLICATE_API_TOKEN}`,
-      'Content-Type': 'application/json',
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       version: MODEL_VERSION,
       input: {
@@ -55,8 +51,8 @@ export async function generateTarotCard(
   }
 
   const created = await createRes.json();
-  const getUrl: string | undefined = created?.urls?.get;
-  if (!getUrl) throw new Error('Replicate create response missing urls.get');
+  const id: string | undefined = created?.id;
+  if (!id) throw new Error('Replicate create response missing id');
 
   let prediction = created;
   const maxAttempts = 90;
@@ -66,9 +62,7 @@ export async function generateTarotCard(
       throw new Error(`Replicate prediction ${prediction.status}: ${prediction.error ?? ''}`);
     }
     await new Promise((r) => setTimeout(r, 2000));
-    const pollRes = await fetch(getUrl, {
-      headers: { Authorization: `Token ${REPLICATE_API_TOKEN}` },
-    });
+    const pollRes = await fetch(proxyUrl(`/api/replicate?id=${encodeURIComponent(id)}`));
     if (!pollRes.ok) {
       const errText = await pollRes.text();
       throw new Error(`Replicate poll failed (${pollRes.status}): ${errText}`);
