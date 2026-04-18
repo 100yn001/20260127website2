@@ -998,6 +998,9 @@ export default function OnboardingScreen() {
             <Text style={styles.subtitle}>
               <Text style={styles.italic}>create your account</Text>
             </Text>
+            <Text style={styles.signupSub}>
+              to save your card and archetype,{'\n'}create an account
+            </Text>
             <TextInput
               style={styles.nameInput}
               value={email}
@@ -1197,9 +1200,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   quizText: {
-    fontSize: 18,
+    fontSize: 24,
     color: '#fff',
     fontFamily: 'EBGaramond-Regular',
+  },
+  signupSub: {
+    fontSize: 15,
+    color: 'rgba(255,255,255,0.7)',
+    fontFamily: 'EBGaramond-Regular',
+    textAlign: 'center',
+    lineHeight: 22,
+    marginTop: -24,
+    marginBottom: 32,
+    paddingHorizontal: 24,
   },
   selectedText: {
     textDecorationLine: 'underline',
