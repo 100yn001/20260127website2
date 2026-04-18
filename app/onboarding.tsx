@@ -3,13 +3,11 @@ import { auth, db } from '@/config/firebase';
 import { personalityInitial, personalityReally } from '@/constants/personality-sets';
 import { useAuth } from '@/contexts/AuthContext';
 import { saveSilverCard, saveUserProfile } from '@/services/user-service';
-import type { SilverCardResult } from '@/components/silver-card/CardStage';
+import CardStage, { type SilverCardResult } from '@/components/silver-card/CardStage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { collection, getDocs, query, where } from 'firebase/firestore';
-import React, { Suspense, lazy, useEffect, useState } from 'react';
-
-const CardStage = lazy(() => import('@/components/silver-card/CardStage'));
+import React, { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
@@ -879,23 +877,17 @@ export default function OnboardingScreen() {
     return (
       <View style={styles.container}>
         <Animated.View style={[styles.fullScreen, { backgroundColor: '#000' }, animatedStyle]}>
-          <Suspense fallback={
-            <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-              <ActivityIndicator size="small" color="#fff" />
-            </View>
-          }>
-            <CardStage
-              answers={answers}
-              onContinue={(result) => {
-                setSilverCardData(result);
-                opacity.value = withTiming(0, { duration: 500 });
-                setTimeout(() => {
-                  setStep('signup');
-                  opacity.value = withTiming(1, { duration: 700 });
-                }, 550);
-              }}
-            />
-          </Suspense>
+          <CardStage
+            answers={answers}
+            onContinue={(result) => {
+              setSilverCardData(result);
+              opacity.value = withTiming(0, { duration: 500 });
+              setTimeout(() => {
+                setStep('signup');
+                opacity.value = withTiming(1, { duration: 700 });
+              }, 550);
+            }}
+          />
         </Animated.View>
       </View>
     );
