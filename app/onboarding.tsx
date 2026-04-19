@@ -928,7 +928,7 @@ export default function OnboardingScreen() {
                   <ActivityIndicator size="small" color="rgba(255,255,255,0.6)" />
                 ) : (
                   <>
-                    <Animated.Text style={[styles.recapLine, recapLeadStyle]}>
+                    <Animated.Text style={[styles.recapLine, { marginBottom: 20 }, recapLeadStyle]}>
                       {nameInput.trim()}, you are a
                     </Animated.Text>
                     {words[0] ? (
