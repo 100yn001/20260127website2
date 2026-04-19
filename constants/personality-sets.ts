@@ -10,7 +10,7 @@ export const personalityInitial: BinaryQuestion[] = [
   { top: 'first asleep', bottom: 'last awake' },
   { top: 'arrive together', bottom: 'meet there' },
   { top: 'dressed up', bottom: 'dressed down' },
-  { top: 'first kiss', bottom: 'second kiss' },
+  { top: 'first touch', bottom: 'first kiss' },
   { top: 'right now', bottom: 'forever' },
 ];
 

@@ -82,7 +82,7 @@ The scoring table is hand-built. Each pickable option in the onboarding quiz is 
 - **moon vs. sun.** The moon is Witch-coded: the pale presider over the hidden. The sun is Ruler-coded: the visible center of the kingdom.
 - **predator vs. prey.** Predator is Warrior-coded (direct, active, testing itself). Prey is Outcast-coded (wounded, watched, on the margins).
 - **kitchen dancing vs. ballroom dancing.** Kitchen is Trickster-coded (informal, improvised). Ballroom is Ruler-coded (formal, held-together).
-- **first kiss vs. second kiss.** First kiss is Warrior-coded (the new territory, the leap). Second kiss is Lover-coded (the sustained thing, the return).
+- **first touch vs. first kiss.** First touch is Warrior-coded (the new territory, the leap across a line). First kiss is Lover-coded (the sustained intimacy that follows once the line is past).
 - **mirror (object).** Witch-coded; the mirror is the classical tool of scrying and self-knowledge.
 - **fox (animal).** Trickster-coded, per basically every folk tradition north of the equator.
 

@@ -27,7 +27,7 @@ export const INITIAL_SCORING: Record<
   'first asleep|last awake': { top: 'muse-dreamer', bottom: 'shadow-witch' },
   'arrive together|meet there': { top: 'hero-ruler', bottom: 'hero-seeker' },
   'dressed up|dressed down': { top: 'muse-maker', bottom: 'shadow-outcast' },
-  'first kiss|second kiss': { top: 'hero-warrior', bottom: 'muse-lover' },
+  'first touch|first kiss': { top: 'hero-warrior', bottom: 'muse-lover' },
   'right now|forever': { top: 'shadow-trickster', bottom: 'muse-dreamer' },
 };
 
