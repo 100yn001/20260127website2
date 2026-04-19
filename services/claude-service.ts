@@ -1,12 +1,16 @@
 /**
  * Claude (Anthropic) Service
- * Two client-side calls used by the silver-card pipeline:
- *   1. describeStorytellingStyle — distills the onboarding answers into 3 words.
- *   2. describeLandscapeFromStyle — turns those 3 words into a landscape sentence
- *      that seeds the Replicate tarot prompt.
  *
- * Follows the existing Grok pattern: keys come from Expo extras and the SDK
- * is allowed in the browser via dangerouslyAllowBrowser.
+ * Single client-side call used by the silver-card pipeline:
+ *   describeStorytellingStyle — distills the onboarding answers into 3
+ *   adjectives shown on the storyteller-recap overlay.
+ *
+ * The archetype title and the tarot scene prompt are NOT generated here
+ * anymore — they're deterministic lookups (constants/archetypes.ts +
+ * services/archetype.ts). See docs/archetypes.md for why.
+ *
+ * Follows the existing Grok pattern: keys come from Expo extras and the
+ * SDK is allowed in the browser via dangerouslyAllowBrowser.
  */
 
 import Anthropic from '@anthropic-ai/sdk';
@@ -83,29 +87,3 @@ export async function describeStorytellingStyle(
   return raw.replace(/\.$/, '').toLowerCase();
 }
 
-export async function describeLandscapeFromStyle(threeWords: string): Promise<string> {
-  const response = await getClient().messages.create({
-    model: MODEL,
-    max_tokens: 128,
-    temperature: 0.9,
-    system:
-      'Invent a tarot-card scene with a single mysterious figure (silhouette or robed/cloaked person, face obscured or turned away) inside a vivid landscape that evokes the given storytelling style. No text, no letters, no readable faces. Respond with one vivid sentence under 35 words. Lowercase. No preamble.',
-    messages: [{ role: 'user', content: threeWords }],
-  });
-
-  return extractText(response);
-}
-
-export async function describeStorytellerArchetype(threeWords: string): Promise<string> {
-  const response = await getClient().messages.create({
-    model: MODEL,
-    max_tokens: 24,
-    temperature: 0.95,
-    system:
-      'Given three words describing a storyteller, return a tarot-card-style archetype title for them in the form "the [noun]" — like "the pioneer", "the wanderer", "the alchemist", "the discoverer". Lowercase only. Two or three words max. No preamble, no quotes, no punctuation.',
-    messages: [{ role: 'user', content: threeWords }],
-  });
-
-  const raw = extractText(response).toLowerCase().trim();
-  return raw.replace(/[^a-z\s]/g, '').replace(/\s+/g, ' ').trim();
-}

@@ -1,12 +1,17 @@
 import { auth, db } from '@/config/firebase';
 import { personalityInitial, personalityReally } from '@/constants/personality-sets';
 import { useAuth } from '@/contexts/AuthContext';
-import {
-    describeLandscapeFromStyle,
-    describeStorytellerArchetype,
-    describeStorytellingStyle,
-} from '@/services/claude-service';
+import { describeStorytellingStyle } from '@/services/claude-service';
 import { generateTarotCard } from '@/services/replicate-service';
+import { classifyArchetype } from '@/services/archetype';
+import {
+    ARCHETYPES_BY_ID,
+    composeScene,
+    type ArchetypeId,
+    type HeroSub,
+    type MuseSub,
+    type ShadowSub,
+} from '@/constants/archetypes';
 import { saveSilverCard, saveUserProfile } from '@/services/user-service';
 import CardScene from '@/components/silver-card/CardScene';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -50,7 +55,14 @@ type Step =
 
 type Pipeline = {
   words?: string;
+  /** Display title, e.g. "The Troubadour". */
   archetype?: string;
+  /** Stable id of the chosen archetype, e.g. "muse-lover". */
+  archetypeId?: ArchetypeId;
+  heroSub?: HeroSub;
+  museSub?: MuseSub;
+  shadowSub?: ShadowSub;
+  /** The full composed scene prompt sent to Replicate. */
   landscape?: string;
   imageUrl?: string;
   remoteUrl?: string;
@@ -112,6 +124,14 @@ export default function OnboardingScreen() {
   const [showExistingAccountModal, setShowExistingAccountModal] = useState(false);
   const [pipeline, setPipeline] = useState<Pipeline>({});
   const pipelineStarted = useRef(false);
+  // Stable per-onboarding-session seed used as the FNV-1a tiebreak input
+  // for the archetype classifier. Generated once at mount; the user's real
+  // uid isn't known until signup, but classification needs to run earlier.
+  const sessionIdRef = useRef<string>(
+    typeof crypto !== 'undefined' && 'randomUUID' in crypto
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+  );
   const [cardPainted, setCardPainted] = useState(false);
   const [reveal, setReveal] = useState(false);
   const [overlayMounted, setOverlayMounted] = useState(true);
@@ -230,26 +250,48 @@ export default function OnboardingScreen() {
 
     (async () => {
       try {
-        const words = await describeStorytellingStyle(answers);
-        setPipeline((p) => ({ ...p, words }));
+        // 1. Pure-function classification — instant, no network round-trip.
+        const classification = classifyArchetype(answers, sessionIdRef.current);
+        const archetypeDef = ARCHETYPES_BY_ID[classification.primary];
+        const scenePrompt = composeScene(
+          classification.primary,
+          classification.heroSub,
+          classification.museSub,
+          classification.shadowSub,
+        );
+        setPipeline((p) => ({
+          ...p,
+          archetypeId: classification.primary,
+          archetype: archetypeDef.title,
+          heroSub: classification.heroSub,
+          museSub: classification.museSub,
+          shadowSub: classification.shadowSub,
+          landscape: scenePrompt,
+        }));
 
-        const [archetype, landscape] = await Promise.all([
-          describeStorytellerArchetype(words),
-          describeLandscapeFromStyle(words),
+        // 2. Claude (3 adjective words) and Replicate (the slow tarot
+        //    image) both depend only on `answers` / `scenePrompt` — neither
+        //    on each other. Run them in parallel.
+        const [words, card] = await Promise.all([
+          describeStorytellingStyle(answers),
+          generateTarotCard(scenePrompt),
         ]);
-        setPipeline((p) => ({ ...p, archetype, landscape }));
+        setPipeline((p) => ({
+          ...p,
+          words,
+          imageUrl: card.dataUrl,
+          remoteUrl: card.remoteUrl,
+        }));
 
-        const { dataUrl, remoteUrl } = await generateTarotCard(landscape);
-        setPipeline((p) => ({ ...p, imageUrl: dataUrl, remoteUrl }));
-
+        // 3. Vectorize on web; just measure on native.
         if (Platform.OS === 'web') {
           const { vectorizeImage } = await import('@/services/vectorize');
-          const { svg, width, height } = await vectorizeImage(dataUrl);
+          const { svg, width, height } = await vectorizeImage(card.dataUrl);
           setPipeline((p) => ({ ...p, svg, dims: { width, height } }));
         } else {
           const dims = await new Promise<{ width: number; height: number }>((resolve) => {
             Image.getSize(
-              dataUrl,
+              card.dataUrl,
               (width, height) => resolve({ width, height }),
               () => resolve({ width: 2, height: 3 }),
             );
@@ -465,12 +507,24 @@ export default function OnboardingScreen() {
       } as any);
 
       // Persist the silver card alongside the user profile
-      if (pipeline.words && pipeline.landscape) {
+      if (
+        pipeline.words &&
+        pipeline.archetypeId &&
+        pipeline.archetype &&
+        pipeline.heroSub &&
+        pipeline.museSub &&
+        pipeline.shadowSub &&
+        pipeline.landscape
+      ) {
         await saveSilverCard(currentUser.uid, {
           storytellingWords: pipeline.words,
-          landscapePrompt: pipeline.landscape,
-          imageUrl: pipeline.remoteUrl,
+          archetypeId: pipeline.archetypeId,
           archetypeTitle: pipeline.archetype,
+          heroSub: pipeline.heroSub,
+          museSub: pipeline.museSub,
+          shadowSub: pipeline.shadowSub,
+          scenePrompt: pipeline.landscape,
+          imageUrl: pipeline.remoteUrl,
         }).catch((err) => console.warn('saveSilverCard failed:', err));
       }
 

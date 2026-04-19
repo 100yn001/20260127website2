@@ -43,9 +43,13 @@ export async function saveSilverCard(
   uid: string,
   card: {
     storytellingWords: string;
-    landscapePrompt: string;
+    archetypeId: string;
+    archetypeTitle: string;
+    heroSub: string;
+    museSub: string;
+    shadowSub: string;
+    scenePrompt: string;
     imageUrl?: string;
-    archetypeTitle?: string;
   }
 ): Promise<void> {
   try {

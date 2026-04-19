@@ -1,3 +1,5 @@
+import type { ArchetypeId, HeroSub, MuseSub, ShadowSub } from '@/constants/archetypes';
+
 export interface UserProfile {
   uid: string;
   email: string;
@@ -15,9 +17,16 @@ export interface UserProfile {
   };
   silverCard?: {
     storytellingWords: string;
-    landscapePrompt: string;
+    archetypeId: ArchetypeId;        // e.g. "muse-lover"
+    archetypeTitle: string;          // e.g. "The Troubadour"
+    heroSub: HeroSub;
+    museSub: MuseSub;
+    shadowSub: ShadowSub;
+    scenePrompt: string;             // composed prompt actually sent to Replicate
     imageUrl?: string;
     generatedAt?: Date;
+    /** Legacy field — kept for back-compat reads of pre-classifier docs. */
+    landscapePrompt?: string;
   };
   bookmarkedStories?: string[];
   createdAt: Date;
