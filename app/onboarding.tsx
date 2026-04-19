@@ -958,7 +958,7 @@ export default function OnboardingScreen() {
                       </Animated.Text>
                     ) : null}
                     {words[2] ? (
-                      <Animated.Text style={[styles.recapWord, recapWord3Style]}>
+                      <Animated.Text style={[styles.recapWord, { marginBottom: 20 }, recapWord3Style]}>
                         {words[2]}
                       </Animated.Text>
                     ) : null}
