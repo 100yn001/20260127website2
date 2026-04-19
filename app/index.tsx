@@ -15,6 +15,17 @@ export default function IndexScreen() {
     }
   }, [loading, user]);
 
+  // Safety valve: if Firebase auth hasn't reported in after 4s, assume
+  // it's not going to and fall through to the signed-out flow. Without
+  // this, a hung auth init leaves the user staring at an endless spinner.
+  useEffect(() => {
+    if (!loading) return;
+    const t = setTimeout(() => {
+      if (loading) checkRoute();
+    }, 4000);
+    return () => clearTimeout(t);
+  }, [loading]);
+
   const checkRoute = async () => {
     if (user) {
       // User is signed in, go to main app
