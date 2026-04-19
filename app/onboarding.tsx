@@ -115,6 +115,7 @@ export default function OnboardingScreen() {
   const [cardPainted, setCardPainted] = useState(false);
   const [reveal, setReveal] = useState(false);
   const [overlayMounted, setOverlayMounted] = useState(true);
+  const [nameSubmitting, setNameSubmitting] = useState(false);
   const revealedRef = useRef(false);
 
   const opacity = useSharedValue(0);
@@ -379,11 +380,18 @@ export default function OnboardingScreen() {
   const handleNameSubmit = async () => {
     if (!nameInput.trim()) return;
 
-    opacity.value = withTiming(0, { duration: 500 });
+    // Cover the name step with a black+spinner overlay immediately so the
+    // ~50ms gap between fade-out and storyteller-recap mounting isn't a
+    // visible black-only frame — the spinner is already there and the
+    // storyteller-recap's overlay (same bg, same spinner position) takes
+    // over seamlessly.
+    setNameSubmitting(true);
+    opacity.value = withTiming(0, { duration: 400 });
     setTimeout(() => {
       setStep('storyteller-recap');
-      opacity.value = withTiming(1, { duration: 700 });
-    }, 550);
+      opacity.value = withTiming(1, { duration: 500 });
+      setNameSubmitting(false);
+    }, 400);
   };
 
   const handleSecretCodeSubmit = async () => {
@@ -855,6 +863,14 @@ export default function OnboardingScreen() {
             )}
           </View>
         </Animated.View>
+        {/* Black+spinner overlay that appears the moment continue is tapped,
+            bridging the gap until storyteller-recap mounts its own
+            identical overlay. Keeps the transition visually continuous. */}
+        {nameSubmitting ? (
+          <View style={[StyleSheet.absoluteFill, styles.recapOverlay]} pointerEvents="none">
+            <ActivityIndicator size="small" color="rgba(255,255,255,0.6)" />
+          </View>
+        ) : null}
       </View>
     );
   }
