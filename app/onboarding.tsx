@@ -1110,12 +1110,16 @@ const styles = StyleSheet.create({
     backgroundColor: '#000',
     justifyContent: 'center',
     alignItems: 'center',
+    // Pre-promote to a compositing layer so Safari doesn't flash white
+    // for one frame when child Animated.Views mount with opacity styles.
+    transform: [{ translateZ: 0 }],
   },
   fullScreen: {
     flex: 1,
     width: '100%',
     justifyContent: 'center',
     alignItems: 'center',
+    transform: [{ translateZ: 0 }],
   },
   centered: {
     flex: 1,
@@ -1394,6 +1398,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#000',
     alignItems: 'center',
     justifyContent: 'center',
+    transform: [{ translateZ: 0 }],
   },
   recapTitleWrap: {
     position: 'absolute',
