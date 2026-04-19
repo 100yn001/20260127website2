@@ -29,18 +29,7 @@ export default function Root({ children }: PropsWithChildren) {
         <style
           dangerouslySetInnerHTML={{
             __html: `
-              html, body, #root {
-                background-color: #000 !important;
-                /* Force a GPU compositing layer upfront so Safari doesn't
-                   flash white for one frame while it promotes descendants
-                   (Reanimated opacity/transform) to layers at mount time. */
-                -webkit-transform: translateZ(0);
-                transform: translateZ(0);
-                -webkit-backface-visibility: hidden;
-                backface-visibility: hidden;
-                -webkit-perspective: 1000;
-                perspective: 1000;
-              }
+              html, body, #root { background-color: #000 !important; }
               html, body { color-scheme: dark; }
               input, textarea, select, button { outline: none !important; -webkit-tap-highlight-color: transparent; }
               input:focus, textarea:focus, select:focus, button:focus { outline: none !important; box-shadow: none !important; }

@@ -131,7 +131,17 @@ export default function RootLayout() {
           <AudioPlayerProvider>
             <StoryQueueProvider>
               <View style={{ flex: 1, backgroundColor: '#000' }}>
-                <Stack screenOptions={{ headerShown: false }}>
+                <Stack
+                  screenOptions={{
+                    headerShown: false,
+                    // React Navigation's default card bg is light. Force
+                    // the per-screen container to #000 so nothing the
+                    // navigation library renders around our screen can
+                    // flash white during transitions or re-renders.
+                    contentStyle: { backgroundColor: '#000' },
+                    animation: 'none',
+                  }}
+                >
                   <Stack.Screen name="index" options={{ headerShown: false }} />
                   <Stack.Screen name="onboarding" options={{ headerShown: false }} />
                   <Stack.Screen name="auth" options={{ headerShown: false }} />
