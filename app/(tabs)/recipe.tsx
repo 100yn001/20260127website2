@@ -1355,6 +1355,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 10,
     width: '100%',
+    maxWidth: 520,
+    alignSelf: 'center',
   },
   continueButtonText: {
     fontSize: 16,
@@ -1370,6 +1372,9 @@ const styles = StyleSheet.create({
     padding: 4,
     backgroundColor: 'rgba(0, 0, 0, 0.05)',
     borderRadius: 12,
+    width: '100%',
+    maxWidth: 520,
+    alignSelf: 'center',
   },
   modeToggle: {
     flex: 1,
