@@ -1,3 +1,4 @@
+import AmbientSoundControl, { type AmbientMode } from '@/components/AmbientSoundControl';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { FontSizes } from '@/constants/typography';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -41,6 +42,8 @@ export default function NarratorStoryScreen() {
   // Narration
   const [duration, setDuration] = useState<'5min' | '10min' | '15min'>('10min');
   const [narrativeRatio, setNarrativeRatio] = useState(5);
+  const [ambientMode, setAmbientMode] = useState<AmbientMode>('auto');
+  const [ambientCustomPrompt, setAmbientCustomPrompt] = useState('');
 
   const handleContinue = () => {
     if (currentStep === 'location') {
@@ -67,6 +70,8 @@ export default function NarratorStoryScreen() {
           tags: JSON.stringify([]),
           narratorData: JSON.stringify(narratorData),
           narratorId: narratorData?.id || '',
+          ambientMode,
+          ambientCustomPrompt,
         },
       });
     }
@@ -213,6 +218,14 @@ export default function NarratorStoryScreen() {
             />
             <Text style={[styles.sliderHint, { color: colors.textSecondary }]}>slide to adjust descriptive vs. direct content</Text>
           </View>
+
+          <AmbientSoundControl
+            mode={ambientMode}
+            onModeChange={setAmbientMode}
+            customPrompt={ambientCustomPrompt}
+            onCustomPromptChange={setAmbientCustomPrompt}
+            colors={colors}
+          />
         </ScrollView>
 
         <View style={[styles.footer, { backgroundColor: colors.background, borderTopColor: colors.border }]}>

@@ -194,6 +194,8 @@ export default function FollowUpScreen() {
     voiceId: getStringParam('voiceId'),
     prompt: getStringParam('prompt'),
     tags: params.tags ? JSON.parse(params.tags as string) : [],
+    ambientMode: (getStringParam('ambientMode', 'auto') as 'auto' | 'off' | 'custom'),
+    ambientCustomPrompt: getStringParam('ambientCustomPrompt'),
   };
   
   // Only add narrator fields if they exist (avoid undefined)

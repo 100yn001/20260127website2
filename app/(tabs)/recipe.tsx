@@ -1,3 +1,4 @@
+import AmbientSoundControl, { type AmbientMode } from '@/components/AmbientSoundControl';
 import { Card } from '@/components/ui/card';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -65,6 +66,8 @@ export default function RecipeScreen() {
   // Narration details
   const [duration, setDuration] = useState<'5min' | '10min' | '15min'>('10min');
   const [narrativeRatio, setNarrativeRatio] = useState(5); // 0-10 slider, where 0 = all narrative, 10 = all direct
+  const [ambientMode, setAmbientMode] = useState<AmbientMode>('auto');
+  const [ambientCustomPrompt, setAmbientCustomPrompt] = useState('');
 
   // Name selection
   const [nameOption, setNameOption] = useState<'my-name' | 'custom' | 'nameless'>('my-name');
@@ -881,6 +884,14 @@ export default function RecipeScreen() {
               />
               <Text style={[styles.sliderHint, { color: colors.textSecondary }]}>slide to adjust descriptive vs. direct content</Text>
             </View>
+
+            <AmbientSoundControl
+              mode={ambientMode}
+              onModeChange={setAmbientMode}
+              customPrompt={ambientCustomPrompt}
+              onCustomPromptChange={setAmbientCustomPrompt}
+              colors={colors}
+            />
           </ScrollView>
 
           {/* Continue Button */}
@@ -970,6 +981,8 @@ export default function RecipeScreen() {
                   voiceId: selectedVoice || '',
                   prompt: '',
                   tags: JSON.stringify(tags),
+                  ambientMode: ambientMode,
+                  ambientCustomPrompt: ambientCustomPrompt,
                 },
               });
             }}

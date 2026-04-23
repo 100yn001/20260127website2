@@ -285,6 +285,8 @@ interface RecipeData {
   narratorId?: string; // For narrator-based stories
   narratorData?: any; // Full narrator data for context
   coverColor?: string; // User-assigned cover color
+  ambientMode?: 'auto' | 'off' | 'custom'; // User-selected ambient mode; defaults to 'auto'
+  ambientCustomPrompt?: string; // User-supplied ambient prompt when ambientMode === 'custom'
 }
 
 /**
@@ -620,12 +622,25 @@ For example, if the user has indicated that they want the character to be domina
     const chunks = splitTextIntoChunks(transcript);
     console.log(`📝 Split into ${chunks.length} chunk(s) for TTS`);
 
-    // STEP 3a: Kick off ambient generation in parallel with narration chunks
-    console.log('🌿 Generating ambient prompt + clip in parallel with narration...');
+    // STEP 3a: Kick off ambient generation in parallel with narration chunks.
+    // Respects recipe.ambientMode: 'auto' (default), 'off' (skip), 'custom' (use prompt).
+    const ambientMode: 'auto' | 'off' | 'custom' = recipe.ambientMode || 'auto';
+    const ambientCustomPrompt: string = (recipe.ambientCustomPrompt || '').trim();
     const ambientPromise = (async (): Promise<{ prompt: string; filePath: string | null }> => {
-      const prompt = await generateAmbientPrompt(recipe.setting, recipe.location);
-      if (!prompt) return { prompt: '', filePath: null };
-      console.log(`🌿 Ambient prompt: ${prompt}`);
+      if (ambientMode === 'off') {
+        console.log('🌿 Ambient mode = off; skipping');
+        return { prompt: '', filePath: null };
+      }
+      let prompt: string;
+      if (ambientMode === 'custom' && ambientCustomPrompt) {
+        prompt = ambientCustomPrompt;
+        console.log(`🌿 Ambient mode = custom; using user prompt: ${prompt}`);
+      } else {
+        console.log('🌿 Ambient mode = auto; generating from setting+location');
+        prompt = await generateAmbientPrompt(recipe.setting, recipe.location);
+        if (!prompt) return { prompt: '', filePath: null };
+        console.log(`🌿 Ambient prompt: ${prompt}`);
+      }
       const filePath = await fetchAmbientClipToFile(prompt);
       if (filePath) {
         const stat = await ReactNativeBlobUtil.fs.stat(filePath);
