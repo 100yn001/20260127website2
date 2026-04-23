@@ -56,6 +56,9 @@ export default function PlayerScreen() {
     stop,
     isAudioReady,
     debugInfo,
+    hasAmbient,
+    ambientEnabled,
+    setAmbientEnabled,
   } = useAudioPlayer();
   const [showTranscript, setShowTranscript] = useState(false);
   const initialTitle = typeof params.title === 'string' && params.title !== 'undefined' ? params.title : '';
@@ -153,6 +156,11 @@ export default function PlayerScreen() {
     } catch { /* ignore */ }
     return [];
   });
+  const [ambientUrl, setAmbientUrl] = useState<string | undefined>(
+    typeof params.ambientUrl === 'string' && params.ambientUrl && params.ambientUrl !== 'undefined'
+      ? (params.ambientUrl as string)
+      : undefined
+  );
   const hasDescription = storyDescription.trim().length > 0;
   const descriptionDisplayText = hasDescription ? storyDescription : 'no description yet';
   const coverStorageKey = storyId || publicStoryId || audioUrlParam;
@@ -435,6 +443,9 @@ export default function PlayerScreen() {
           if (data.audioChunkURLs && Array.isArray(data.audioChunkURLs) && data.audioChunkURLs.length > 0) {
             setAudioChunkURLs(prev => prev.length > 0 ? prev : data.audioChunkURLs);
           }
+          if (typeof data.ambientUrl === 'string' && data.ambientUrl) {
+            setAmbientUrl(prev => prev || data.ambientUrl);
+          }
         }
       } catch (error) {
         console.error('Error loading story data:', error);
@@ -535,6 +546,20 @@ export default function PlayerScreen() {
         }
         if (stale) return;
 
+        // If we have a storyId but no ambientUrl yet, pull it from Firestore
+        let resolvedAmbientUrl = ambientUrl;
+        if (!resolvedAmbientUrl && storyId) {
+          try {
+            const snap = await getDoc(doc(db, 'stories', storyId));
+            if (snap.exists()) {
+              const data = snap.data();
+              if (typeof data.ambientUrl === 'string' && data.ambientUrl) {
+                resolvedAmbientUrl = data.ambientUrl;
+              }
+            }
+          } catch { /* optional */ }
+        }
+
         const hasChunks = chunks.length > 0;
         await loadTrack({
           id: effectiveStoryId || undefined,
@@ -545,6 +570,7 @@ export default function PlayerScreen() {
           transcript: transcript,
           coverColor: artworkColorForLoad,
           topographyLayers: artworkLayersForLoad,
+          ambientUrl: resolvedAmbientUrl,
         }, true);
 
         audioLoadedKeyRef.current = `${audioUrl}|${chunks.length}`;
@@ -1118,6 +1144,23 @@ export default function PlayerScreen() {
               <IconSymbol name="goforward.15" size={32} color={colors.text} />
             </TouchableOpacity>
           </View>
+
+          {hasAmbient && (
+            <TouchableOpacity
+              onPress={() => setAmbientEnabled(!ambientEnabled)}
+              style={styles.ambientToggle}
+              accessibilityLabel={ambientEnabled ? 'Turn off ambient sound' : 'Turn on ambient sound'}
+            >
+              <IconSymbol
+                name={ambientEnabled ? 'speaker.wave.2.fill' : 'speaker.slash'}
+                size={16}
+                color={colors.textSecondary}
+              />
+              <Text style={[styles.ambientToggleText, { color: colors.textSecondary }]}>
+                {ambientEnabled ? 'ambient on' : 'ambient off'}
+              </Text>
+            </TouchableOpacity>
+          )}
 
           {/* Details button */}
           <TouchableOpacity
@@ -1710,6 +1753,18 @@ const styles = StyleSheet.create({
   },
   playButton: {
     padding: 8,
+  },
+  ambientToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'center',
+    gap: 6,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    marginBottom: 8,
+  },
+  ambientToggleText: {
+    fontSize: 12,
   },
   actionButtons: {
     gap: 12,

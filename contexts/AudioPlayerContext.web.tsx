@@ -10,6 +10,7 @@ export interface TrackInfo {
   coverColor?: string;
   topographyLayers?: any[];
   metadata?: Record<string, any>;
+  ambientUrl?: string;
 }
 
 interface AudioPlayerContextValue {
@@ -28,6 +29,11 @@ interface AudioPlayerContextValue {
   stop: () => Promise<void>;
   isAudioReady: boolean;
   debugInfo: string;
+  hasAmbient: boolean;
+  ambientEnabled: boolean;
+  ambientVolume: number;
+  setAmbientEnabled: (enabled: boolean) => void;
+  setAmbientVolume: (volume: number) => void;
 }
 
 /**
@@ -62,6 +68,23 @@ export const AudioPlayerProvider = ({ children }: { children: React.ReactNode })
   const activeChunkIndexRef = useRef(0);
   const positionIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  const ambientAudioRef = useRef<HTMLAudioElement | null>(null);
+  const [hasAmbient, setHasAmbient] = useState(false);
+  const [ambientEnabled, setAmbientEnabledState] = useState(true);
+  const [ambientVolume, setAmbientVolumeState] = useState(0.2);
+
+  const cleanupAmbient = useCallback(() => {
+    const el = ambientAudioRef.current;
+    if (el) {
+      try {
+        el.pause();
+        el.removeAttribute('src');
+        el.load();
+      } catch { /* ignore */ }
+    }
+    ambientAudioRef.current = null;
+  }, []);
+
   // Cleanup audio elements
   const cleanupAudioElements = useCallback(() => {
     for (const audio of audioElementsRef.current) {
@@ -72,7 +95,8 @@ export const AudioPlayerProvider = ({ children }: { children: React.ReactNode })
       } catch { /* ignore */ }
     }
     audioElementsRef.current = [];
-  }, []);
+    cleanupAmbient();
+  }, [cleanupAmbient]);
 
   // Start position tracking interval
   const startPositionTracking = useCallback(() => {
@@ -289,11 +313,31 @@ export const AudioPlayerProvider = ({ children }: { children: React.ReactNode })
 
       setIsAudioReady(true);
 
+      // ─── Ambient bed: non-blocking, plays underneath narration ───
+      if (track.ambientUrl) {
+        try {
+          const ambientEl = new Audio(fixFirebaseStorageUrl(track.ambientUrl));
+          ambientEl.loop = true;
+          ambientEl.preload = 'auto';
+          ambientEl.volume = ambientEnabled ? ambientVolume : 0;
+          ambientAudioRef.current = ambientEl;
+          setHasAmbient(true);
+        } catch (err) {
+          console.warn('Failed to prepare ambient track:', err);
+          setHasAmbient(false);
+        }
+      } else {
+        setHasAmbient(false);
+      }
+
       if (autoplay) {
         activeChunkIndexRef.current = 0;
         await audioElements[0].play();
         setIsPlaying(true);
         startPositionTracking();
+        if (ambientAudioRef.current && ambientEnabled) {
+          ambientAudioRef.current.play().catch((e) => console.warn('Ambient play failed:', e));
+        }
       }
 
       setDebugInfo(`playing from web (${remoteURLs.length > 1 ? remoteURLs.length + ' chunks' : 'single'})`);
@@ -318,11 +362,14 @@ export const AudioPlayerProvider = ({ children }: { children: React.ReactNode })
         await audio.play();
         setIsPlaying(true);
         startPositionTracking();
+        if (ambientAudioRef.current && ambientEnabled) {
+          ambientAudioRef.current.play().catch((e) => console.warn('Ambient play failed:', e));
+        }
       }
     } catch (e) {
       console.warn('Error playing:', e);
     }
-  }, [isLoading, startPositionTracking]);
+  }, [isLoading, startPositionTracking, ambientEnabled]);
 
   const pause = useCallback(async () => {
     try {
@@ -331,6 +378,9 @@ export const AudioPlayerProvider = ({ children }: { children: React.ReactNode })
         audio.pause();
         setIsPlaying(false);
         stopPositionTracking();
+        if (ambientAudioRef.current) {
+          ambientAudioRef.current.pause();
+        }
       }
     } catch (e) {
       console.warn('Error pausing:', e);
@@ -406,9 +456,29 @@ export const AudioPlayerProvider = ({ children }: { children: React.ReactNode })
     setCurrentTrack(null);
     setIsPlaying(false);
     setIsAudioReady(false);
+    setHasAmbient(false);
     setPosition(0);
     setDuration(0);
   }, [stopPositionTracking, cleanupAudioElements]);
+
+  const setAmbientEnabled = useCallback((enabled: boolean) => {
+    setAmbientEnabledState(enabled);
+    const el = ambientAudioRef.current;
+    if (!el) return;
+    if (enabled) {
+      el.volume = ambientVolume;
+      if (isPlaying) el.play().catch((e) => console.warn('Ambient play failed:', e));
+    } else {
+      el.pause();
+    }
+  }, [ambientVolume, isPlaying]);
+
+  const setAmbientVolume = useCallback((volume: number) => {
+    const clamped = Math.max(0, Math.min(1, volume));
+    setAmbientVolumeState(clamped);
+    const el = ambientAudioRef.current;
+    if (el && ambientEnabled) el.volume = clamped;
+  }, [ambientEnabled]);
 
   const value: AudioPlayerContextValue = {
     currentTrack,
@@ -426,6 +496,11 @@ export const AudioPlayerProvider = ({ children }: { children: React.ReactNode })
     stop,
     isAudioReady,
     debugInfo,
+    hasAmbient,
+    ambientEnabled,
+    ambientVolume,
+    setAmbientEnabled,
+    setAmbientVolume,
   };
 
   return <AudioPlayerContext.Provider value={value}>{children}</AudioPlayerContext.Provider>;

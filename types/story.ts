@@ -30,6 +30,8 @@ export interface Story {
   createdAt: Date;
   coverColor?: string;
   topographyLayers?: DepthLayer[];
+  ambientUrl?: string;
+  ambientPrompt?: string;
 }
 
 export interface SharedAudio {

@@ -6,7 +6,7 @@
 import { DEFAULT_COVER_COLOR } from '@/constants/cover-colors';
 import { DepthLayer } from '@/types/story';
 import Constants from 'expo-constants';
-import { saveStory, uploadAudioChunk } from './story-service';
+import { saveStory, uploadAmbient, uploadAudioChunk } from './story-service';
 
 // Get API keys from Expo environment variables
 const XAI_API_KEY = Constants.expoConfig?.extra?.XAI || '';
@@ -127,6 +127,76 @@ async function fetchAudioChunkAsBlob(
   }
 
   return response.blob();
+}
+
+/**
+ * Ask Grok for a short, comma-separated SFX description for the ambient bed.
+ * Returns empty string if the call fails — caller should treat as optional.
+ */
+async function generateAmbientPrompt(setting: string, location: string): Promise<string> {
+  const userPrompt = `Given a story set in "${setting || 'unspecified'}" at a "${location || 'unspecified'}" location, output a single comma-separated list of ambient sounds that would realistically be heard continuously in the background. No music. No speech. No voices. Only environmental, natural, or mechanical sounds that can loop seamlessly. Example output: "wind through leafy trees, distant birdsong, faint gravel footfalls, rustling foliage". Output only the sound list on one line, nothing else.`;
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 60_000);
+    let response;
+    try {
+      response = await fetch('https://api.x.ai/v1/responses', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${XAI_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model: 'grok-4-1-fast-reasoning',
+          input: [
+            { role: 'system', content: 'You output only comma-separated lists of ambient environmental sounds. You never include music, speech, or voices. You never add preamble or commentary.' },
+            { role: 'user', content: userPrompt },
+          ],
+        }),
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(timeoutId);
+    }
+    if (!response.ok) return '';
+    const data = await response.json();
+    const text = data.output?.[0]?.content?.[0]?.text || '';
+    return text.trim().split('\n')[0].trim();
+  } catch (err) {
+    console.warn('Ambient prompt generation failed:', err);
+    return '';
+  }
+}
+
+/**
+ * Call ElevenLabs SFX v2 to produce a 30s seamless ambient loop (web variant).
+ * Returns a Blob or null on failure.
+ */
+async function fetchAmbientClipAsBlob(prompt: string): Promise<Blob | null> {
+  try {
+    const response = await fetch('https://api.elevenlabs.io/v1/sound-generation', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'xi-api-key': ELEVENLABS_API_KEY,
+      },
+      body: JSON.stringify({
+        text: prompt,
+        duration_seconds: 30,
+        loop: true,
+        prompt_influence: 0.3,
+      }),
+    });
+    if (!response.ok) {
+      console.warn('ElevenLabs SFX error:', response.status, await response.text());
+      return null;
+    }
+    return await response.blob();
+  } catch (err) {
+    console.warn('Ambient clip generation failed:', err);
+    return null;
+  }
 }
 
 interface RecipeData {
@@ -481,16 +551,29 @@ For example, if the user has indicated that they want the character to be domina
     // Always chunk the transcript for reliable, fast generation
     const chunks = splitTextIntoChunks(transcript);
     console.log(`📝 Split into ${chunks.length} chunk(s) for TTS`);
-    
-    // STEP 3a: Generate audio chunks as Blobs
+
+    // STEP 3a: Kick off ambient generation in parallel with narration chunks
+    console.log('🌿 Generating ambient prompt + clip in parallel with narration...');
+    const ambientPromise = (async (): Promise<{ prompt: string; blob: Blob | null }> => {
+      const prompt = await generateAmbientPrompt(recipe.setting, recipe.location);
+      if (!prompt) return { prompt: '', blob: null };
+      console.log(`🌿 Ambient prompt: ${prompt}`);
+      const blob = await fetchAmbientClipAsBlob(prompt);
+      if (blob) {
+        console.log(`✅ Ambient clip fetched: ${(blob.size / 1024).toFixed(1)} KB`);
+      }
+      return { prompt, blob };
+    })();
+
+    // STEP 3b: Generate narration chunks as Blobs
     const chunkBlobs: Blob[] = [];
     for (let i = 0; i < chunks.length; i++) {
       const chunk = chunks[i];
       console.log(`🎤 Generating chunk ${i + 1}/${chunks.length} (${chunk.length} chars)`);
-      
+
       const blob = await fetchAudioChunkAsBlob(chunk, voiceId);
       chunkBlobs.push(blob);
-      
+
       console.log(`✅ Chunk ${i + 1} generated: ${(blob.size / 1024).toFixed(1)} KB`);
     }
     
@@ -503,7 +586,24 @@ For example, if the user has indicated that they want the character to be domina
       audioChunkURLs.push(chunkUrl);
     }
     console.log(`✅ All ${audioChunkURLs.length} chunks uploaded`);
-    
+
+    // STEP 4b: Upload ambient if it generated successfully
+    let ambientUrl: string | undefined;
+    let ambientPrompt: string | undefined;
+    try {
+      const { prompt, blob } = await ambientPromise;
+      if (blob && prompt) {
+        console.log('📤 Uploading ambient loop...');
+        ambientUrl = await uploadAmbient(userId, blob, recipe.isNighttime);
+        ambientPrompt = prompt;
+        console.log('✅ Ambient uploaded');
+      } else {
+        console.log('ℹ️ No ambient generated (skipped or failed); continuing narration-only');
+      }
+    } catch (err) {
+      console.warn('Ambient upload failed, continuing narration-only:', err);
+    }
+
     // STEP 5: Save story metadata to Firestore
     const createdAt = new Date();
     const title = createdAt.toLocaleString('en-US', {
@@ -534,7 +634,12 @@ For example, if the user has indicated that they want the character to be domina
       coverColor: recipe.coverColor || DEFAULT_COVER_COLOR,
       topographyLayers: generateDepthLayers(5),
     };
-    
+
+    if (ambientUrl) {
+      storyData.ambientUrl = ambientUrl;
+      storyData.ambientPrompt = ambientPrompt;
+    }
+
     // Only include narratorId if it exists
     if (recipe.narratorId) {
       storyData.narratorId = recipe.narratorId;
