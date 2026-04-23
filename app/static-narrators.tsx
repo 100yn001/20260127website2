@@ -185,19 +185,18 @@ export default function StaticNarratorsScreen() {
     setIsNameModalVisible(true);
   };
 
-  const confirmCustomName = () => {
+  const confirmCustomName = async () => {
     if (!pendingNarrator) return;
     const trimmed = customName.trim();
-    if (!trimmed) {
-      Alert.alert('name required', 'enter a name or choose use my name.');
-      return;
-    }
-    handleClone(pendingNarrator, trimmed);
+    // Empty custom name -> fall through to stored name instead of blocking
+    // with an Alert (Alert.alert doesn't render reliably on web).
+    const nameToUse = trimmed || storedUserName;
+    await handleClone(pendingNarrator, nameToUse);
   };
 
-  const confirmStoredName = () => {
+  const confirmStoredName = async () => {
     if (!pendingNarrator) return;
-    handleClone(pendingNarrator, storedUserName);
+    await handleClone(pendingNarrator, storedUserName);
   };
 
   return (
