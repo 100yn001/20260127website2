@@ -151,42 +151,59 @@ export function StoryQueueProvider({ children }: { children: React.ReactNode }) 
     return () => unsubscribe();
   }, [user]);
 
+  // Recursively strip undefined values — Firestore rejects writes that
+  // contain any undefined value at any depth.
+  const stripUndefined = (value: any): any => {
+    if (value === undefined) return null;
+    if (value === null) return null;
+    if (Array.isArray(value)) return value.map(stripUndefined);
+    if (typeof value === 'object') {
+      const out: any = {};
+      for (const [k, v] of Object.entries(value)) {
+        if (v === undefined) continue;
+        out[k] = stripUndefined(v);
+      }
+      return out;
+    }
+    return value;
+  };
+
   // Save queue changes to Firestore
   const saveQueueItem = async (item: QueuedStory) => {
-    if (!user) return;
-    
+    if (!user) {
+      console.error('[Queue] saveQueueItem called with no authed user — aborting');
+      throw new Error('you must be signed in to queue a story');
+    }
+
+    // Deep-clean recipeData so nested undefined values don't silently fail
+    // the Firestore write.
+    const cleanedRecipeData = stripUndefined(item.recipeData);
+
+    const docRef = doc(db, 'users', user.uid, 'queue', item.id);
     try {
-      // Clean recipeData to remove undefined values (Firestore doesn't allow them)
-      const cleanedRecipeData = { ...item.recipeData };
-      if (cleanedRecipeData.narratorData === undefined) {
-        delete cleanedRecipeData.narratorData;
-      }
-      if (cleanedRecipeData.narratorId === undefined) {
-        delete cleanedRecipeData.narratorId;
-      }
-      if (cleanedRecipeData.voiceId === undefined) {
-        delete cleanedRecipeData.voiceId;
-      }
-      
-      const docRef = doc(db, 'users', user.uid, 'queue', item.id);
       await setDoc(docRef, {
-          recipeData: cleanedRecipeData,
-          followUpQuestions: item.followUpQuestions,
-          followUpAnswers: item.followUpAnswers,
-          status: item.status,
-          progress: item.progress,
-          currentStep: item.currentStep || null,
-          createdAt: Timestamp.fromDate(item.createdAt),
-          completedAt: item.completedAt ? Timestamp.fromDate(item.completedAt) : null,
-          storyId: item.storyId || null,
-          audioUrl: item.audioUrl || null,
-          audioChunkURLs: item.audioChunkURLs || [],
-          transcript: item.transcript || null,
-          error: item.error || null,
-          fcmToken: item.fcmToken || null,
-        });
+        recipeData: cleanedRecipeData,
+        followUpQuestions: item.followUpQuestions,
+        followUpAnswers: item.followUpAnswers,
+        status: item.status,
+        progress: item.progress,
+        currentStep: item.currentStep || null,
+        createdAt: Timestamp.fromDate(item.createdAt),
+        completedAt: item.completedAt ? Timestamp.fromDate(item.completedAt) : null,
+        storyId: item.storyId || null,
+        audioUrl: item.audioUrl || null,
+        audioChunkURLs: item.audioChunkURLs || [],
+        transcript: item.transcript || null,
+        error: item.error || null,
+        fcmToken: item.fcmToken || null,
+      });
+      console.log('[Queue] saved', item.id, 'status=', item.status, 'uid=', user.uid);
     } catch (error) {
-      console.error('Error saving queue item:', error);
+      // Surface the real error to the caller instead of swallowing it —
+      // otherwise addToQueue reports "success" even when the doc never
+      // actually hit Firestore, and the UI shows nothing in mystories.
+      console.error('[Queue] Error saving queue item:', error);
+      throw error;
     }
   };
 

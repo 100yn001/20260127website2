@@ -6,6 +6,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
+    Alert,
     KeyboardAvoidingView,
     Platform,
     ScrollView,
@@ -333,14 +334,15 @@ export default function FollowUpScreen() {
       console.log('⚠️ Submission already in progress, ignoring duplicate tap');
       return;
     }
-    
+
     setIsSubmitting(true);
     try {
       // Skip directly to generation - don't change showIntro to avoid flash
       await addToQueue(recipeData, [], []);
       setShowModal(true);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error adding to queue:', error);
+      surfaceQueueError(error);
       setIsSubmitting(false); // Reset on error so user can retry
     }
   };
@@ -365,22 +367,33 @@ export default function FollowUpScreen() {
     }
   };
 
+  const surfaceQueueError = (error: any) => {
+    const msg = error?.message || 'something went wrong queueing your story — please try again';
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      // eslint-disable-next-line no-alert
+      window.alert(`could not queue story:\n\n${msg}`);
+    } else {
+      Alert.alert('could not queue story', msg);
+    }
+  };
+
   const handleGenerateStory = async () => {
     // Prevent duplicate submissions
     if (isSubmitting) {
       console.log('⚠️ Submission already in progress, ignoring duplicate tap');
       return;
     }
-    
+
     setIsSubmitting(true);
     try {
       // Add to queue instead of navigating to loading
       await addToQueue(recipeData, followUpQuestions, answers);
-      
+
       // Show modal
       setShowModal(true);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error adding to queue:', error);
+      surfaceQueueError(error);
       setIsSubmitting(false); // Reset on error so user can retry
     }
     // Note: Don't reset isSubmitting on success - modal will navigate away
