@@ -57,6 +57,31 @@ interface QueueItem {
 const DEFAULT_COVER_COLOR = '#8B7355';
 const MAX_CHUNK_SIZE = 1000; // eleven_v3 has a lower char limit than older models
 
+// ElevenLabs text-to-speech rejects payloads over 5000 chars. Anything over
+// this hard limit gets brute-split before the API call.
+const HARD_TTS_LIMIT = 4500;
+
+function enforceHardLimit(chunks: string[]): string[] {
+  const out: string[] = [];
+  for (const chunk of chunks) {
+    if (chunk.length <= HARD_TTS_LIMIT) {
+      out.push(chunk);
+      continue;
+    }
+    console.warn(`⚠️ TTS chunk ${chunk.length} chars exceeds HARD_TTS_LIMIT ${HARD_TTS_LIMIT} — re-splitting`);
+    let rem = chunk;
+    while (rem.length > HARD_TTS_LIMIT) {
+      const head = rem.slice(0, HARD_TTS_LIMIT);
+      const lastSpace = head.lastIndexOf(' ');
+      const cut = lastSpace > HARD_TTS_LIMIT * 0.5 ? lastSpace : HARD_TTS_LIMIT;
+      out.push(head.slice(0, cut).trim());
+      rem = rem.slice(cut).trim();
+    }
+    if (rem.length > 0) out.push(rem);
+  }
+  return out;
+}
+
 const VOICE_IDS = {
   male: 'Qe9WSybioZxssVEwlBSo',
   female: 'LEnmbrrxYsUYS7vsRRwD',
@@ -371,8 +396,9 @@ Make sure that the narration sounds natural and does not include any verbatim el
       console.log('🎤 Step 3: Generating audio (chunked)...');
       
       const voiceId = recipe.voiceId || VOICE_IDS[recipe.genderOther as 'male' | 'female'] || VOICE_IDS.male;
-      const chunks = splitTextIntoChunks(transcript);
-      console.log(`📝 Split into ${chunks.length} chunk(s) for TTS`);
+      const chunks = enforceHardLimit(splitTextIntoChunks(transcript));
+      const longest = chunks.reduce((m, c) => Math.max(m, c.length), 0);
+      console.log(`📝 Split into ${chunks.length} chunk(s) for TTS (longest=${longest} chars)`);
 
       const chunkBuffers: Buffer[] = [];
       for (let i = 0; i < chunks.length; i++) {

@@ -25,9 +25,38 @@ const VOICE_IDS = {
   female: 'LEnmbrrxYsUYS7vsRRwD',
 };
 
-// Maximum characters per chunk — kept well under ElevenLabs limit (~5000)
+// Maximum characters per chunk — kept well under ElevenLabs limit (5000)
 // so each chunk generates quickly and doesn't risk timing out
 const MAX_CHUNK_SIZE = 1000; // eleven_v3 has a lower char limit than older models
+
+// Hard ceiling defense — ElevenLabs v1/text-to-speech returns 400
+// ("text_too_long") for payloads over 5000 chars. If anything slips past the
+// sentence-aware splitter above this limit, brute-split it at word/char
+// boundaries before the API call.
+const HARD_TTS_LIMIT = 4500;
+
+function enforceHardLimit(chunks: string[]): string[] {
+  const out: string[] = [];
+  for (const chunk of chunks) {
+    if (chunk.length <= HARD_TTS_LIMIT) {
+      out.push(chunk);
+      continue;
+    }
+    console.warn(
+      `⚠️ TTS chunk ${chunk.length} chars exceeds HARD_TTS_LIMIT ${HARD_TTS_LIMIT} — re-splitting`,
+    );
+    let rem = chunk;
+    while (rem.length > HARD_TTS_LIMIT) {
+      const head = rem.slice(0, HARD_TTS_LIMIT);
+      const lastSpace = head.lastIndexOf(' ');
+      const cut = lastSpace > HARD_TTS_LIMIT * 0.5 ? lastSpace : HARD_TTS_LIMIT;
+      out.push(head.slice(0, cut).trim());
+      rem = rem.slice(cut).trim();
+    }
+    if (rem.length > 0) out.push(rem);
+  }
+  return out;
+}
 
 /**
  * Split text into chunks at sentence boundaries, each under MAX_CHUNK_SIZE chars.
@@ -550,9 +579,12 @@ For example, if the user has indicated that they want the character to be domina
 
     console.log('🎤 Generating audio with ElevenLabs using voice:', voiceId);
     
-    // Always chunk the transcript for reliable, fast generation
-    const chunks = splitTextIntoChunks(transcript);
-    console.log(`📝 Split into ${chunks.length} chunk(s) for TTS`);
+    // Always chunk the transcript for reliable, fast generation. Then pass
+    // through the hard-limit enforcer so nothing over 4500 chars ever hits
+    // the ElevenLabs API.
+    const chunks = enforceHardLimit(splitTextIntoChunks(transcript));
+    const longest = chunks.reduce((m, c) => Math.max(m, c.length), 0);
+    console.log(`📝 Split into ${chunks.length} chunk(s) for TTS (longest=${longest} chars)`);
 
     // STEP 3a: Kick off ambient generation in parallel with narration chunks.
     // Respects recipe.ambientMode: 'auto' (default), 'off' (skip), 'custom' (use prompt).
