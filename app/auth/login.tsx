@@ -1,233 +1,142 @@
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { useAuth } from '@/contexts/AuthContext';
-import { useTheme } from '@/contexts/ThemeContext';
-import { getUserProfile } from '@/services/user-service';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
+import { AlertTriangle } from 'lucide-react-native';
 import React, { useState } from 'react';
-import {
-    ActivityIndicator,
-    Alert,
-    KeyboardAvoidingView,
-    Platform,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Pressable, Text, View } from 'react-native';
+
+import { FlowCluster, Screen, ScreenHeader, TopBar } from '@/components/screen';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useAuth } from '@/contexts/AuthContext';
+import { getUserProfile } from '@/services/user-service';
 
 export default function LoginScreen() {
   const { signIn, resetPassword } = useAuth();
-  const { colors } = useTheme();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
 
   const handleForgotPassword = async () => {
+    setError(null);
+    setInfo(null);
     if (!email.trim()) {
-      Alert.alert('enter email', 'please enter your email address first');
+      setError('enter your email first');
       return;
     }
-
     try {
       setLoading(true);
       await resetPassword(email);
-      Alert.alert('email sent', 'check your inbox for a password reset link');
-    } catch (error: any) {
-      Alert.alert('error', error.message);
+      setInfo('check your inbox for a reset link');
+    } catch (e: any) {
+      setError(e.message ?? 'something went wrong');
     } finally {
       setLoading(false);
     }
   };
 
   const handleLogin = async () => {
+    setError(null);
+    setInfo(null);
     if (!email || !password) {
-      Alert.alert('error', 'please fill in all fields');
+      setError('please fill in all fields');
       return;
     }
-
     try {
       setLoading(true);
-      
-      // Sign in with Firebase (this updates the user in AuthContext)
       await signIn(email, password);
-      
-      // Wait a moment for auth state to update
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Use Firebase auth directly since context may not update immediately
+      await new Promise((r) => setTimeout(r, 1000));
       const { auth } = require('@/config/firebase');
       const currentUser = auth.currentUser;
-      
       if (currentUser) {
-        // Fetch user profile from Firestore
         const profile = await getUserProfile(currentUser.uid);
         const displayName = profile?.name || 'friend';
         const profileAnswers = profile?.onboardingAnswers || {};
-        
-        // Save to AsyncStorage for offline access and persistence
         await AsyncStorage.setItem('hasCompletedOnboarding', 'true');
         await AsyncStorage.setItem('userName', displayName);
         await AsyncStorage.setItem('onboardingAnswers', JSON.stringify(profileAnswers));
       }
-      
-      // Navigate to main app
       router.replace('/(tabs)/library');
-    } catch (error: any) {
-      Alert.alert('login failed', error.message);
+    } catch (e: any) {
+      setError(e.message ?? 'login failed');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.keyboardView}
-      >
-        <View style={styles.content}>
-          <TouchableOpacity
-            onPress={() => router.back()}
-            style={styles.backButton}
-          >
-            <IconSymbol name="chevron.left" size={24} color={colors.text} />
-          </TouchableOpacity>
+    <Screen>
+      <TopBar onBack={() => router.back()} />
+      <FlowCluster>
+        <ScreenHeader title="welcome back" subtitle="sign in to continue" />
 
-          <Text style={[styles.title, { color: colors.text }]}>welcome back</Text>
-          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>sign in to continue</Text>
-
-          <View style={styles.form}>
-            <TextInput
-              style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }]}
-              placeholder="email"
-              placeholderTextColor={colors.textSecondary}
+        <View className="gap-3">
+          <View className="gap-1.5">
+            <Label>email</Label>
+            <Input
               value={email}
               onChangeText={setEmail}
+              placeholder="you@domain.com"
               autoCapitalize="none"
               keyboardType="email-address"
               editable={!loading}
             />
-
-            <TextInput
-              style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }]}
-              placeholder="password"
-              placeholderTextColor={colors.textSecondary}
+          </View>
+          <View className="gap-1.5">
+            <Label>password</Label>
+            <Input
               value={password}
               onChangeText={setPassword}
+              placeholder="••••••••"
               secureTextEntry
               editable={!loading}
             />
-
-            <TouchableOpacity
-              style={[styles.button, loading && styles.buttonDisabled]}
-              onPress={handleLogin}
-              disabled={loading}
-            >
-              {loading ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={styles.buttonText}>sign in</Text>
-              )}
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={handleForgotPassword}
-              disabled={loading}
-              style={{ marginTop: 16 }}
-            >
-              <Text style={[styles.linkText, { color: colors.textSecondary }]}>
-                forgot your password?
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => router.push('/onboarding')}
-              disabled={loading}
-              style={{ marginTop: 8 }}
-            >
-              <Text style={[styles.linkText, { color: colors.textSecondary }]}>
-                don&apos;t have an account? <Text style={[styles.linkBold, { color: colors.text }]}>sign up</Text>
-              </Text>
-            </TouchableOpacity>
           </View>
         </View>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+
+        {error && <InlineBanner tone="error" message={error} />}
+        {info && <InlineBanner tone="info" message={info} />}
+
+        <View className="gap-2">
+          <Button size="lg" onPress={handleLogin} loading={loading} className="w-full">
+            sign in
+          </Button>
+          <Pressable onPress={handleForgotPassword} disabled={loading} className="self-center py-2">
+            <Text className="text-sm font-serif text-muted-foreground">forgot your password?</Text>
+          </Pressable>
+        </View>
+
+        <Pressable
+          onPress={() => router.push('/onboarding')}
+          disabled={loading}
+          className="self-center py-2"
+        >
+          <Text className="text-sm font-serif text-muted-foreground">
+            don't have an account?{' '}
+            <Text className="font-serif-medium text-foreground">sign up</Text>
+          </Text>
+        </Pressable>
+      </FlowCluster>
+    </Screen>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  keyboardView: {
-    flex: 1,
-  },
-  content: {
-    flex: 1,
-    padding: 24,
-  },
-  backButton: {
-    marginBottom: 32,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: '600',
-    marginBottom: 8,
-    fontFamily: 'EBGaramond-Medium',
-    textAlign: 'center',
-  },
-  subtitle: {
-    fontSize: 16,
-    marginBottom: 48,
-    fontFamily: 'EBGaramond-Regular',
-    textAlign: 'center',
-  },
-  form: {
-    gap: 16,
-    width: '100%',
-    maxWidth: 360,
-    alignSelf: 'center',
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#E5E5E7',
-    borderRadius: 12,
-    padding: 16,
-    fontSize: 16,
-    backgroundColor: '#fff',
-    fontFamily: 'EBGaramond-Regular',
-  },
-  button: {
-    backgroundColor: '#2b2b34',
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  buttonDisabled: {
-    opacity: 0.5,
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-    fontFamily: 'EBGaramond-Medium',
-  },
-  linkText: {
-    textAlign: 'center',
-    color: '#717182',
-    fontSize: 14,
-    marginTop: 8,
-    fontFamily: 'EBGaramond-Regular',
-  },
-  linkBold: {
-    color: '#030213',
-    fontWeight: '600',
-    fontFamily: 'EBGaramond-Medium',
-  },
-});
+function InlineBanner({ tone, message }: { tone: 'error' | 'info'; message: string }) {
+  const isError = tone === 'error';
+  return (
+    <View
+      className={
+        isError
+          ? 'flex-row items-center gap-2 rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2'
+          : 'flex-row items-center gap-2 rounded-lg border border-border bg-accent px-3 py-2'
+      }
+    >
+      {isError && <AlertTriangle size={14} color="#ef4444" />}
+      <Text className={isError ? 'text-xs text-red-400' : 'text-xs text-muted-foreground'}>
+        {message}
+      </Text>
+    </View>
+  );
+}

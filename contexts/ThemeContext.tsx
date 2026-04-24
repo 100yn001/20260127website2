@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { colorScheme as nwColorScheme } from 'nativewind';
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { Platform } from 'react-native';
 
@@ -104,6 +105,11 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     loadTheme();
   }, []);
+
+  // Sync nativewind colorScheme whenever theme changes.
+  useEffect(() => {
+    nwColorScheme.set(theme);
+  }, [theme]);
 
   const loadTheme = async () => {
     try {

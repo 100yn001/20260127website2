@@ -1,214 +1,129 @@
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { useAuth } from '@/contexts/AuthContext';
-import { useTheme } from '@/contexts/ThemeContext';
 import { router } from 'expo-router';
+import { AlertTriangle } from 'lucide-react-native';
 import React, { useState } from 'react';
-import {
-    ActivityIndicator,
-    Alert,
-    KeyboardAvoidingView,
-    Platform,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Pressable, Text, View } from 'react-native';
+
+import { FlowCluster, Screen, ScreenHeader, TopBar } from '@/components/screen';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function SignUpScreen() {
   const { signUp } = useAuth();
-  const { colors } = useTheme();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [secretCode, setSecretCode] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSignUp = async () => {
+    setError(null);
     if (!email || !password || !confirmPassword || !secretCode) {
-      Alert.alert('Error', 'Please fill in all fields');
+      setError('please fill in all fields');
       return;
     }
-
     if (password !== confirmPassword) {
-      Alert.alert('Error', 'Passwords do not match');
+      setError('passwords do not match');
       return;
     }
-
     if (password.length < 6) {
-      Alert.alert('Error', 'Password must be at least 6 characters');
+      setError('password must be at least 6 characters');
       return;
     }
-
     if (secretCode.toLowerCase() !== 'fern') {
-      Alert.alert('Error', 'Invalid secret code');
+      setError('invalid secret code');
       return;
     }
-
     try {
       setLoading(true);
       await signUp(email, password);
       router.replace('/(tabs)/library');
-    } catch (error: any) {
-      Alert.alert('Sign Up Failed', error.message);
+    } catch (e: any) {
+      setError(e.message ?? 'sign up failed');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.keyboardView}
-      >
-        <View style={styles.content}>
-          <TouchableOpacity
-            onPress={() => router.back()}
-            style={styles.backButton}
-          >
-            <IconSymbol name="chevron.left" size={24} color={colors.text} />
-          </TouchableOpacity>
+    <Screen>
+      <TopBar onBack={() => router.back()} />
+      <FlowCluster>
+        <ScreenHeader title="welcome to yn" subtitle="sign up to get started" />
 
-          <Text style={[styles.title, { color: colors.text }]}>welcome to yn</Text>
-          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>sign up to get started</Text>
-
-          <View style={styles.form}>
-            <TextInput
-              style={[styles.input, { color: colors.text, borderColor: colors.border, backgroundColor: colors.background }]}
-              placeholder="Email"
-              placeholderTextColor={colors.textSecondary}
+        <View className="gap-3">
+          <Field label="email">
+            <Input
               value={email}
               onChangeText={setEmail}
+              placeholder="you@domain.com"
               autoCapitalize="none"
               keyboardType="email-address"
               editable={!loading}
             />
-
-            <TextInput
-              style={[styles.input, { color: colors.text, borderColor: colors.border, backgroundColor: colors.background }]}
-              placeholder="Password"
-              placeholderTextColor={colors.textSecondary}
+          </Field>
+          <Field label="password">
+            <Input
               value={password}
               onChangeText={setPassword}
+              placeholder="at least 6 characters"
               secureTextEntry
               editable={!loading}
             />
-
-            <TextInput
-              style={[styles.input, { color: colors.text, borderColor: colors.border, backgroundColor: colors.background }]}
-              placeholder="Confirm Password"
-              placeholderTextColor={colors.textSecondary}
+          </Field>
+          <Field label="confirm password">
+            <Input
               value={confirmPassword}
               onChangeText={setConfirmPassword}
+              placeholder="type it again"
               secureTextEntry
               editable={!loading}
             />
-
-            <TextInput
-              style={[styles.input, { color: colors.text, borderColor: colors.border, backgroundColor: colors.background }]}
-              placeholder="Secret Code"
-              placeholderTextColor={colors.textSecondary}
+          </Field>
+          <Field label="secret code">
+            <Input
               value={secretCode}
               onChangeText={setSecretCode}
+              placeholder="a quiet word"
               autoCapitalize="none"
               editable={!loading}
             />
-
-            <TouchableOpacity
-              style={[styles.button, { backgroundColor: colors.buttonBackground }, loading && styles.buttonDisabled]}
-              onPress={handleSignUp}
-              disabled={loading}
-            >
-              {loading ? (
-                <ActivityIndicator color={colors.buttonText} />
-              ) : (
-                <Text style={[styles.buttonText, { color: colors.buttonText }]}>Sign Up</Text>
-              )}
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => router.back()}
-              disabled={loading}
-            >
-              <Text style={[styles.linkText, { color: colors.textSecondary }]}>
-                Already have an account? <Text style={[styles.linkBold, { color: colors.text }]}>Sign In</Text>
-              </Text>
-            </TouchableOpacity>
-          </View>
+          </Field>
         </View>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+
+        {error && (
+          <View className="flex-row items-center gap-2 rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2">
+            <AlertTriangle size={14} color="#ef4444" />
+            <Text className="text-xs text-red-400">{error}</Text>
+          </View>
+        )}
+
+        <Button size="lg" onPress={handleSignUp} loading={loading} className="w-full">
+          create account
+        </Button>
+
+        <Pressable
+          onPress={() => router.push('/auth/login')}
+          disabled={loading}
+          className="self-center py-2"
+        >
+          <Text className="text-sm font-serif text-muted-foreground">
+            already have an account?{' '}
+            <Text className="font-serif-medium text-foreground">sign in</Text>
+          </Text>
+        </Pressable>
+      </FlowCluster>
+    </Screen>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  keyboardView: {
-    flex: 1,
-  },
-  content: {
-    flex: 1,
-    padding: 24,
-  },
-  backButton: {
-    marginBottom: 32,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: '600',
-    color: '#030213',
-    marginBottom: 8,
-    fontFamily: 'EBGaramond-Medium',
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#717182',
-    marginBottom: 48,
-    fontFamily: 'EBGaramond-Regular',
-  },
-  form: {
-    gap: 16,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#E5E5E7',
-    borderRadius: 12,
-    padding: 16,
-    fontSize: 16,
-    backgroundColor: '#fff',
-    fontFamily: 'EBGaramond-Regular',
-  },
-  button: {
-    backgroundColor: '#030213',
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  buttonDisabled: {
-    opacity: 0.5,
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-    fontFamily: 'EBGaramond-Medium',
-  },
-  linkText: {
-    textAlign: 'center',
-    color: '#717182',
-    fontSize: 14,
-    marginTop: 8,
-    fontFamily: 'EBGaramond-Regular',
-  },
-  linkBold: {
-    color: '#030213',
-    fontWeight: '600',
-    fontFamily: 'EBGaramond-Medium',
-  },
-});
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <View className="gap-1.5">
+      <Label>{label}</Label>
+      {children}
+    </View>
+  );
+}

@@ -1,40 +1,37 @@
-import React from 'react';
-import { StyleSheet, Text, View, ViewStyle } from 'react-native';
+import * as React from 'react';
+import { Text, View } from 'react-native';
+import { cn } from '@/lib/cn';
 
-interface BadgeProps {
+export function Badge({
+  children,
+  variant = 'default',
+  className,
+  textClassName,
+}: {
   children: React.ReactNode;
-  variant?: 'default' | 'secondary';
-  style?: ViewStyle;
-}
-
-export function Badge({ children, variant = 'secondary', style }: BadgeProps) {
+  variant?: 'default' | 'outline';
+  className?: string;
+  textClassName?: string;
+}) {
   return (
-    <View style={[styles.badge, styles[`badge_${variant}`], style]}>
-      <Text style={[styles.text, styles[`text_${variant}`]]}>{children}</Text>
+    <View
+      className={cn(
+        'self-start rounded-full px-3 py-1',
+        variant === 'default' && 'bg-accent',
+        variant === 'outline' && 'border border-border',
+        className
+      )}
+    >
+      <Text
+        className={cn(
+          'text-xs font-serif-medium',
+          variant === 'default' && 'text-accent-foreground',
+          variant === 'outline' && 'text-muted-foreground',
+          textClassName
+        )}
+      >
+        {children}
+      </Text>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  badge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-    alignSelf: 'flex-start',
-  },
-  badge_default: {
-    backgroundColor: '#030213',
-  },
-  badge_secondary: {
-    backgroundColor: '#ececf0',
-  },
-  text: {
-    fontSize: 11,
-  },
-  text_default: {
-    color: '#fff',
-  },
-  text_secondary: {
-    color: '#030213',
-  },
-});

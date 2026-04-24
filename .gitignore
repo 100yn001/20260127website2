@@ -3,6 +3,9 @@
 # dependencies
 node_modules/
 
+# prototype — kept local as a design reference, not shipped
+prototype-shadcn/
+
 # Expo
 .expo/
 dist/

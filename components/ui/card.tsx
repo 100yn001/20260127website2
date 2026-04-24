@@ -1,21 +1,51 @@
-import React from 'react';
-import { View, StyleSheet, ViewStyle } from 'react-native';
+import * as React from 'react';
+import { Text, View, type ViewProps } from 'react-native';
+import { cn } from '@/lib/cn';
 
-interface CardProps {
-  children: React.ReactNode;
-  style?: ViewStyle;
+export const Card = React.forwardRef<View, ViewProps & { className?: string }>(
+  function Card({ className, ...props }, ref) {
+    return (
+      <View
+        ref={ref}
+        className={cn('rounded-[var(--radius)] border border-border bg-card', className)}
+        {...props}
+      />
+    );
+  }
+);
+
+export function CardHeader({ className, ...props }: ViewProps & { className?: string }) {
+  return <View className={cn('px-5 pt-5 gap-1.5', className)} {...props} />;
 }
 
-export function Card({ children, style }: CardProps) {
-  return <View style={[styles.card, style]}>{children}</View>;
+export function CardTitle({
+  className,
+  children,
+  ...props
+}: React.ComponentProps<typeof Text> & { className?: string }) {
+  return (
+    <Text className={cn('text-[1.05rem] font-serif-medium text-foreground', className)} {...props}>
+      {children}
+    </Text>
+  );
 }
 
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.1)',
-    padding: 16,
-  },
-});
+export function CardDescription({
+  className,
+  children,
+  ...props
+}: React.ComponentProps<typeof Text> & { className?: string }) {
+  return (
+    <Text className={cn('text-sm font-serif text-muted-foreground', className)} {...props}>
+      {children}
+    </Text>
+  );
+}
+
+export function CardContent({ className, ...props }: ViewProps & { className?: string }) {
+  return <View className={cn('p-5', className)} {...props} />;
+}
+
+export function CardFooter({ className, ...props }: ViewProps & { className?: string }) {
+  return <View className={cn('flex-row items-center px-5 pb-5', className)} {...props} />;
+}
