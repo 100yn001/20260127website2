@@ -89,7 +89,7 @@ export default function NarratorsTab() {
       <View className={cn(GUTTER, 'pt-2 pb-6')}>
         <Text className="text-[1.9rem] font-serif-medium text-foreground">narrators</Text>
         <Text className="mt-1 text-[0.95rem] font-serif text-muted-foreground">
-          your saved personas — voice, tone, and relationship to you persist across stories.
+          your saved personas; voice, tone, and relationship to you persist across stories.
         </Text>
       </View>
 

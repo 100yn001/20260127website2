@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useRouter } from 'expo-router';
-import { ArrowRight, Check, Volume2, Waves } from 'lucide-react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { ArrowRight, Check, Waves } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
@@ -28,16 +28,10 @@ type Gender = 'female' | 'male' | 'custom';
 type Duration = '5min' | '10min' | '15min';
 type NameOpt = 'my-name' | 'custom' | 'nameless';
 
-const sampleVoices = [
-  { id: 'v1', name: 'ember', accent: 'southern us', mood: 'warm, lived-in' },
-  { id: 'v2', name: 'wren', accent: 'british rp', mood: 'measured, gentle' },
-  { id: 'v3', name: 'iris', accent: 'neutral us', mood: 'bright, close-miked' },
-  { id: 'v4', name: 'atlas', accent: 'irish', mood: 'low, contemplative' },
-];
-
 export default function ScratchScreen() {
   const router = useRouter();
   const { mode } = useMode();
+  const routeParams = useLocalSearchParams<{ selectedVoiceId?: string }>();
 
   const [step, setStep] = useState<Step>('idea');
   const [idea, setIdea] = useState('');
@@ -47,6 +41,8 @@ export default function ScratchScreen() {
   const [charCustom, setCharCustom] = useState('');
   const [duration, setDuration] = useState<Duration>('10min');
   const [ratio, setRatio] = useState(5);
+  const [ambient, setAmbient] = useState<'auto' | 'off' | 'custom'>('auto');
+  const [ambientPrompt, setAmbientPrompt] = useState('');
   const [nameOpt, setNameOpt] = useState<NameOpt>('my-name');
   const [customName, setCustomName] = useState('');
   const [storedName, setStoredName] = useState('User');
@@ -57,6 +53,13 @@ export default function ScratchScreen() {
       if (v) setStoredName(v);
     });
   }, []);
+
+  // Pick up voiceId returned from /voice-library
+  useEffect(() => {
+    if (routeParams.selectedVoiceId) {
+      setVoiceId(routeParams.selectedVoiceId as string);
+    }
+  }, [routeParams.selectedVoiceId]);
 
   const resolveSelf = selfGender === 'custom' ? selfCustom.trim() : selfGender;
   const resolveChar = charGender === 'custom' ? charCustom.trim() : charGender;
@@ -89,6 +92,8 @@ export default function ScratchScreen() {
         voiceId,
         prompt: idea,
         tags: JSON.stringify([]),
+        ambientMode: ambient,
+        ambientCustomPrompt: ambientPrompt,
       },
     });
   };
@@ -185,6 +190,35 @@ export default function ScratchScreen() {
               </View>
               <Slider value={ratio} onValueChange={setRatio} min={0} max={10} step={1} />
             </Card>
+            <Card className="p-5 gap-4">
+              <View className="flex-row items-baseline justify-between">
+                <Label>ambient sound</Label>
+                <Text className="text-[11px] font-serif text-muted-foreground">
+                  background layer
+                </Text>
+              </View>
+              <ToggleGroup<'auto' | 'off' | 'custom'>
+                value={ambient}
+                onValueChange={setAmbient}
+                options={[
+                  { value: 'auto', label: 'auto' },
+                  { value: 'off', label: 'off' },
+                  { value: 'custom', label: 'custom' },
+                ]}
+              />
+              {ambient === 'custom' && (
+                <Input
+                  value={ambientPrompt}
+                  onChangeText={setAmbientPrompt}
+                  placeholder="e.g. soft rain on a tin roof, distant thunder"
+                />
+              )}
+              <Text className="text-xs font-serif text-muted-foreground">
+                {ambient === 'auto' && "we'll pick ambient that fits the scene."}
+                {ambient === 'off' && 'voice only, no background layer.'}
+                {ambient === 'custom' && 'describe the soundscape you want underneath.'}
+              </Text>
+            </Card>
           </View>
           <ContinueButton onPress={() => setStep('name')} />
         </FlowCluster>
@@ -252,65 +286,40 @@ export default function ScratchScreen() {
   }
 
   /* ---------- step: voice ----------------------------------------------- */
+  const openVoiceLibrary = () => {
+    router.push({
+      pathname: '/voice-library' as never,
+      params: {
+        genderHint: resolveChar || '',
+        userName,
+      },
+    });
+  };
+
   return (
     <Screen mode={mode}>
       <TopBar onBack={onBack} step={5} total={STEPS.length} />
       <FlowCluster>
-        <ScreenHeader title="pick a voice" subtitle="preview each one" />
-        <View className="flex-row flex-wrap gap-2.5">
-          {sampleVoices.map((v) => {
-            const active = voiceId === v.id;
-            return (
-              <Pressable
-                key={v.id}
-                onPress={() => setVoiceId(v.id)}
-                style={{ width: '48%' }}
-                className={cn(
-                  'aspect-square rounded-[var(--radius)] border bg-card p-4',
-                  active ? 'border-foreground' : 'border-border'
-                )}
-              >
-                <View className="flex-1 justify-between">
-                  <View>
-                    <Text className="text-[1.05rem] font-serif-medium text-foreground">{v.name}</Text>
-                    <Text className="mt-0.5 text-[11px] font-serif text-muted-foreground uppercase tracking-wide">
-                      {v.accent}
-                    </Text>
-                    <Text className="mt-2 text-xs font-serif text-muted-foreground leading-relaxed">
-                      {v.mood}
-                    </Text>
-                  </View>
-                  <View className="flex-row items-center justify-between">
-                    <Waves size={14} color="hsl(var(--muted-foreground))" />
-                    <View
-                      className={cn(
-                        'h-8 w-8 items-center justify-center rounded-full border',
-                        active ? 'bg-primary border-primary' : 'border-border'
-                      )}
-                    >
-                      <Volume2
-                        size={14}
-                        color={
-                          active ? 'hsl(var(--primary-foreground))' : 'hsl(var(--foreground))'
-                        }
-                      />
-                    </View>
-                  </View>
-                </View>
-              </Pressable>
-            );
-          })}
-        </View>
+        <ScreenHeader title="pick a voice" subtitle="choose from real voices" />
+        <Pressable
+          onPress={openVoiceLibrary}
+          className="rounded-[var(--radius)] border border-border bg-card p-6 items-center"
+        >
+          <View className="h-14 w-14 items-center justify-center rounded-full bg-accent mb-3">
+            <Waves size={22} color="hsl(var(--foreground))" />
+          </View>
+          <Text className="text-[1.05rem] font-serif-medium text-foreground">
+            {voiceId ? 'voice selected' : 'open voice library'}
+          </Text>
+          <Text className="mt-1 text-sm font-serif text-muted-foreground text-center">
+            {voiceId ? 'tap to change' : 'browse, preview, and design voices via elevenlabs'}
+          </Text>
+        </Pressable>
         <View className="flex-row gap-2">
           <Button variant="outline" size="lg" onPress={() => setStep('name')}>
-            change
+            back
           </Button>
-          <Button
-            size="lg"
-            disabled={!voiceId}
-            onPress={handleSubmit}
-            className="flex-1"
-          >
+          <Button size="lg" disabled={!voiceId} onPress={handleSubmit} className="flex-1">
             continue
             <ArrowRight size={18} color="hsl(var(--primary-foreground))" />
           </Button>

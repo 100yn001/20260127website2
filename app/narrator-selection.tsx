@@ -8,6 +8,7 @@ import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-nati
 import { Screen, TopBar } from '@/components/screen';
 import { db } from '@/config/firebase';
 import { useAuth } from '@/contexts/AuthContext';
+import { useMode } from '@/hooks/useMode';
 
 type Narrator = {
   id: string;
@@ -21,6 +22,7 @@ type Narrator = {
 export default function NarratorSelectionScreen() {
   const router = useRouter();
   const { user } = useAuth();
+  const { mode } = useMode();
   const [narrators, setNarrators] = useState<Narrator[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -61,7 +63,7 @@ export default function NarratorSelectionScreen() {
   };
 
   return (
-    <Screen>
+    <Screen mode={mode}>
       <TopBar onBack={() => router.back()} />
       <View className="px-6 pt-2 pb-5">
         <Text className="text-[1.65rem] font-serif-medium text-foreground leading-tight">

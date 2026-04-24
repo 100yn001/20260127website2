@@ -15,16 +15,19 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Textarea } from '@/components/ui/textarea';
 import { ToggleGroup } from '@/components/ui/toggle-group';
+import { useMode } from '@/hooks/useMode';
 
 type Step = 'story' | 'narration' | 'preview';
 type Duration = '5min' | '10min' | '15min';
 
 export default function NarratorStoryScreen() {
   const router = useRouter();
+  const { mode } = useMode();
   const params = useLocalSearchParams<{
     narratorId?: string;
     narratorName?: string;
@@ -43,6 +46,8 @@ export default function NarratorStoryScreen() {
   const [prompt, setPrompt] = useState('');
   const [duration, setDuration] = useState<Duration>('10min');
   const [ratio, setRatio] = useState(5);
+  const [ambient, setAmbient] = useState<'auto' | 'off' | 'custom'>('auto');
+  const [ambientPrompt, setAmbientPrompt] = useState('');
   const [storedName, setStoredName] = useState('User');
 
   useEffect(() => {
@@ -79,6 +84,8 @@ export default function NarratorStoryScreen() {
         tags: JSON.stringify([]),
         narratorId: params.narratorId as string,
         narratorData: params.narratorData as string,
+        ambientMode: ambient,
+        ambientCustomPrompt: ambientPrompt,
       },
     });
   };
@@ -86,7 +93,7 @@ export default function NarratorStoryScreen() {
   /* ============================================================ STORY */
   if (step === 'story') {
     return (
-      <Screen>
+      <Screen mode={mode}>
         <TopBar onBack={goBack} step={stepIdx + 1} total={totalSteps} />
         <FlowCluster>
           <ScreenHeader title="what should they tell you?" />
@@ -144,7 +151,7 @@ export default function NarratorStoryScreen() {
     const descriptivePct = (10 - ratio) * 10;
     const directPct = ratio * 10;
     return (
-      <Screen>
+      <Screen mode={mode}>
         <TopBar onBack={goBack} step={stepIdx + 1} total={totalSteps} />
         <FlowCluster>
           <ScreenHeader title="narration style" subtitle="pacing and duration" />
@@ -170,6 +177,30 @@ export default function NarratorStoryScreen() {
               </View>
               <Slider value={ratio} onValueChange={setRatio} min={0} max={10} step={1} />
             </Card>
+            <Card className="p-5 gap-4">
+              <View className="flex-row items-baseline justify-between">
+                <Label>ambient sound</Label>
+                <Text className="text-[11px] font-serif text-muted-foreground">
+                  background layer
+                </Text>
+              </View>
+              <ToggleGroup<'auto' | 'off' | 'custom'>
+                value={ambient}
+                onValueChange={setAmbient}
+                options={[
+                  { value: 'auto', label: 'auto' },
+                  { value: 'off', label: 'off' },
+                  { value: 'custom', label: 'custom' },
+                ]}
+              />
+              {ambient === 'custom' && (
+                <Input
+                  value={ambientPrompt}
+                  onChangeText={setAmbientPrompt}
+                  placeholder="e.g. soft rain on a tin roof, distant thunder"
+                />
+              )}
+            </Card>
           </View>
           <ContinueButton onPress={() => setStep('preview')} />
         </FlowCluster>
@@ -179,7 +210,7 @@ export default function NarratorStoryScreen() {
 
   /* ============================================================ PREVIEW */
   return (
-    <Screen>
+    <Screen mode={mode}>
       <TopBar onBack={goBack} step={stepIdx + 1} total={totalSteps} />
       <FlowCluster className="items-center">
         {narrator && (

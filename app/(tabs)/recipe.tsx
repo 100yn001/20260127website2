@@ -8,7 +8,6 @@ import {
   ChevronRight,
   Shuffle,
   Sparkles,
-  Volume2,
   Waves,
 } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
@@ -65,13 +64,6 @@ const featureList = [
   'toys',
   'biting',
   'cuddling',
-];
-
-const voices = [
-  { id: 'v1', name: 'ember', accent: 'southern us', mood: 'warm, lived-in' },
-  { id: 'v2', name: 'wren', accent: 'british rp', mood: 'measured, gentle' },
-  { id: 'v3', name: 'iris', accent: 'neutral us', mood: 'bright, close-miked' },
-  { id: 'v4', name: 'atlas', accent: 'irish', mood: 'low, contemplative' },
 ];
 
 export default function RecipeScreen() {
@@ -439,57 +431,36 @@ export default function RecipeScreen() {
 
   /* ============================================================ VOICE */
   if (step === 'voice') {
+    const openVoiceLibrary = () => {
+      router.push({
+        pathname: '/voice-library' as never,
+        params: {
+          genderHint: charGender === 'custom' ? charCustom : charGender ?? '',
+          userName,
+        },
+      });
+    };
     return (
       <Screen mode={mode}>
         <TopBar onBack={goBack} step={progress} total={total} />
         <FlowCluster>
-          <ScreenHeader title="pick a voice" subtitle="preview each one" />
-          <View className="flex-row flex-wrap gap-2.5">
-            {voices.map((v) => {
-              const active = voiceId === v.id;
-              return (
-                <Pressable
-                  key={v.id}
-                  onPress={() => setVoiceId(v.id)}
-                  style={{ width: '48%' }}
-                  className={cn(
-                    'aspect-square rounded-[var(--radius)] border bg-card p-4',
-                    active ? 'border-foreground' : 'border-border'
-                  )}
-                >
-                  <View className="flex-1 justify-between">
-                    <View>
-                      <Text className="text-[1.05rem] font-serif-medium text-foreground">
-                        {v.name}
-                      </Text>
-                      <Text className="mt-0.5 text-[11px] font-serif text-muted-foreground uppercase tracking-wide">
-                        {v.accent}
-                      </Text>
-                      <Text className="mt-2 text-xs font-serif text-muted-foreground leading-relaxed">
-                        {v.mood}
-                      </Text>
-                    </View>
-                    <View className="flex-row items-center justify-between">
-                      <Waves size={14} color="hsl(var(--muted-foreground))" />
-                      <View
-                        className={cn(
-                          'h-8 w-8 items-center justify-center rounded-full border',
-                          active ? 'bg-primary border-primary' : 'border-border'
-                        )}
-                      >
-                        <Volume2
-                          size={14}
-                          color={
-                            active ? 'hsl(var(--primary-foreground))' : 'hsl(var(--foreground))'
-                          }
-                        />
-                      </View>
-                    </View>
-                  </View>
-                </Pressable>
-              );
-            })}
-          </View>
+          <ScreenHeader title="pick a voice" subtitle="choose from real voices" />
+          <Pressable
+            onPress={openVoiceLibrary}
+            className="rounded-[var(--radius)] border border-border bg-card p-6 items-center"
+          >
+            <View className="h-14 w-14 items-center justify-center rounded-full bg-accent mb-3">
+              <Waves size={22} color="hsl(var(--foreground))" />
+            </View>
+            <Text className="text-[1.05rem] font-serif-medium text-foreground">
+              {voiceId ? 'voice selected' : 'open voice library'}
+            </Text>
+            <Text className="mt-1 text-sm font-serif text-muted-foreground text-center">
+              {voiceId
+                ? 'tap to change'
+                : 'browse, preview, and design voices via elevenlabs'}
+            </Text>
+          </Pressable>
           <ContinueButton disabled={!voiceId} onPress={goNext} />
         </FlowCluster>
       </Screen>

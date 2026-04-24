@@ -122,7 +122,7 @@ export function ContinueCard({ story, onPress }: { story: CardStory; onPress?: (
   const pct = story.progressPct ?? 0;
   const remaining = Math.max(0, Math.round(story.durationMin * (1 - pct / 100)));
   return (
-    <Pressable onPress={onPress} style={{ width: 160 }}>
+    <Pressable onPress={onPress} className="w-[160px] md:w-[210px] lg:w-[230px]">
       <View className="relative">
         <StoryArtwork cover={story.cover} nighttime={story.nighttime} />
         <View className="absolute left-2 right-2 bottom-2">
@@ -152,7 +152,7 @@ export function ContinueCard({ story, onPress }: { story: CardStory; onPress?: (
 
 export function ShelfCard({ story, onPress }: { story: CardStory; onPress?: () => void }) {
   return (
-    <Pressable onPress={onPress} style={{ width: 140 }}>
+    <Pressable onPress={onPress} className="w-[140px] md:w-[180px] lg:w-[200px]">
       <StoryArtwork cover={story.cover} nighttime={story.nighttime} />
       <View className="mt-2 px-0.5">
         <Text className="text-[0.9rem] font-serif-medium text-foreground" numberOfLines={1}>

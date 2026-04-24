@@ -21,6 +21,7 @@ import {
 } from '@/components/screen';
 import { Button } from '@/components/ui/button';
 import { useStoryQueue } from '@/contexts/StoryQueueContext';
+import { useMode } from '@/hooks/useMode';
 import { cn } from '@/lib/cn';
 
 type MsgType = 'bot' | 'user';
@@ -41,6 +42,7 @@ export default function FollowUpScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const { addToQueue } = useStoryQueue();
+  const { mode } = useMode();
 
   const [showIntro, setShowIntro] = useState(true);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -175,7 +177,7 @@ export default function FollowUpScreen() {
   /* ============================================================ INTRO */
   if (showIntro) {
     return (
-      <Screen>
+      <Screen mode={mode} auraIntensity="subtle">
         <TopBar onBack={() => router.back()} />
         <FlowCluster className="items-center">
           <View className="h-14 w-14 items-center justify-center rounded-full bg-accent self-center">
@@ -213,7 +215,7 @@ export default function FollowUpScreen() {
 
   /* ============================================================ CHAT */
   return (
-    <Screen>
+    <Screen mode={mode} auraIntensity="subtle">
       <TopBar
         onBack={() => setShowIntro(true)}
         right={

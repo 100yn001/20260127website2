@@ -202,7 +202,16 @@ export default function ProfileScreen() {
                     {TINTS.map((t) => (
                       <Pressable
                         key={t.id}
-                        onPress={() => setTintId(t.id)}
+                        onPress={async () => {
+                          setTintId(t.id);
+                          if (user) {
+                            try {
+                              await updateUserProfile(user.uid, { artworkTint: t.id } as any);
+                            } catch (e) {
+                              console.error('[profile] tint save failed', e);
+                            }
+                          }
+                        }}
                         className={cn(
                           'h-5 w-5 overflow-hidden rounded-full',
                           tintId === t.id && 'border-2 border-foreground'

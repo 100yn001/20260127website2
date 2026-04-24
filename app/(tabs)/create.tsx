@@ -3,7 +3,6 @@ import { ArrowUpRight, BookOpenText, Check, MicVocal, Moon, Sparkles, Sun } from
 import React, { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
-import { ProfileButton } from '@/components/profile-button';
 import {
   ContinueButton,
   FlowCluster,
@@ -50,7 +49,7 @@ export default function CreateScreen() {
   if (stage === 'mode') {
     return (
       <Screen mode={mode} auraIntensity="full">
-        <TopBar right={<ProfileButton />} />
+        <TopBar />
         <FlowCluster>
           <ScreenHeader title="what's the mood?" subtitle="pick a mode" />
           <View className="gap-3">
@@ -78,7 +77,7 @@ export default function CreateScreen() {
   // stage === 'pick'
   return (
     <Screen mode={mode} auraIntensity="subtle">
-      <TopBar onBack={() => setStage('mode')} right={<ProfileButton />} />
+      <TopBar onBack={() => setStage('mode')} />
       <FlowCluster>
         <ScreenHeader title="how should we start?" subtitle="pick a starting point" />
         <View className="gap-2.5">

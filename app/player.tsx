@@ -1,11 +1,11 @@
 import RNSlider from '@react-native-community/slider';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useColorScheme as useNWColorScheme } from 'nativewind';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { doc, getDoc } from 'firebase/firestore';
 import {
   Bookmark,
   BookOpenText,
-  Gauge,
   MoreHorizontal,
   Pause,
   Play,
@@ -16,14 +16,12 @@ import {
   X,
 } from 'lucide-react-native';
 import React, { useEffect, useMemo, useState } from 'react';
-import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import { Modal, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 
 import { Screen, TopBar } from '@/components/screen';
 import { db } from '@/config/firebase';
 import { useAudioPlayer } from '@/contexts/AudioPlayerContext';
 import { cn } from '@/lib/cn';
-
-const SPEEDS = [0.75, 1, 1.25, 1.5, 2] as const;
 
 export default function PlayerScreen() {
   const router = useRouter();
@@ -44,34 +42,43 @@ export default function PlayerScreen() {
   } = useAudioPlayer();
 
   const [story, setStory] = useState<any>(null);
-  const [speed, setSpeed] = useState<(typeof SPEEDS)[number]>(1);
   const [bookmarked, setBookmarked] = useState(false);
   const [transcriptOpen, setTranscriptOpen] = useState(false);
-  const [speedMenu, setSpeedMenu] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       if (!id) return;
       try {
-        const snap = await getDoc(doc(db, 'stories', id));
-        if (cancelled || !snap.exists()) return;
+        // Try user stories first, then public library.
+        let snap = await getDoc(doc(db, 'stories', id));
+        if (!snap.exists()) {
+          snap = await getDoc(doc(db, 'publicStories', id));
+        }
+        if (cancelled || !snap.exists()) {
+          console.warn('[player] story not found in stories or publicStories', id);
+          return;
+        }
         const data = snap.data() as any;
         setStory({ id: snap.id, ...data });
-        if (data.audioUrl || (data.audioChunkURLs && data.audioChunkURLs.length)) {
-          await loadTrack(
-            {
-              id: snap.id,
-              title: data.title ?? 'untitled',
-              audioUrl: data.audioUrl,
-              audioChunkURLs: data.audioChunkURLs,
-              transcript: data.transcript,
-              coverColor: data.coverColor,
-              metadata: data,
-            },
-            true
-          );
+        const hasAudio =
+          !!data.audioUrl || (Array.isArray(data.audioChunkURLs) && data.audioChunkURLs.length);
+        if (!hasAudio) {
+          console.warn('[player] story has no audio yet', id);
+          return;
         }
+        await loadTrack(
+          {
+            id: snap.id,
+            title: data.title ?? 'untitled',
+            audioUrl: data.audioUrl,
+            audioChunkURLs: data.audioChunkURLs,
+            transcript: data.transcript,
+            coverColor: data.coverColor,
+            metadata: data,
+          },
+          true
+        );
       } catch (e) {
         console.error('[player] load failed', e);
       }
@@ -120,15 +127,7 @@ export default function PlayerScreen() {
           </View>
 
           <View className="mt-7 w-full">
-            <RNSlider
-              value={pos}
-              minimumValue={0}
-              maximumValue={dur}
-              onSlidingComplete={(v) => seek(v)}
-              minimumTrackTintColor="hsl(var(--primary))"
-              maximumTrackTintColor="hsl(var(--border))"
-              thumbTintColor="hsl(var(--primary))"
-            />
+            <PlayerScrubber value={pos} max={dur} onSlidingComplete={(v) => seek(v)} />
             <View className="mt-1 flex-row items-center justify-between">
               <Text className="text-[11px] font-sans text-foreground/60">{fmt(pos / 1000)}</Text>
               <Text className="text-[11px] font-sans text-foreground/60">-{fmt(remaining)}</Text>
@@ -142,6 +141,7 @@ export default function PlayerScreen() {
             <Pressable
               onPress={togglePlayPause}
               className="h-16 w-16 items-center justify-center rounded-full bg-foreground"
+              style={Platform.OS === 'web' ? ({ outlineWidth: 0 } as any) : undefined}
             >
               {isPlaying ? (
                 <Pause size={24} color="hsl(var(--background))" />
@@ -154,18 +154,7 @@ export default function PlayerScreen() {
             </Pressable>
           </View>
 
-          <View className="mt-8 flex-row items-center justify-between gap-2 w-full max-w-[360px]">
-            <Pressable
-              onPress={() => setSpeedMenu((v) => !v)}
-              className={cn(
-                'h-9 px-3 flex-row items-center gap-1.5 rounded-full',
-                speedMenu && 'bg-accent'
-              )}
-            >
-              <Gauge size={14} color="hsl(var(--foreground))" />
-              <Text className="text-xs font-sans text-foreground">{speed}×</Text>
-            </Pressable>
-
+          <View className="mt-8 flex-row items-center justify-center gap-3 w-full max-w-[360px]">
             {hasAmbient && (
               <Chip
                 active={ambientEnabled}
@@ -194,27 +183,6 @@ export default function PlayerScreen() {
           </View>
         </View>
       </View>
-
-      {speedMenu && (
-        <View
-          style={{ position: 'absolute', left: 20, bottom: 160, zIndex: 50 }}
-          className="min-w-[110px] rounded-xl border border-border bg-card py-1"
-        >
-          {SPEEDS.map((s) => (
-            <Pressable
-              key={s}
-              onPress={() => {
-                setSpeed(s);
-                setSpeedMenu(false);
-              }}
-              className="px-3 py-1.5 flex-row items-center justify-between"
-            >
-              <Text className="text-sm font-sans text-foreground">{s}×</Text>
-              {s === speed && <View className="h-1.5 w-1.5 rounded-full bg-foreground" />}
-            </Pressable>
-          ))}
-        </View>
-      )}
 
       <Modal
         visible={transcriptOpen}
@@ -250,6 +218,32 @@ export default function PlayerScreen() {
         </View>
       </Modal>
     </Screen>
+  );
+}
+
+function PlayerScrubber({
+  value,
+  max,
+  onSlidingComplete,
+}: {
+  value: number;
+  max: number;
+  onSlidingComplete: (v: number) => void;
+}) {
+  const { colorScheme } = useNWColorScheme();
+  const isDark = colorScheme === 'dark';
+  const primary = isDark ? '#fafafa' : '#151519';
+  const track = isDark ? '#2b2b2b' : '#d9dae0';
+  return (
+    <RNSlider
+      value={value}
+      minimumValue={0}
+      maximumValue={max}
+      onSlidingComplete={onSlidingComplete}
+      minimumTrackTintColor={primary}
+      maximumTrackTintColor={track}
+      thumbTintColor={primary}
+    />
   );
 }
 

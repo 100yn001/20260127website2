@@ -52,10 +52,13 @@ export default function VaultScreen() {
       (snap) => {
         const items: CardStory[] = snap.docs.map((d) => {
           const data = d.data() as any;
+          const rawDur = Number(data.duration);
+          const durationMin =
+            Number.isFinite(rawDur) && rawDur > 0 ? Math.max(1, Math.round(rawDur / 60)) : 10;
           return {
             id: d.id,
             title: data.title ?? 'untitled',
-            durationMin: Math.max(1, Math.round((data.duration ?? 600) / 60)),
+            durationMin,
             cover: coverFor(data.coverColor ?? d.id),
             nighttime: !!data.isNighttime,
             narrator: data.narratorName,
@@ -177,18 +180,29 @@ export default function VaultScreen() {
               </Text>
             </View>
             <View className="gap-2">
-              {queue.map((item) => (
-                <QueueRow
-                  key={item.id}
-                  title={item.recipeData?.setting || item.recipeData?.prompt?.slice(0, 40) || 'new story'}
-                  character={item.recipeData?.character || item.recipeData?.narratorData?.name}
-                  progressPct={Math.round(item.progress * 100)}
-                  status={item.status}
-                  error={item.error}
-                  onRetry={() => retryStory(item.id)}
-                  onDismiss={() => removeFromQueue(item.id)}
-                />
-              ))}
+              {queue.map((item) => {
+                const raw = Number(item.progress ?? 0);
+                // progress is sometimes 0..1 (fraction), sometimes 0..100 (percentage)
+                // depending on where in the pipeline it was written from. Normalize.
+                const normalized = raw <= 1 ? raw * 100 : raw;
+                const progressPct = Math.max(0, Math.min(100, Math.round(normalized)));
+                return (
+                  <QueueRow
+                    key={item.id}
+                    title={
+                      item.recipeData?.setting ||
+                      item.recipeData?.prompt?.slice(0, 40) ||
+                      'new story'
+                    }
+                    character={item.recipeData?.character || item.recipeData?.narratorData?.name}
+                    progressPct={progressPct}
+                    status={item.status}
+                    error={item.error}
+                    onRetry={() => retryStory(item.id)}
+                    onDismiss={() => removeFromQueue(item.id)}
+                  />
+                );
+              })}
             </View>
           </View>
         )}
