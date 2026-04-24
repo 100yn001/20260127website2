@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Image as ExpoImage } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import {
@@ -11,28 +12,21 @@ import {
   Sun,
   Trash2,
   UserRound,
+  X,
 } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
-import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, Modal, Pressable, ScrollView, Text, View } from 'react-native';
 
 import { Screen, TopBar } from '@/components/screen';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { TINTS, useArtworkTint } from '@/hooks/useArtworkTint';
 import { cn } from '@/lib/cn';
 import { getUserProfile, updateUserProfile } from '@/services/user-service';
 
 const GUTTER = 'px-5 sm:px-8 md:px-10 lg:px-14';
-
-const TINTS = [
-  { id: 'amber', a: '#e5d6b8', b: '#8a8055' },
-  { id: 'rose', a: '#e8d2c1', b: '#a37257' },
-  { id: 'sky', a: '#c4d6ef', b: '#6a8fb8' },
-  { id: 'sage', a: '#cde0d2', b: '#5f8d66' },
-  { id: 'lilac', a: '#e5d1e8', b: '#a57aa5' },
-  { id: 'slate', a: '#c7cfda', b: '#54606f' },
-];
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -42,10 +36,12 @@ export default function ProfileScreen() {
   const [name, setName] = useState('friend');
   const [editingName, setEditingName] = useState(false);
   const [notifications, setNotifications] = useState(true);
-  const [tintId, setTintId] = useState('rose');
+  const currentTint = useArtworkTint();
   const [storyCount, setStoryCount] = useState<number>(0);
   const [narratorCount, setNarratorCount] = useState<number>(0);
   const [bookmarkCount, setBookmarkCount] = useState<number>(0);
+  const [silverCard, setSilverCard] = useState<any>(null);
+  const [showCard, setShowCard] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -53,10 +49,8 @@ export default function ProfileScreen() {
       try {
         const profile = await getUserProfile(user.uid);
         if (profile?.name) setName(profile.name);
-        if (typeof (profile as any)?.artworkTint === 'string') {
-          setTintId((profile as any).artworkTint);
-        }
         setBookmarkCount(profile?.bookmarks?.length ?? 0);
+        if ((profile as any)?.silverCard) setSilverCard((profile as any).silverCard);
       } catch {}
     })();
   }, [user?.uid]);
@@ -97,7 +91,7 @@ export default function ProfileScreen() {
     ]);
   };
 
-  const tint = TINTS.find((t) => t.id === tintId) ?? TINTS[0];
+  const tint = currentTint;
   const isDark = theme === 'dark';
 
   return (
@@ -149,6 +143,49 @@ export default function ProfileScreen() {
               <Stat value={bookmarkCount} label="bookmarks" />
             </View>
           </View>
+
+          {silverCard && (
+            <Pressable
+              onPress={() => setShowCard(true)}
+              className="rounded-[var(--radius)] border border-border bg-card p-5"
+            >
+              <View className="flex-row items-center justify-between">
+                <View className="flex-row items-center gap-3">
+                  <View
+                    className="h-10 w-8 overflow-hidden rounded-md bg-muted"
+                    style={
+                      silverCard.imageUrl
+                        ? undefined
+                        : {
+                            // subtle placeholder tint if image missing
+                            backgroundColor: '#1f1f1f',
+                          }
+                    }
+                  >
+                    {silverCard.imageUrl ? (
+                      <ExpoImage
+                        source={{ uri: silverCard.imageUrl }}
+                        style={{ width: '100%', height: '100%' }}
+                        contentFit="cover"
+                      />
+                    ) : null}
+                  </View>
+                  <View>
+                    <Text className="text-[1.05rem] font-serif-medium text-foreground">
+                      your card
+                    </Text>
+                    <Text
+                      className="mt-0.5 text-sm font-serif text-muted-foreground"
+                      numberOfLines={1}
+                    >
+                      {silverCard.archetypeTitle ?? 'silver archetype'}
+                    </Text>
+                  </View>
+                </View>
+                <ChevronRight size={16} color="hsl(var(--muted-foreground))" />
+              </View>
+            </Pressable>
+          )}
 
           <Pressable
             onPress={() => router.navigate('/(tabs)/narrators')}
@@ -203,7 +240,6 @@ export default function ProfileScreen() {
                       <Pressable
                         key={t.id}
                         onPress={async () => {
-                          setTintId(t.id);
                           if (user) {
                             try {
                               await updateUserProfile(user.uid, { artworkTint: t.id } as any);
@@ -214,7 +250,7 @@ export default function ProfileScreen() {
                         }}
                         className={cn(
                           'h-5 w-5 overflow-hidden rounded-full',
-                          tintId === t.id && 'border-2 border-foreground'
+                          currentTint.id === t.id && 'border-2 border-foreground'
                         )}
                       >
                         <LinearGradient
@@ -252,7 +288,65 @@ export default function ProfileScreen() {
           </View>
         </View>
       </ScrollView>
+
+      <Modal
+        visible={showCard}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowCard(false)}
+      >
+        <Pressable
+          onPress={() => setShowCard(false)}
+          className="flex-1 items-center justify-center bg-black/80 px-6"
+        >
+          <Pressable className="w-full max-w-[360px] rounded-[var(--radius)] border border-border bg-card overflow-hidden">
+            <View className="flex-row items-center justify-between px-5 pt-4 pb-2">
+              <View>
+                <Text className="text-[11px] font-serif text-muted-foreground">your card</Text>
+                <Text className="text-base font-serif-medium text-foreground" numberOfLines={1}>
+                  {silverCard?.archetypeTitle ?? 'silver archetype'}
+                </Text>
+              </View>
+              <Pressable
+                onPress={() => setShowCard(false)}
+                className="h-8 w-8 items-center justify-center rounded-full"
+              >
+                <X size={16} color="hsl(var(--foreground))" />
+              </Pressable>
+            </View>
+            {silverCard?.imageUrl && (
+              <View className="aspect-[5/8]">
+                <ExpoImage
+                  source={{ uri: silverCard.imageUrl }}
+                  style={{ width: '100%', height: '100%' }}
+                  contentFit="cover"
+                />
+              </View>
+            )}
+            {(silverCard?.heroSub || silverCard?.museSub || silverCard?.shadowSub) && (
+              <View className="p-5 gap-2">
+                {silverCard?.heroSub && (
+                  <CardLine label="hero" value={silverCard.heroSub} />
+                )}
+                {silverCard?.museSub && <CardLine label="muse" value={silverCard.museSub} />}
+                {silverCard?.shadowSub && (
+                  <CardLine label="shadow" value={silverCard.shadowSub} />
+                )}
+              </View>
+            )}
+          </Pressable>
+        </Pressable>
+      </Modal>
     </Screen>
+  );
+}
+
+function CardLine({ label, value }: { label: string; value: string }) {
+  return (
+    <View className="flex-row items-baseline gap-3">
+      <Text className="text-[11px] font-serif text-muted-foreground w-14">{label}</Text>
+      <Text className="flex-1 text-sm font-serif text-foreground">{value}</Text>
+    </View>
   );
 }
 

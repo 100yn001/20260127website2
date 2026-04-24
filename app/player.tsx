@@ -90,9 +90,24 @@ export default function PlayerScreen() {
 
   const cover = useMemo(() => coverFor(story?.coverColor ?? id ?? 'x'), [story, id]);
   const mode = story?.isNighttime ? 'night' : 'day';
-  const dur = Math.max(1, duration || (story?.duration ?? 600) * 1000);
-  const pos = Math.min(position, dur);
-  const remaining = Math.max(0, Math.floor((dur - pos) / 1000));
+
+  // Defensive math — `duration` and `position` come from the audio context
+  // and can be undefined / NaN during the first render while chunks load.
+  const safeDuration = Number.isFinite(duration) && duration > 0 ? duration : NaN;
+  const fallbackMs =
+    Number.isFinite(story?.duration) && story?.duration > 0
+      ? Math.round(story.duration * 1000)
+      : 0;
+  const dur = Number.isFinite(safeDuration)
+    ? safeDuration
+    : fallbackMs > 0
+    ? fallbackMs
+    : 0;
+  const safePosition = Number.isFinite(position) && position >= 0 ? position : 0;
+  const pos = dur > 0 ? Math.min(safePosition, dur) : safePosition;
+  const remaining = dur > 0 ? Math.max(0, Math.floor((dur - pos) / 1000)) : 0;
+  const timingReady = dur > 0;
+  const titleReady = !!story?.title;
 
   return (
     <Screen wide mode={mode as 'night' | 'day'} auraIntensity="subtle">
@@ -117,20 +132,32 @@ export default function PlayerScreen() {
           </View>
 
           <View className="mt-6 w-full">
-            <Text className="text-center text-[1.5rem] font-serif-medium text-foreground">
-              {story?.title ?? currentTrack?.title ?? 'loading…'}
-            </Text>
-            <Text className="mt-1.5 text-center text-sm font-serif text-foreground/70">
-              {story?.narratorName ?? '—'}
-              {story?.character ? <>  ·  {story.character}</> : null}
-            </Text>
+            {titleReady ? (
+              <Text className="text-center text-[1.5rem] font-serif-medium text-foreground">
+                {story.title}
+              </Text>
+            ) : (
+              <View className="self-center h-6 w-48 rounded-full bg-muted" />
+            )}
+            {titleReady ? (
+              <Text className="mt-1.5 text-center text-sm font-serif text-foreground/70">
+                {story.narratorName ?? (story.character ? story.character : '—')}
+                {story.narratorName && story.character ? <>  ·  {story.character}</> : null}
+              </Text>
+            ) : (
+              <View className="self-center mt-2 h-3 w-28 rounded-full bg-muted" />
+            )}
           </View>
 
           <View className="mt-7 w-full">
-            <PlayerScrubber value={pos} max={dur} onSlidingComplete={(v) => seek(v)} />
+            <PlayerScrubber value={pos} max={Math.max(dur, 1)} onSlidingComplete={(v) => seek(v)} />
             <View className="mt-1 flex-row items-center justify-between">
-              <Text className="text-[11px] font-sans text-foreground/60">{fmt(pos / 1000)}</Text>
-              <Text className="text-[11px] font-sans text-foreground/60">-{fmt(remaining)}</Text>
+              <Text className="text-[11px] font-sans text-foreground/60">
+                {timingReady ? fmt(pos / 1000) : '--:--'}
+              </Text>
+              <Text className="text-[11px] font-sans text-foreground/60">
+                {timingReady ? `-${fmt(remaining)}` : '--:--'}
+              </Text>
             </View>
           </View>
 

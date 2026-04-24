@@ -1,12 +1,13 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { collection, getDocs } from 'firebase/firestore';
-import { Globe, Plus } from 'lucide-react-native';
-import React, { useEffect, useState } from 'react';
+import { Globe, Plus, Search } from 'lucide-react-native';
+import React, { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from 'react-native';
 
 import { Screen, TopBar } from '@/components/screen';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { db } from '@/config/firebase';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/cn';
@@ -19,10 +20,12 @@ type PublicNarrator = {
   name: string;
   gender?: string;
   relationship?: string;
-  colorA?: string;
-  colorB?: string;
+  color?: string;
+  username?: string;
+  usernameLowercase?: string;
   storyCount?: number;
   accent?: string;
+  raw: any;
 };
 
 export default function PublicNarratorsScreen() {
@@ -31,6 +34,7 @@ export default function PublicNarratorsScreen() {
   const [narrators, setNarrators] = useState<PublicNarrator[]>([]);
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState<string | null>(null);
+  const [q, setQ] = useState('');
 
   useEffect(() => {
     (async () => {
@@ -44,10 +48,12 @@ export default function PublicNarratorsScreen() {
               name: data.name ?? 'unnamed',
               gender: data.gender,
               relationship: data.relationship,
-              colorA: data.colorA ?? '#e8d2c1',
-              colorB: data.colorB ?? '#a37257',
+              color: data.color,
+              username: data.username,
+              usernameLowercase: data.usernameLowercase,
               storyCount: data.storyCount ?? 0,
               accent: data.accent,
+              raw: data,
             };
           })
         );
@@ -59,6 +65,17 @@ export default function PublicNarratorsScreen() {
     })();
   }, []);
 
+  const filtered = useMemo(() => {
+    const term = q.trim().toLowerCase();
+    if (!term) return narrators;
+    return narrators.filter(
+      (n) =>
+        n.username?.toLowerCase().includes(term) ||
+        n.usernameLowercase?.includes(term) ||
+        n.name.toLowerCase().includes(term)
+    );
+  }, [q, narrators]);
+
   const saveToLibrary = async (n: PublicNarrator) => {
     if (!user) {
       Alert.alert('sign in required', 'please sign in to save narrators');
@@ -66,7 +83,7 @@ export default function PublicNarratorsScreen() {
     }
     setAdding(n.id);
     try {
-      await clonePublicNarratorToUser(n.id, user.uid);
+      await clonePublicNarratorToUser({ id: n.id, ...n.raw } as any, user.uid);
       router.replace('/(tabs)/narrators');
     } catch (e: any) {
       Alert.alert('save failed', e?.message ?? 'please try again');
@@ -78,7 +95,7 @@ export default function PublicNarratorsScreen() {
   return (
     <Screen wide>
       <TopBar onBack={() => router.back()} />
-      <View className={cn(GUTTER, 'pt-2 pb-6')}>
+      <View className={cn(GUTTER, 'pt-2 pb-4')}>
         <View className="flex-row items-center gap-2 mb-1">
           <Globe size={18} color="hsl(var(--foreground))" />
           <Text className="text-[1.9rem] font-serif-medium text-foreground">public narrators</Text>
@@ -86,73 +103,131 @@ export default function PublicNarratorsScreen() {
         <Text className="mt-1 text-[0.95rem] font-serif text-muted-foreground">
           discover personas shared by the community.
         </Text>
+
+        <View className="mt-4 relative">
+          <View className="absolute left-3 top-0 bottom-0 justify-center z-10">
+            <Search size={14} color="hsl(var(--muted-foreground))" />
+          </View>
+          <Input
+            value={q}
+            onChangeText={setQ}
+            placeholder="search by username or name"
+            autoCapitalize="none"
+            className="h-10 pl-9 rounded-full"
+          />
+        </View>
       </View>
 
       {loading ? (
         <View className="py-10 items-center">
           <ActivityIndicator color="hsl(var(--foreground))" />
         </View>
-      ) : narrators.length === 0 ? (
+      ) : filtered.length === 0 ? (
         <View className="flex-1 items-center justify-center px-6">
           <Text className="text-sm font-serif text-muted-foreground text-center">
-            no public narrators yet — check back soon.
+            {q.trim()
+              ? `no matches for "${q}"`
+              : 'no public narrators yet — check back soon.'}
           </Text>
         </View>
       ) : (
         <ScrollView contentContainerStyle={{ paddingBottom: 110 }}>
           <View className={cn(GUTTER, 'flex-row flex-wrap gap-3')}>
-            {narrators.map((n) => (
-              <View
-                key={n.id}
-                className="rounded-[var(--radius)] border border-border bg-card p-5"
-                style={{ flexBasis: 320, flexGrow: 1 }}
-              >
-                <View className="flex-row items-start gap-4">
-                  <View className="h-16 w-16 overflow-hidden rounded-full shrink-0">
-                    <LinearGradient
-                      colors={[n.colorA ?? '#e8d2c1', n.colorB ?? '#a37257']}
-                      start={{ x: 0.3, y: 0.25 }}
-                      end={{ x: 1, y: 1 }}
-                      style={{ flex: 1 }}
-                    />
-                  </View>
-                  <View className="flex-1 min-w-0">
-                    <Text className="text-[1.1rem] font-serif-medium text-foreground">
-                      {n.name}
-                    </Text>
-                    <Text className="mt-0.5 text-xs font-serif text-muted-foreground">
-                      {n.gender ?? ''}
-                      {n.accent ? <>  ·  {n.accent}</> : null}
-                    </Text>
-                    {n.relationship && (
-                      <Text
-                        className="mt-1.5 text-sm font-serif text-muted-foreground leading-relaxed"
-                        numberOfLines={2}
-                      >
-                        {n.relationship}
-                      </Text>
-                    )}
-                    {typeof n.storyCount === 'number' && n.storyCount > 0 && (
-                      <Text className="mt-2 text-[11px] font-sans text-muted-foreground">
-                        {n.storyCount} {n.storyCount === 1 ? 'story' : 'stories'}
-                      </Text>
-                    )}
-                  </View>
-                </View>
-                <Button
-                  size="sm"
-                  className="mt-4 w-full"
-                  loading={adding === n.id}
-                  onPress={() => saveToLibrary(n)}
+            {filtered.map((n) => {
+              const cover = narratorCover(n.color ?? n.id);
+              return (
+                <View
+                  key={n.id}
+                  className="rounded-[var(--radius)] border border-border bg-card p-5"
+                  style={{ flexBasis: 320, flexGrow: 1 }}
                 >
-                  <Plus size={14} color="hsl(var(--primary-foreground))" />
-                  save to my library
-                </Button>
-              </View>
-            ))}
+                  <View className="flex-row items-start gap-4">
+                    <View className="h-16 w-16 overflow-hidden rounded-full shrink-0">
+                      <LinearGradient
+                        colors={[cover.a, cover.b]}
+                        start={{ x: 0.3, y: 0.25 }}
+                        end={{ x: 1, y: 1 }}
+                        style={{ flex: 1 }}
+                      />
+                    </View>
+                    <View className="flex-1 min-w-0">
+                      <View className="flex-row items-center gap-2 flex-wrap">
+                        <Text className="text-[1.1rem] font-serif-medium text-foreground">
+                          {n.name}
+                        </Text>
+                        {n.username && (
+                          <Text className="text-xs font-serif text-muted-foreground">
+                            @{n.username}
+                          </Text>
+                        )}
+                      </View>
+                      <Text className="mt-0.5 text-xs font-serif text-muted-foreground">
+                        {n.gender ?? ''}
+                        {n.accent ? <>  ·  {n.accent}</> : null}
+                      </Text>
+                      {n.relationship && (
+                        <Text
+                          className="mt-1.5 text-sm font-serif text-muted-foreground leading-relaxed"
+                          numberOfLines={2}
+                        >
+                          {n.relationship}
+                        </Text>
+                      )}
+                      {typeof n.storyCount === 'number' && n.storyCount > 0 && (
+                        <Text className="mt-2 text-[11px] font-sans text-muted-foreground">
+                          {n.storyCount} {n.storyCount === 1 ? 'story' : 'stories'}
+                        </Text>
+                      )}
+                    </View>
+                  </View>
+                  <Button
+                    size="sm"
+                    className="mt-4 w-full"
+                    loading={adding === n.id}
+                    onPress={() => saveToLibrary(n)}
+                  >
+                    <Plus size={14} color="hsl(var(--primary-foreground))" />
+                    save to my library
+                  </Button>
+                </View>
+              );
+            })}
           </View>
         </ScrollView>
       )}
     </Screen>
   );
+}
+
+function narratorCover(seed: string): { a: string; b: string } {
+  // If seed is already a hex color, derive a darker variant; else hash-pick.
+  if (/^#?[0-9a-f]{6}$/i.test(seed.replace('#', ''))) {
+    const hex = seed.startsWith('#') ? seed : `#${seed}`;
+    return { a: lighten(hex, 0.35), b: hex };
+  }
+  const palettes: [string, string][] = [
+    ['#f4c67a', '#d98b5f'],
+    ['#c2d7ef', '#6a8fb8'],
+    ['#e5d1e8', '#a57aa5'],
+    ['#cfe2cd', '#5f8d66'],
+    ['#e6cba3', '#8a5b2f'],
+    ['#e4c0cd', '#93547c'],
+  ];
+  const idx = Math.abs(hashStr(seed)) % palettes.length;
+  const [a, b] = palettes[idx];
+  return { a, b };
+}
+
+function lighten(hex: string, pct: number) {
+  const n = parseInt(hex.slice(1), 16);
+  const r = Math.min(255, Math.round(((n >> 16) & 0xff) + 255 * pct));
+  const g = Math.min(255, Math.round(((n >> 8) & 0xff) + 255 * pct));
+  const b = Math.min(255, Math.round((n & 0xff) + 255 * pct));
+  return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0')}`;
+}
+
+function hashStr(s: string) {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h << 5) - h + s.charCodeAt(i);
+  return h;
 }
