@@ -3,6 +3,7 @@ import { Image as ExpoImage } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import {
+  BookOpen,
   Bell,
   ChevronRight,
   LogOut,
@@ -14,12 +15,14 @@ import {
   UserRound,
   X,
 } from 'lucide-react-native';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Alert, Modal, Pressable, ScrollView, Text, View } from 'react-native';
 
 import { Screen, TopBar } from '@/components/screen';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { TINTS, useArtworkTint } from '@/hooks/useArtworkTint';
@@ -42,6 +45,10 @@ export default function ProfileScreen() {
   const [bookmarkCount, setBookmarkCount] = useState<number>(0);
   const [silverCard, setSilverCard] = useState<any>(null);
   const [showCard, setShowCard] = useState(false);
+  const [aboutYou, setAboutYou] = useState<string>('');
+  const [aboutEditing, setAboutEditing] = useState(false);
+  const [aboutDraft, setAboutDraft] = useState('');
+  const [aboutSaving, setAboutSaving] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -50,7 +57,15 @@ export default function ProfileScreen() {
         const profile = await getUserProfile(user.uid);
         if (profile?.name) setName(profile.name);
         setBookmarkCount(profile?.bookmarks?.length ?? 0);
-        if ((profile as any)?.silverCard) setSilverCard((profile as any).silverCard);
+        const sc = (profile as any)?.silverCard;
+        if (sc) setSilverCard(sc);
+        const saved = (profile as any)?.aboutYou;
+        if (typeof saved === 'string' && saved.trim().length > 0) {
+          setAboutYou(saved);
+        } else {
+          // Seed from the silver card so the user sees something useful on first visit.
+          setAboutYou(deriveAboutYou(sc, profile));
+        }
       } catch {}
     })();
   }, [user?.uid]);
@@ -143,6 +158,36 @@ export default function ProfileScreen() {
               <Stat value={bookmarkCount} label="bookmarks" />
             </View>
           </View>
+
+          <Pressable
+            onPress={() => {
+              setAboutDraft(aboutYou);
+              setAboutEditing(true);
+            }}
+            className="rounded-[var(--radius)] border border-border bg-card p-5"
+          >
+            <View className="flex-row items-start gap-3">
+              <View className="h-9 w-9 items-center justify-center rounded-full bg-accent">
+                <BookOpen size={16} color="hsl(var(--foreground))" />
+              </View>
+              <View className="flex-1">
+                <View className="flex-row items-center justify-between">
+                  <Text className="text-[1.05rem] font-serif-medium text-foreground">
+                    about you
+                  </Text>
+                  <Pencil size={14} color="hsl(var(--muted-foreground))" />
+                </View>
+                <Text
+                  className="mt-1.5 text-sm font-serif text-foreground/80 leading-relaxed"
+                  numberOfLines={4}
+                >
+                  {aboutYou.trim().length > 0
+                    ? aboutYou
+                    : 'tap to write a short blurb about how you like your stories told.'}
+                </Text>
+              </View>
+            </View>
+          </Pressable>
 
           {silverCard && (
             <Pressable
@@ -290,6 +335,74 @@ export default function ProfileScreen() {
       </ScrollView>
 
       <Modal
+        visible={aboutEditing}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setAboutEditing(false)}
+      >
+        <View className="flex-1 items-center justify-center bg-black/70 px-6">
+          <View className="w-full max-w-[420px] rounded-[var(--radius)] border border-border bg-card p-5">
+            <View className="flex-row items-center justify-between">
+              <Text className="text-[1.05rem] font-serif-medium text-foreground">about you</Text>
+              <Pressable
+                onPress={() => setAboutEditing(false)}
+                className="h-8 w-8 items-center justify-center rounded-full"
+              >
+                <X size={16} color="hsl(var(--foreground))" />
+              </Pressable>
+            </View>
+            <Text className="mt-1 text-xs font-serif text-muted-foreground">
+              we use this to shape the voice of your stories.
+            </Text>
+            <Textarea
+              value={aboutDraft}
+              onChangeText={(t) => setAboutDraft(t.slice(0, 800))}
+              placeholder="e.g. i like slow openings, lots of physical detail, and characters who take their time getting to the point."
+              numberOfLines={7}
+              className="mt-3 min-h-[180px]"
+            />
+            <Text className="mt-1 text-[11px] font-sans text-right text-muted-foreground">
+              {aboutDraft.length}/800
+            </Text>
+            <View className="mt-3 flex-row gap-2">
+              <Button
+                variant="outline"
+                size="default"
+                className="flex-1"
+                onPress={() => setAboutEditing(false)}
+              >
+                cancel
+              </Button>
+              <Button
+                size="default"
+                className="flex-1"
+                loading={aboutSaving}
+                onPress={async () => {
+                  if (!user) {
+                    setAboutEditing(false);
+                    return;
+                  }
+                  const value = aboutDraft.trim();
+                  setAboutSaving(true);
+                  try {
+                    await updateUserProfile(user.uid, { aboutYou: value } as any);
+                    setAboutYou(value);
+                    setAboutEditing(false);
+                  } catch (e: any) {
+                    Alert.alert('save failed', e?.message ?? 'please try again');
+                  } finally {
+                    setAboutSaving(false);
+                  }
+                }}
+              >
+                save
+              </Button>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
         visible={showCard}
         transparent
         animationType="fade"
@@ -348,6 +461,33 @@ function CardLine({ label, value }: { label: string; value: string }) {
       <Text className="flex-1 text-sm font-serif text-foreground">{value}</Text>
     </View>
   );
+}
+
+/**
+ * Build a first-draft "about you" blurb from whatever onboarding artifacts
+ * are already saved to the user doc. Users are expected to edit this —
+ * this is just to avoid an empty card for returning users.
+ */
+function deriveAboutYou(silverCard: any, profile: any): string {
+  if (!silverCard && !profile?.onboardingAnswers) return '';
+  const words = silverCard?.storytellingWords?.trim();
+  const archetype = silverCard?.archetypeTitle?.trim();
+  const hero = silverCard?.heroSub?.trim();
+  const parts: string[] = [];
+  if (words) parts.push(`you like stories that feel ${words}.`);
+  if (archetype) parts.push(`your card is the ${archetype}.`);
+  if (hero) parts.push(hero);
+  const ob = profile?.onboardingAnswers as any;
+  if (ob?.descriptors?.length || ob?.descriptors2?.length) {
+    const descs = [
+      ...(ob.descriptors ?? []),
+      ...(ob.descriptors2 ?? []),
+    ].slice(0, 4);
+    if (descs.length > 0) {
+      parts.push(`you tend to read as ${descs.join(', ')}.`);
+    }
+  }
+  return parts.join(' ');
 }
 
 function Stat({ value, label }: { value: number; label: string }) {

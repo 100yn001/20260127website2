@@ -94,6 +94,28 @@ export async function getUserProfile(uid: string): Promise<UserProfile | null> {
 }
 
 /**
+ * Merge arbitrary profile fields into users/{uid}. Used for preferences
+ * (artworkTint, aboutYou, notifications, etc.) that don't need their own
+ * dedicated service call.
+ */
+export async function updateUserProfile(
+  uid: string,
+  patch: Partial<UserProfile> & Record<string, unknown>
+): Promise<void> {
+  try {
+    const userRef = doc(db, 'users', uid);
+    await setDoc(
+      userRef,
+      { ...patch, updatedAt: Timestamp.fromDate(new Date()) },
+      { merge: true }
+    );
+  } catch (error) {
+    console.error('Error updating user profile:', error);
+    throw error;
+  }
+}
+
+/**
  * Update user's name
  */
 export async function updateUserName(uid: string, name: string): Promise<void> {
