@@ -1070,65 +1070,159 @@ export default function OnboardingScreen() {
   }
 
   if (step === 'signup') {
+    const canSubmit = email.trim() && password.trim() && confirmPassword.trim();
     return (
       <View style={styles.container}>
         <Animated.View style={[styles.fullScreen, animatedStyle]}>
-          <View style={styles.centered}>
-            <Text style={styles.subtitle}>
-              <Text style={styles.italic}>create your account</Text>
-            </Text>
-            <Text style={styles.signupSub}>
-              to save your card and archetype,{'\n'}create an account
-            </Text>
-            <TextInput
-              style={styles.nameInput}
-              value={email}
-              onChangeText={setEmail}
-              placeholder="email"
-              placeholderTextColor="#666"
-              autoCapitalize="none"
-              keyboardType="email-address"
-              autoFocus
-              editable={!isLoading}
-            />
-            <TextInput
-              style={styles.nameInput}
-              value={password}
-              onChangeText={setPassword}
-              placeholder="password"
-              placeholderTextColor="#666"
-              secureTextEntry
-              editable={!isLoading}
-            />
-            <TextInput
-              style={styles.nameInput}
-              value={confirmPassword}
-              onChangeText={setConfirmPassword}
-              placeholder="confirm password"
-              placeholderTextColor="#666"
-              secureTextEntry
-              editable={!isLoading}
-            />
-            {email.trim() && password.trim() && confirmPassword.trim() && (
+          <View style={[styles.centered, { width: '100%', maxWidth: 380, alignSelf: 'center' }]}>
+            <View style={{ width: '100%' }}>
+              <Text style={[styles.subtitle, { textAlign: 'center' }]}>
+                <Text style={styles.italic}>create your account</Text>
+              </Text>
+              <Text style={[styles.signupSub, { textAlign: 'center', marginBottom: 24 }]}>
+                to save your card and archetype,{'\n'}create an account
+              </Text>
+
+              <View style={{ gap: 12 }}>
+                <View style={{ gap: 6 }}>
+                  <Text
+                    style={{
+                      fontSize: 11,
+                      letterSpacing: 1.5,
+                      color: '#666',
+                      fontFamily: 'EBGaramond-Regular',
+                      textTransform: 'uppercase',
+                    }}
+                  >
+                    email
+                  </Text>
+                  <TextInput
+                    style={{
+                      height: 44,
+                      borderRadius: 10,
+                      borderWidth: 1,
+                      borderColor: '#2a2a2a',
+                      backgroundColor: '#111',
+                      paddingHorizontal: 12,
+                      color: '#fff',
+                      fontSize: 15,
+                      fontFamily: 'EBGaramond-Regular',
+                    }}
+                    value={email}
+                    onChangeText={setEmail}
+                    placeholder="you@domain.com"
+                    placeholderTextColor="#555"
+                    autoCapitalize="none"
+                    keyboardType="email-address"
+                    autoFocus
+                    editable={!isLoading}
+                  />
+                </View>
+                <View style={{ gap: 6 }}>
+                  <Text
+                    style={{
+                      fontSize: 11,
+                      letterSpacing: 1.5,
+                      color: '#666',
+                      fontFamily: 'EBGaramond-Regular',
+                      textTransform: 'uppercase',
+                    }}
+                  >
+                    password
+                  </Text>
+                  <TextInput
+                    style={{
+                      height: 44,
+                      borderRadius: 10,
+                      borderWidth: 1,
+                      borderColor: '#2a2a2a',
+                      backgroundColor: '#111',
+                      paddingHorizontal: 12,
+                      color: '#fff',
+                      fontSize: 15,
+                      fontFamily: 'EBGaramond-Regular',
+                    }}
+                    value={password}
+                    onChangeText={setPassword}
+                    placeholder="at least 6 characters"
+                    placeholderTextColor="#555"
+                    secureTextEntry
+                    editable={!isLoading}
+                  />
+                </View>
+                <View style={{ gap: 6 }}>
+                  <Text
+                    style={{
+                      fontSize: 11,
+                      letterSpacing: 1.5,
+                      color: '#666',
+                      fontFamily: 'EBGaramond-Regular',
+                      textTransform: 'uppercase',
+                    }}
+                  >
+                    confirm password
+                  </Text>
+                  <TextInput
+                    style={{
+                      height: 44,
+                      borderRadius: 10,
+                      borderWidth: 1,
+                      borderColor: '#2a2a2a',
+                      backgroundColor: '#111',
+                      paddingHorizontal: 12,
+                      color: '#fff',
+                      fontSize: 15,
+                      fontFamily: 'EBGaramond-Regular',
+                    }}
+                    value={confirmPassword}
+                    onChangeText={setConfirmPassword}
+                    placeholder="type it again"
+                    placeholderTextColor="#555"
+                    secureTextEntry
+                    editable={!isLoading}
+                  />
+                </View>
+              </View>
+
               <TouchableOpacity
-                style={[styles.signupButton, isLoading && { opacity: 0.5 }]}
+                style={{
+                  marginTop: 20,
+                  height: 52,
+                  borderRadius: 999,
+                  backgroundColor: '#fff',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  opacity: !canSubmit || isLoading ? 0.4 : 1,
+                }}
                 onPress={handleSignUpSubmit}
-                disabled={isLoading}
+                disabled={!canSubmit || isLoading}
               >
                 {isLoading ? (
-                  <ActivityIndicator color="#fff" />
+                  <ActivityIndicator color="#000" />
                 ) : (
-                  <Text style={styles.continueText}>create account →</Text>
+                  <Text
+                    style={{
+                      color: '#000',
+                      fontSize: 16,
+                      fontFamily: 'EBGaramond-Medium',
+                    }}
+                  >
+                    create account
+                  </Text>
                 )}
               </TouchableOpacity>
-            )}
-            <TouchableOpacity
-              style={styles.signInLink}
-              onPress={() => router.push('/auth/login')}
-              disabled={isLoading}
-            >
-              <Text style={styles.signInText}>already have an account? sign in</Text>
-            </TouchableOpacity>
+
+              <TouchableOpacity
+                style={{ marginTop: 14, alignItems: 'center' }}
+                onPress={() => router.push('/auth/login')}
+                disabled={isLoading}
+              >
+                <Text style={{ color: '#888', fontSize: 14, fontFamily: 'EBGaramond-Regular' }}>
+                  already have an account?{' '}
+                  <Text style={{ color: '#fff', fontFamily: 'EBGaramond-Medium' }}>sign in</Text>
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </Animated.View>
 
