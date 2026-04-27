@@ -22,6 +22,7 @@ import { Screen, TopBar } from '@/components/screen';
 import { db } from '@/config/firebase';
 import { useAudioPlayer } from '@/contexts/AudioPlayerContext';
 import { cn } from '@/lib/cn';
+import { coverFor } from '@/lib/cover';
 
 export default function PlayerScreen() {
   const router = useRouter();
@@ -75,6 +76,8 @@ export default function PlayerScreen() {
             audioChunkURLs: data.audioChunkURLs,
             transcript: data.transcript,
             coverColor: data.coverColor,
+            topographyLayers: data.topographyLayers,
+            ambientUrl: data.ambientUrl,
             metadata: data,
           },
           true
@@ -167,13 +170,13 @@ export default function PlayerScreen() {
             </Pressable>
             <Pressable
               onPress={togglePlayPause}
-              className="h-16 w-16 items-center justify-center rounded-full bg-foreground"
+              className="h-16 w-16 items-center justify-center bg-black"
               style={Platform.OS === 'web' ? ({ outlineWidth: 0 } as any) : undefined}
             >
               {isPlaying ? (
-                <Pause size={24} color="hsl(var(--background))" />
+                <Pause size={24} color="#fff" fill="#fff" />
               ) : (
-                <Play size={24} color="hsl(var(--background))" />
+                <Play size={24} color="#fff" fill="#fff" />
               )}
             </Pressable>
             <Pressable onPress={() => skipForward(15)} className="h-12 w-12 items-center justify-center">
@@ -302,21 +305,3 @@ function fmt(s: number) {
   return `${m}:${sec.toString().padStart(2, '0')}`;
 }
 
-function coverFor(seed: string): { a: string; b: string } {
-  const palettes: [string, string][] = [
-    ['#d6c2a8', '#8a6c47'],
-    ['#a6b3d5', '#3b4a7a'],
-    ['#cddacb', '#5c7a63'],
-    ['#e8d2c1', '#a37257'],
-    ['#c4a8d8', '#593c77'],
-  ];
-  const idx = Math.abs(hashStr(seed)) % palettes.length;
-  const [a, b] = palettes[idx];
-  return { a, b };
-}
-
-function hashStr(s: string) {
-  let h = 0;
-  for (let i = 0; i < s.length; i++) h = (h << 5) - h + s.charCodeAt(i);
-  return h;
-}

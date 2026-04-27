@@ -1,19 +1,15 @@
 import { ScrollViewStyleReset } from 'expo-router/html';
+import { Image } from 'react-native';
 import type { PropsWithChildren } from 'react';
+
+import iconImage from '../assets/images/icon2.png';
 
 // Custom HTML wrapper for the static-rendered web build. Forces the document
 // to a black background from the very first paint so the page never flashes
 // white between route transitions or while the React tree mounts.
 export default function Root({ children }: PropsWithChildren) {
-  // Keep the favicon in sync with 20260127website2-main/index.html so the
-  // tab icon is identical on the landing page and every /app route.
-  const faviconSvg =
-    "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>" +
-    "<rect width='100' height='100' fill='black'/>" +
-    "<text x='50%' y='58%' dominant-baseline='middle' text-anchor='middle' " +
-    "font-family='EB Garamond, serif' font-size='78' fill='white'>{yn}</text>" +
-    '</svg>';
-  const faviconHref = `data:image/svg+xml,${encodeURIComponent(faviconSvg)}`;
+  const resolved = Image.resolveAssetSource(iconImage as any);
+  const faviconHref = resolved?.uri || (iconImage as unknown as string);
 
   return (
     <html lang="en">
