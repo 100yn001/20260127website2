@@ -6,7 +6,7 @@ import {
   query,
   where,
 } from 'firebase/firestore';
-import { AlertTriangle, Loader, Pencil, Plus, Search, Trash2 } from 'lucide-react-native';
+import { AlertTriangle, Pencil, Plus, Search, Trash2 } from 'lucide-react-native';
 import React, { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 
@@ -317,7 +317,11 @@ function QueueRow({
           isErr ? 'bg-red-500/15' : 'bg-accent'
         )}
       >
-        {isErr ? <AlertTriangle size={14} color="#ef4444" /> : <Loader size={14} color="hsl(var(--foreground))" />}
+        {isErr ? (
+          <AlertTriangle size={14} color="#ef4444" />
+        ) : (
+          <ActivityIndicator size="small" color="hsl(var(--foreground))" />
+        )}
       </View>
       <View className="flex-1">
         <Text className="text-[0.95rem] font-serif-medium text-foreground" numberOfLines={1}>
