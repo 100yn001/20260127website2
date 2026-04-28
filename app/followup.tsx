@@ -110,7 +110,9 @@ export default function FollowUpScreen() {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       const { generateFollowUpQuestions } = require('@/services/audio-generation');
       const qs: string[] = await generateFollowUpQuestions(recipeData);
-      const valid = (qs ?? []).filter((q) => q && q.length > 5);
+      const valid = (qs ?? [])
+        .filter((q) => q && q.length > 5)
+        .map((q) => q.toLowerCase());
       const list = valid.length > 0 ? valid : FALLBACK_QUESTIONS;
       setQuestions(list);
       setThinking(false);
@@ -255,7 +257,7 @@ export default function FollowUpScreen() {
         <ScrollView
           ref={scrollRef}
           className="flex-1"
-          contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 12, gap: 10 }}
+          contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 12, gap: 10 }}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
