@@ -122,14 +122,20 @@ export default function PlayerScreen() {
 
   const tint = useArtworkTint();
   // Public stories carry their own published coverColor — show that. The
-  // listener's profile tint is only used for their own (private) stories so
-  // the vault stays in their color family while public stories keep the
-  // publisher's chosen color.
+  // listener's profile tint is only used for the user's own (private)
+  // stories so the vault stays in their color family while public stories
+  // keep the publisher's chosen color.
+  //
+  // While the story doc is still loading we deliberately use a deterministic
+  // hash-derived palette (coverFromColor with no hex → coverFor) instead of
+  // the profile tint, otherwise public-story players would flash the
+  // listener's tint for the first frame before the fetch resolves.
   const cover = useMemo(() => {
     const seed = story?.id ?? id ?? 'x';
-    if (storyIsPublic) return coverFromColor(story?.coverColor, seed);
+    if (!story) return coverFromColor(undefined, seed);
+    if (storyIsPublic) return coverFromColor(story.coverColor, seed);
     return variedTint(tint, seed);
-  }, [tint, story?.id, story?.coverColor, storyIsPublic, id]);
+  }, [tint, story, storyIsPublic, id]);
   const mode = story?.isNighttime ? 'night' : 'day';
 
   // Defensive math — `duration` and `position` come from the audio context
@@ -221,10 +227,17 @@ export default function PlayerScreen() {
               <View className="self-center h-6 w-48 rounded-full bg-muted" />
             )}
             {titleReady ? (
-              <Text className="mt-1.5 text-center text-sm font-serif text-foreground/70">
-                {story.narratorName ?? (story.character ? story.character : '—')}
-                {story.narratorName && story.character ? <>  ·  {story.character}</> : null}
-              </Text>
+              (() => {
+                const byline = [story.narratorName, story.character]
+                  .filter((s) => typeof s === 'string' && s.trim())
+                  .join('  ·  ');
+                if (!byline) return null;
+                return (
+                  <Text className="mt-1.5 text-center text-sm font-serif text-foreground/70">
+                    {byline}
+                  </Text>
+                );
+              })()
             ) : (
               <View className="self-center mt-2 h-3 w-28 rounded-full bg-muted" />
             )}

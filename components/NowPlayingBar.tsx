@@ -2,7 +2,7 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAudioPlayer } from '@/contexts/AudioPlayerContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useArtworkTint } from '@/hooks/useArtworkTint';
-import { variedTint } from '@/lib/cover';
+import { coverFromColor, variedTint } from '@/lib/cover';
 import { createShadow } from '@/utils/shadow';
 import { LinearGradient } from 'expo-linear-gradient';
 import { usePathname, useRouter } from 'expo-router';
@@ -49,10 +49,16 @@ export const NowPlayingBar = () => {
     transform: [{ translateX: translateX.value }, { translateY: translateY.value }],
   }));
 
-  const cover = useMemo(
-    () => variedTint(tint, currentTrack?.id || currentTrack?.title || 'x'),
-    [tint, currentTrack?.id, currentTrack?.title],
-  );
+  // If the loaded track shipped a coverColor (public stories always do, and
+  // user-owned stories carry one for whichever color they were saved with),
+  // use it so the mini player matches whatever cover the user was just
+  // looking at. Only fall through to the profile tint for legacy tracks
+  // without a coverColor.
+  const cover = useMemo(() => {
+    const seed = currentTrack?.id || currentTrack?.title || 'x';
+    if (currentTrack?.coverColor) return coverFromColor(currentTrack.coverColor, seed);
+    return variedTint(tint, seed);
+  }, [tint, currentTrack?.id, currentTrack?.title, currentTrack?.coverColor]);
 
   // Hide on player screen and create workflow screens
   const createWorkflowPaths = [
