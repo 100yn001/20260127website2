@@ -7,9 +7,9 @@ import {
   Bookmark,
   BookOpenText,
   ChevronDown,
-  MoreHorizontal,
   Pause,
   Play,
+  RefreshCw,
   Share2,
   SkipBack,
   SkipForward,
@@ -24,7 +24,7 @@ import { db } from '@/config/firebase';
 import { useAudioPlayer } from '@/contexts/AudioPlayerContext';
 import { useArtworkTint } from '@/hooks/useArtworkTint';
 import { cn } from '@/lib/cn';
-import { variedTint } from '@/lib/cover';
+import { coverFromColor, variedTint } from '@/lib/cover';
 
 export default function PlayerScreen() {
   const router = useRouter();
@@ -116,7 +116,15 @@ export default function PlayerScreen() {
   }, [id]);
 
   const tint = useArtworkTint();
-  const cover = useMemo(() => variedTint(tint, story?.id ?? id ?? 'x'), [tint, story?.id, id]);
+  // Public stories carry their own published coverColor — show that. The
+  // listener's profile tint is only used for their own (private) stories so
+  // the vault stays in their color family while public stories keep the
+  // publisher's chosen color.
+  const cover = useMemo(() => {
+    const seed = story?.id ?? id ?? 'x';
+    if (storyIsPublic) return coverFromColor(story?.coverColor, seed);
+    return variedTint(tint, seed);
+  }, [tint, story?.id, story?.coverColor, storyIsPublic, id]);
   const mode = story?.isNighttime ? 'night' : 'day';
 
   // Defensive math — `duration` and `position` come from the audio context
@@ -172,7 +180,7 @@ export default function PlayerScreen() {
             disabled={!story}
             className="h-8 w-8 items-center justify-center rounded-full active:bg-accent"
           >
-            <MoreHorizontal size={16} color="hsl(var(--foreground))" />
+            <RefreshCw size={16} color="hsl(var(--foreground))" />
           </Pressable>
         }
       />
