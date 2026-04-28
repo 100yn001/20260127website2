@@ -76,7 +76,7 @@ function FullscreenButton() {
       style={{
         position: 'absolute',
         right: 16,
-        bottom: isFullscreen ? 16 : 76,
+        bottom: 16,
         width: 36,
         height: 36,
         borderRadius: 18,
