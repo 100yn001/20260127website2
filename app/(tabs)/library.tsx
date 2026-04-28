@@ -35,9 +35,9 @@ export default function LibraryScreen() {
         const docs = snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) }));
         const all: (CardStory & { collection?: string | null })[] = docs.map((d) => ({
           id: d.id,
-          title: d.title ?? 'untitled',
+          title: cleanTitle(d.title),
           narrator: d.narratorName,
-          durationMin: Math.max(1, Math.round((d.duration ?? 600) / 60)),
+          durationMin: parseDurationMin(d.duration),
           cover: variedTint(tint, d.id),
           nighttime: !!d.isNighttime,
           collection: (typeof d.collection === 'string' && d.collection.trim()) || null,
@@ -130,6 +130,27 @@ export default function LibraryScreen() {
 }
 
 /* -------------------------------------------------------------------------- */
+
+// Strip surrounding straight or curly quotes that some published stories
+// were saved with, and fall back to 'untitled' when blank.
+function cleanTitle(raw: unknown): string {
+  if (typeof raw !== 'string') return 'untitled';
+  const trimmed = raw.trim().replace(/^["'‘’“”]+|["'‘’“”]+$/g, '').trim();
+  return trimmed || 'untitled';
+}
+
+// Stories are saved with `duration` as either the bucket string
+// '5min' / '10min' / '15min' or a legacy numeric (seconds) value.
+function parseDurationMin(raw: unknown): number {
+  if (typeof raw === 'string') {
+    const m = raw.match(/(\d+)/);
+    if (m) return Math.max(1, parseInt(m[1], 10));
+  }
+  if (typeof raw === 'number' && Number.isFinite(raw) && raw > 0) {
+    return raw > 60 ? Math.max(1, Math.round(raw / 60)) : Math.max(1, Math.round(raw));
+  }
+  return 10;
+}
 
 function Shelf({ title, children }: { title: string; children: React.ReactNode }) {
   return (

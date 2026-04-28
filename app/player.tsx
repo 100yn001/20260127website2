@@ -100,10 +100,18 @@ export default function PlayerScreen() {
   // Defensive math — `duration` and `position` come from the audio context
   // and can be undefined / NaN during the first render while chunks load.
   const safeDuration = Number.isFinite(duration) && duration > 0 ? duration : NaN;
-  const fallbackMs =
-    Number.isFinite(story?.duration) && story?.duration > 0
-      ? Math.round(story.duration * 1000)
-      : 0;
+  // story.duration may be a number (seconds) or a bucket string like '15min'.
+  // Public stories are written as the bucket string; fall back to that so the
+  // scrubber shows the expected total before audio metadata arrives.
+  const fallbackMs = (() => {
+    const d: any = story?.duration;
+    if (typeof d === 'number' && Number.isFinite(d) && d > 0) return Math.round(d * 1000);
+    if (typeof d === 'string') {
+      const m = d.match(/(\d+)/);
+      if (m) return parseInt(m[1], 10) * 60 * 1000;
+    }
+    return 0;
+  })();
   const dur = Number.isFinite(safeDuration)
     ? safeDuration
     : fallbackMs > 0
