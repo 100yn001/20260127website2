@@ -495,6 +495,9 @@ const styles = StyleSheet.create({
     padding: 24,
     paddingTop: 80,
     paddingBottom: 100,
+    width: '100%',
+    maxWidth: 600,
+    alignSelf: 'center',
   },
   header: {
     marginBottom: 32,
@@ -621,6 +624,7 @@ const styles = StyleSheet.create({
     right: 0,
     padding: 24,
     borderTopWidth: 1,
+    alignItems: 'center',
   },
   continueButton: {
     flexDirection: 'row',
@@ -631,6 +635,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     borderRadius: 999,
     width: '100%',
+    maxWidth: 552,
   },
   continueButtonDisabled: {
     opacity: 0.3,
