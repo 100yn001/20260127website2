@@ -73,13 +73,15 @@ export default function PublicNarratorsScreen() {
         shouldDuckAndroid: true,
       });
 
+      // Trailing ellipsis gives ElevenLabs enough silence after the greeting
+      // that the final syllable doesn't get clipped on playback.
       const r = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'xi-api-key': apiKey },
         body: JSON.stringify({
-          text: `hello, ${userName}.`,
+          text: `hello, ${userName}…`,
           model_id: 'eleven_v3',
-          voice_settings: { stability: 0.5, similarity_boost: 0.5 },
+          voice_settings: { stability: 0.6, similarity_boost: 0.6 },
         }),
       });
       if (!r.ok) throw new Error(`elevenlabs ${r.status}`);
@@ -164,9 +166,11 @@ export default function PublicNarratorsScreen() {
     <Screen wide>
       <TopBar onBack={() => router.back()} />
       <View className={cn(GUTTER, 'pt-2 pb-4')}>
-        <View className="flex-row items-center gap-2 mb-1">
-          <Globe size={18} color="hsl(var(--foreground))" />
-          <Text className="text-[1.9rem] font-serif-medium text-foreground">public narrators</Text>
+        <View className="flex-row items-baseline gap-2 mb-1">
+          <Globe size={22} color="hsl(var(--foreground))" style={{ transform: [{ translateY: 3 }] }} />
+          <Text className="text-[1.9rem] font-serif-medium text-foreground leading-none">
+            public narrators
+          </Text>
         </View>
         <Text className="mt-1 text-[0.95rem] font-serif text-muted-foreground">
           discover personas shared by the community.
