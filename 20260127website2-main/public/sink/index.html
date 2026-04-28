@@ -3,43 +3,58 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>sink · open story</title>
+  <title>sink · listen</title>
+  <link rel="icon" type="image/png" href="/icon.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      background: #000;
-      color: #fff;
-      font-family: 'EB Garamond', serif;
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      padding: 24px;
-    }
-    .container { max-width: 360px; }
-    .logo { font-size: 36px; font-weight: 600; margin-bottom: 8px; }
-    .subtitle { font-size: 16px; color: rgba(255,255,255,0.5); margin-bottom: 32px; }
-    .status { font-size: 18px; color: rgba(255,255,255,0.7); margin-bottom: 24px; }
+    body { background: #000; color: #fff; font-family: 'EB Garamond', serif; min-height: 100vh; }
+    .container { max-width: 420px; margin: 0 auto; padding: 32px 24px 64px; }
+    .logo { font-size: 32px; font-weight: 600; text-align: center; }
+    .subtitle { font-size: 14px; color: rgba(255,255,255,0.5); text-align: center; margin-top: 4px; margin-bottom: 28px; }
+    .hidden { display: none !important; }
+
+    .status-box { text-align: center; padding: 40px 0; }
+    .status { font-size: 16px; color: rgba(255,255,255,0.7); }
     .open-btn {
-      display: inline-block;
-      padding: 14px 32px;
-      background: rgba(255,255,255,0.1);
-      border: 1px solid rgba(255,255,255,0.2);
-      border-radius: 12px;
-      color: #fff;
-      font-family: 'EB Garamond', serif;
-      font-size: 18px;
-      text-decoration: none;
-      cursor: pointer;
-      transition: background 0.2s;
+      display: inline-block; margin-top: 18px; padding: 12px 28px;
+      background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 12px; color: #fff; text-decoration: none;
+      font-family: 'EB Garamond', serif; font-size: 16px;
     }
-    .open-btn:hover { background: rgba(255,255,255,0.18); }
-    .fallback { margin-top: 24px; font-size: 14px; color: rgba(255,255,255,0.35); }
-    .hidden { display: none; }
+    .web-link {
+      display: inline-block; margin-top: 14px; font-size: 13px;
+      color: rgba(255,255,255,0.5); cursor: pointer; text-decoration: underline;
+    }
+
+    .artwork {
+      width: 100%; max-width: 320px; aspect-ratio: 1; border-radius: 14px;
+      margin: 0 auto; overflow: hidden;
+    }
+    .player-title { font-size: 22px; font-weight: 600; text-align: center; margin-top: 22px; }
+    .player-subtitle { font-size: 13px; color: rgba(255,255,255,0.55); text-align: center; margin-top: 4px; }
+
+    .scrubber-wrap { max-width: 320px; margin: 26px auto 6px; }
+    input[type=range] { width: 100%; -webkit-appearance: none; background: transparent; }
+    input[type=range]::-webkit-slider-runnable-track { height: 3px; background: rgba(255,255,255,0.2); border-radius: 2px; }
+    input[type=range]::-moz-range-track { height: 3px; background: rgba(255,255,255,0.2); border-radius: 2px; }
+    input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; background: #fff; border-radius: 50%; margin-top: -4.5px; }
+    input[type=range]::-moz-range-thumb { width: 12px; height: 12px; background: #fff; border-radius: 50%; border: 0; }
+    .times { display: flex; justify-content: space-between; font-size: 11px; color: rgba(255,255,255,0.5); max-width: 320px; margin: 4px auto 0; }
+
+    .controls { display: flex; align-items: center; justify-content: center; gap: 24px; margin-top: 22px; }
+    .play-btn {
+      width: 60px; height: 60px; background: #fff; color: #000; border: none;
+      font-size: 22px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+    }
+    .skip-btn { background: none; border: none; color: rgba(255,255,255,0.85); font-size: 14px; cursor: pointer; padding: 8px 4px; font-family: inherit; }
+    .skip-btn:hover { color: #fff; }
+
+    .err { color: #ff8888; text-align: center; padding: 40px 0; font-size: 15px; }
+    .footer-cta { margin-top: 36px; text-align: center; font-size: 12px; color: rgba(255,255,255,0.4); }
+    .footer-cta a { color: rgba(255,255,255,0.7); text-decoration: underline; }
   </style>
 </head>
 <body>
@@ -47,38 +62,278 @@
     <div class="logo">{sink}</div>
     <div class="subtitle">your stories, locally</div>
 
-    <div id="opening" class="status">opening in sink...</div>
-
-    <div id="fallback" class="hidden">
-      <p class="status">couldn't open sink automatically</p>
-      <a id="open-btn" class="open-btn" href="#">tap to open in sink</a>
-      <p class="fallback">if you don't have sink installed, you'll need to install it first</p>
+    <div id="status-box" class="status-box hidden">
+      <div id="status" class="status">opening in sink…</div>
+      <a id="open-btn" class="open-btn hidden" href="#">tap to open in sink</a>
+      <div id="web-link" class="web-link hidden">listen in browser instead</div>
     </div>
+
+    <div id="player" class="hidden">
+      <div id="artwork" class="artwork"></div>
+      <div id="player-title" class="player-title">loading…</div>
+      <div id="player-subtitle" class="player-subtitle"></div>
+      <div class="scrubber-wrap">
+        <input id="seek" type="range" min="0" max="100" value="0" step="0.1" />
+        <div class="times">
+          <span id="cur">0:00</span>
+          <span id="rem">--:--</span>
+        </div>
+      </div>
+      <div class="controls">
+        <button class="skip-btn" id="back-btn">« 15s</button>
+        <button class="play-btn" id="play-btn" aria-label="play">▶</button>
+        <button class="skip-btn" id="fwd-btn">15s »</button>
+      </div>
+      <div class="footer-cta">
+        <a href="https://apps.apple.com/app/the-synk/id6761191876" target="_blank" rel="noopener">get the sink app</a>
+      </div>
+    </div>
+
+    <div id="error" class="err hidden"></div>
   </div>
+
+  <audio id="audio" preload="metadata" style="display:none"></audio>
 
   <script>
     (function() {
-      // Extract the shared audio ID from the URL path: /sink/{id}
-      var pathParts = window.location.pathname.split('/');
-      var sharedId = pathParts[pathParts.length - 1] || pathParts[pathParts.length - 2];
+      var PROJECT_ID = 'yourname-7fc08';
+      var API_KEY = 'AIzaSyCy44tkp-wdobya78bscvMrfo85n3UVQ_o';
 
-      if (!sharedId || sharedId === 'sink') {
-        document.getElementById('opening').textContent = 'no story link provided';
+      var pathParts = window.location.pathname.split('/').filter(Boolean);
+      var idIdx = pathParts.indexOf('sink');
+      var sharedId = idIdx >= 0 && idIdx < pathParts.length - 1 ? pathParts[idIdx + 1] : null;
+
+      function el(id) { return document.getElementById(id); }
+      function show(id) { el(id).classList.remove('hidden'); }
+      function hide(id) { el(id).classList.add('hidden'); }
+
+      if (!sharedId) {
+        show('error');
+        el('error').textContent = 'no story link provided';
         return;
       }
 
-      var deepLink = 'sink://play/' + sharedId;
-      var openBtn = document.getElementById('open-btn');
-      openBtn.href = deepLink;
+      var ua = navigator.userAgent || '';
+      var isIOS = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
 
-      // Try to open the app automatically
-      window.location.href = deepLink;
+      var webPlayerLoaded = false;
+      function loadWebPlayer() {
+        if (webPlayerLoaded) return;
+        webPlayerLoaded = true;
+        hide('status-box');
+        show('player');
+        loadAndRender();
+      }
 
-      // If still here after 1.5s, show fallback
-      setTimeout(function() {
-        document.getElementById('opening').classList.add('hidden');
-        document.getElementById('fallback').classList.remove('hidden');
-      }, 1500);
+      function unwrapValue(v) {
+        if (!v || typeof v !== 'object') return null;
+        if ('stringValue' in v) return v.stringValue;
+        if ('integerValue' in v) return Number(v.integerValue);
+        if ('doubleValue' in v) return v.doubleValue;
+        if ('booleanValue' in v) return v.booleanValue;
+        if ('timestampValue' in v) return new Date(v.timestampValue);
+        if ('arrayValue' in v) return (v.arrayValue.values || []).map(unwrapValue);
+        if ('mapValue' in v) return fromFirestore(v.mapValue.fields || {});
+        if ('nullValue' in v) return null;
+        return null;
+      }
+      function fromFirestore(fields) {
+        var out = {};
+        for (var k in fields) out[k] = unwrapValue(fields[k]);
+        return out;
+      }
+
+      function coverFor(seed) {
+        var palettes = [
+          ['#d6c2a8','#8a6c47'], ['#a6b3d5','#3b4a7a'], ['#cddacb','#5c7a63'],
+          ['#e5d6b8','#8a8055'], ['#e8d2c1','#a37257'], ['#d7e0e8','#6d8aa0'],
+          ['#c4a8d8','#593c77']
+        ];
+        var h = 0;
+        var s = String(seed || '');
+        for (var i = 0; i < s.length; i++) h = (h << 5) - h + s.charCodeAt(i);
+        return palettes[Math.abs(h) % palettes.length];
+      }
+      function fmt(s) {
+        if (!isFinite(s) || s < 0) s = 0;
+        var m = Math.floor(s / 60);
+        var sec = Math.floor(s % 60);
+        return m + ':' + String(sec).padStart(2, '0');
+      }
+
+      var chunkURLs = [];
+      var chunkIdx = 0;
+      var chunkDurations = [];
+      var audio = el('audio');
+      var seek = el('seek');
+      var seeking = false;
+
+      async function loadAndRender() {
+        try {
+          var url = 'https://firestore.googleapis.com/v1/projects/' + PROJECT_ID +
+                    '/databases/(default)/documents/sharedAudio/' + encodeURIComponent(sharedId) +
+                    '?key=' + API_KEY;
+          var r = await fetch(url);
+          if (!r.ok) {
+            console.error('Firestore fetch failed', r.status);
+            el('error').textContent = r.status === 404 ? 'story not found or link expired' : 'failed to load story';
+            hide('player'); show('error'); return;
+          }
+          var json = await r.json();
+          var data = fromFirestore(json.fields || {});
+
+          chunkURLs = (data.audioChunkURLs && data.audioChunkURLs.length) ? data.audioChunkURLs
+            : (data.audioUrl ? [data.audioUrl] : []);
+
+          if (chunkURLs.length === 0) {
+            el('error').textContent = 'this story has no audio';
+            hide('player'); show('error'); return;
+          }
+
+          chunkDurations = new Array(chunkURLs.length).fill(0);
+
+          el('player-title').textContent = data.title || 'untitled';
+          el('player-subtitle').textContent = '';
+
+          var art = el('artwork');
+          if (data.artworkUrl) {
+            art.style.background = 'url("' + data.artworkUrl + '") center/cover no-repeat';
+          } else {
+            var pal = coverFor(data.coverColor || sharedId);
+            art.style.background = 'linear-gradient(135deg, ' + pal[0] + ', ' + pal[1] + ')';
+          }
+
+          loadChunk(0, false);
+          // Prefetch durations of remaining chunks so the scrubber knows the total length
+          prefetchDurations();
+        } catch (err) {
+          console.error('load error', err);
+          el('error').textContent = 'failed to load story';
+          hide('player'); show('error');
+        }
+      }
+
+      function prefetchDurations() {
+        // Use ephemeral Audio elements to read durations without disturbing main playback
+        for (var i = 0; i < chunkURLs.length; i++) {
+          if (i === chunkIdx) continue; // current one will populate via main element
+          (function(i) {
+            var a = new Audio();
+            a.preload = 'metadata';
+            a.src = chunkURLs[i];
+            a.addEventListener('loadedmetadata', function() {
+              chunkDurations[i] = a.duration;
+              updateScrubber();
+            });
+          })(i);
+        }
+      }
+
+      function loadChunk(idx, autoplay) {
+        chunkIdx = idx;
+        if (idx >= chunkURLs.length) {
+          chunkIdx = 0;
+          audio.src = chunkURLs[0];
+          el('play-btn').textContent = '▶';
+          return;
+        }
+        audio.src = chunkURLs[idx];
+        audio.load();
+        if (autoplay) audio.play().catch(function() {});
+      }
+
+      audio.addEventListener('loadedmetadata', function() {
+        chunkDurations[chunkIdx] = audio.duration;
+        updateScrubber();
+      });
+      audio.addEventListener('timeupdate', updateScrubber);
+      audio.addEventListener('ended', function() {
+        if (chunkIdx + 1 < chunkURLs.length) {
+          loadChunk(chunkIdx + 1, true);
+        } else {
+          el('play-btn').textContent = '▶';
+        }
+      });
+      audio.addEventListener('play', function() { el('play-btn').textContent = '❚❚'; });
+      audio.addEventListener('pause', function() { el('play-btn').textContent = '▶'; });
+
+      function totalDuration() {
+        var total = 0;
+        for (var i = 0; i < chunkDurations.length; i++) total += chunkDurations[i] || 0;
+        return total;
+      }
+      function playedBeforeCurrent() {
+        var p = 0;
+        for (var i = 0; i < chunkIdx; i++) p += chunkDurations[i] || 0;
+        return p;
+      }
+      function updateScrubber() {
+        if (seeking) return;
+        var total = totalDuration();
+        var totalCur = playedBeforeCurrent() + (audio.currentTime || 0);
+        if (total > 0) {
+          seek.max = String(total);
+          seek.value = String(totalCur);
+          el('cur').textContent = fmt(totalCur);
+          el('rem').textContent = '-' + fmt(Math.max(0, total - totalCur));
+        } else {
+          el('cur').textContent = fmt(audio.currentTime || 0);
+        }
+      }
+
+      seek.addEventListener('input', function() { seeking = true; });
+      seek.addEventListener('change', function() {
+        seeking = false;
+        var v = Number(seek.value);
+        var acc = 0;
+        for (var i = 0; i < chunkURLs.length; i++) {
+          var d = chunkDurations[i] || 0;
+          if (v <= acc + d || i === chunkURLs.length - 1) {
+            var offset = Math.max(0, v - acc);
+            if (i !== chunkIdx) {
+              loadChunk(i, !audio.paused);
+              audio.addEventListener('loadedmetadata', function once() {
+                audio.removeEventListener('loadedmetadata', once);
+                audio.currentTime = offset;
+              });
+            } else {
+              audio.currentTime = offset;
+            }
+            break;
+          }
+          acc += d;
+        }
+      });
+
+      el('play-btn').addEventListener('click', function() {
+        if (audio.paused) audio.play().catch(function() {});
+        else audio.pause();
+      });
+      el('back-btn').addEventListener('click', function() {
+        audio.currentTime = Math.max(0, audio.currentTime - 15);
+      });
+      el('fwd-btn').addEventListener('click', function() {
+        audio.currentTime = audio.currentTime + 15;
+      });
+
+      // Initial flow: iOS tries the deep link first; everyone else gets the web player straight away.
+      if (isIOS) {
+        show('status-box');
+        var deepLink = 'sink://play/' + sharedId;
+        el('open-btn').href = deepLink;
+        el('web-link').addEventListener('click', loadWebPlayer);
+        // Attempt the app open
+        var t = Date.now();
+        window.location.href = deepLink;
+        setTimeout(function() {
+          if (Date.now() - t < 2500) {
+            el('status').textContent = "couldn't open sink automatically";
+            show('open-btn'); show('web-link');
+          }
+        }, 1500);
+      } else {
+        loadWebPlayer();
+      }
     })();
   </script>
 </body>

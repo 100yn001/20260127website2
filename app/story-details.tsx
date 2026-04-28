@@ -71,6 +71,7 @@ export default function StoryDetailsScreen() {
   const [editDescription, setEditDescription] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [isSynking, setIsSynking] = useState(false);
+  const [synkToast, setSynkToast] = useState<string | null>(null);
   
   // Artwork edit
   const [showArtworkModal, setShowArtworkModal] = useState(false);
@@ -130,14 +131,8 @@ export default function StoryDetailsScreen() {
     if (!currentUser || isSynking) return;
     setIsSynking(true);
 
-    // Open window immediately to preserve user gesture (browsers block async popups)
-    let popup: Window | null = null;
-    if (Platform.OS === 'web') {
-      popup = window.open('about:blank', '_blank');
-    }
-
     try {
-      const deepLink = await shareStoryToSink({
+      const link = await shareStoryToSink({
         userId: currentUser.uid,
         storyId,
         title: storyTitle || 'untitled',
@@ -148,12 +143,35 @@ export default function StoryDetailsScreen() {
         duration: duration as any,
         isNighttime,
       });
-      if (popup) {
-        popup.location.href = deepLink;
+
+      const shareText = `${storyTitle || 'a story'} · listen on sink`;
+
+      if (Platform.OS === 'web' && typeof navigator !== 'undefined') {
+        // Prefer the OS share sheet on mobile browsers; fall back to clipboard on desktop.
+        const nav: any = navigator;
+        if (nav.share) {
+          try {
+            await nav.share({ title: shareText, url: link });
+          } catch {
+            /* user canceled — no-op */
+          }
+        } else if (nav.clipboard?.writeText) {
+          await nav.clipboard.writeText(link);
+          setSynkToast('link copied');
+          setTimeout(() => setSynkToast(null), 2200);
+        } else {
+          // Last-resort fallback: open in a new tab so the user can copy from address bar.
+          window.open(link, '_blank');
+        }
+      } else {
+        // Native: defer-import Share so web bundles don't pull it in unnecessarily.
+        const { Share } = require('react-native');
+        await Share.share({ message: `${shareText}\n${link}`, url: link });
       }
     } catch (error: any) {
       console.error('Error synking story:', error);
-      if (popup) popup.close();
+      setSynkToast('share failed — try again');
+      setTimeout(() => setSynkToast(null), 2200);
     } finally {
       setIsSynking(false);
     }
@@ -408,23 +426,26 @@ export default function StoryDetailsScreen() {
           <Text style={styles.playButtonText}>play story</Text>
         </TouchableOpacity>
 
-        {/* Synk it button (web only) */}
-        {Platform.OS === 'web' && (
-          <TouchableOpacity
-            style={[styles.synkButton, isSynking && { opacity: 0.6 }]}
-            onPress={handleSynkIt}
-            activeOpacity={0.8}
-            disabled={isSynking}
-          >
-            {isSynking ? (
-              <ActivityIndicator size="small" color="#fff" />
-            ) : (
-              <>
-                <IconSymbol name="arrow.down.to.line" size={18} color="#fff" />
-                <Text style={styles.synkButtonText}>synk it</Text>
-              </>
-            )}
-          </TouchableOpacity>
+        {/* Synk it button — share a link that opens in the sink app on iOS or in the web player elsewhere */}
+        <TouchableOpacity
+          style={[styles.synkButton, isSynking && { opacity: 0.6 }]}
+          onPress={handleSynkIt}
+          activeOpacity={0.8}
+          disabled={isSynking}
+        >
+          {isSynking ? (
+            <ActivityIndicator size="small" color="#fff" />
+          ) : (
+            <>
+              <IconSymbol name="arrow.down.to.line" size={18} color="#fff" />
+              <Text style={styles.synkButtonText}>synk it</Text>
+            </>
+          )}
+        </TouchableOpacity>
+        {synkToast && (
+          <View style={styles.synkToast}>
+            <Text style={styles.synkToastText}>{synkToast}</Text>
+          </View>
         )}
 
         {isAdminUser && (
@@ -866,5 +887,21 @@ const styles = StyleSheet.create({
     fontFamily: 'EBGaramond-Medium',
     textTransform: 'lowercase',
     color: '#fff',
+  },
+  synkToast: {
+    alignSelf: 'center',
+    marginTop: -12,
+    marginBottom: 18,
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+    borderRadius: 999,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.12)',
+  },
+  synkToastText: {
+    fontSize: 12,
+    fontFamily: 'EBGaramond-Regular',
+    color: 'rgba(255,255,255,0.85)',
   },
 });
