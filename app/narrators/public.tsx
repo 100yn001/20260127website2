@@ -4,7 +4,7 @@ import Constants from 'expo-constants';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { collection, getDocs } from 'firebase/firestore';
-import { Globe, Pause, Play, Plus, Search } from 'lucide-react-native';
+import { Pause, Play, Plus, Search } from 'lucide-react-native';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from 'react-native';
 
@@ -166,19 +166,9 @@ export default function PublicNarratorsScreen() {
     <Screen wide>
       <TopBar onBack={() => router.back()} />
       <View className={cn(GUTTER, 'pt-2 pb-4')}>
-        <View className="flex-row items-center gap-2 mb-1">
-          <Globe
-            size={22}
-            color="hsl(var(--foreground))"
-            style={{ transform: [{ translateY: -2 }] }}
-          />
-          <Text
-            className="text-[1.9rem] font-serif-medium text-foreground"
-            style={{ lineHeight: 30 }}
-          >
-            public narrators
-          </Text>
-        </View>
+        <Text className="text-[1.9rem] font-serif-medium text-foreground mb-1">
+          public narrators
+        </Text>
         <Text className="mt-1 text-[0.95rem] font-serif text-muted-foreground">
           discover personas shared by the community.
         </Text>
