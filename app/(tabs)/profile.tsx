@@ -189,48 +189,44 @@ export default function ProfileScreen() {
             </View>
           </Pressable>
 
-          {silverCard && (
-            <Pressable
-              onPress={() => setShowCard(true)}
-              className="rounded-[var(--radius)] border border-border bg-card p-5"
-            >
-              <View className="flex-row items-center justify-between">
-                <View className="flex-row items-center gap-3">
-                  <View
-                    className="h-10 w-8 overflow-hidden rounded-md bg-muted"
-                    style={
-                      silverCard.imageUrl
-                        ? undefined
-                        : {
-                            // subtle placeholder tint if image missing
-                            backgroundColor: '#1f1f1f',
-                          }
-                    }
-                  >
-                    {silverCard.imageUrl ? (
-                      <ExpoImage
-                        source={{ uri: silverCard.imageUrl }}
-                        style={{ width: '100%', height: '100%' }}
-                        contentFit="cover"
-                      />
-                    ) : null}
-                  </View>
-                  <View>
-                    <Text className="text-[1.05rem] font-serif-medium text-foreground">
-                      your card
-                    </Text>
-                    <Text
-                      className="mt-0.5 text-sm font-serif text-muted-foreground"
-                      numberOfLines={1}
-                    >
-                      {silverCard.archetypeTitle ?? 'silver archetype'}
-                    </Text>
-                  </View>
+          <Pressable
+            onPress={() => {
+              if (silverCard) setShowCard(true);
+              else router.push('/onboarding');
+            }}
+            className="rounded-[var(--radius)] border border-border bg-card p-5"
+          >
+            <View className="flex-row items-center justify-between">
+              <View className="flex-row items-center gap-3">
+                <View
+                  className="h-10 w-8 overflow-hidden rounded-md bg-muted"
+                  style={silverCard?.imageUrl ? undefined : { backgroundColor: '#1f1f1f' }}
+                >
+                  {silverCard?.imageUrl ? (
+                    <ExpoImage
+                      source={{ uri: silverCard.imageUrl }}
+                      style={{ width: '100%', height: '100%' }}
+                      contentFit="cover"
+                    />
+                  ) : null}
                 </View>
-                <ChevronRight size={16} color="hsl(var(--muted-foreground))" />
+                <View>
+                  <Text className="text-[1.05rem] font-serif-medium text-foreground">
+                    your card
+                  </Text>
+                  <Text
+                    className="mt-0.5 text-sm font-serif text-muted-foreground"
+                    numberOfLines={1}
+                  >
+                    {silverCard
+                      ? silverCard.archetypeTitle ?? 'silver archetype'
+                      : 'finish onboarding to generate yours'}
+                  </Text>
+                </View>
               </View>
-            </Pressable>
-          )}
+              <ChevronRight size={16} color="hsl(var(--muted-foreground))" />
+            </View>
+          </Pressable>
 
           <Pressable
             onPress={() => router.navigate('/(tabs)/narrators')}
