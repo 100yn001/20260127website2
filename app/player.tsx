@@ -45,6 +45,7 @@ export default function PlayerScreen() {
   } = useAudioPlayer();
 
   const [story, setStory] = useState<any>(null);
+  const [storyIsPublic, setStoryIsPublic] = useState(false);
   const [bookmarked, setBookmarked] = useState(false);
   const [transcriptOpen, setTranscriptOpen] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -72,7 +73,8 @@ export default function PlayerScreen() {
             return null;
           }),
         ]);
-        const snap = userSnap?.exists() ? userSnap : publicSnap?.exists() ? publicSnap : null;
+        const fromUser = userSnap?.exists();
+        const snap = fromUser ? userSnap : publicSnap?.exists() ? publicSnap : null;
         if (cancelled) return;
         if (!snap) {
           console.warn('[player] story not found in stories or publicStories', id);
@@ -81,6 +83,7 @@ export default function PlayerScreen() {
         }
         const data = snap.data() as any;
         setStory({ id: snap.id, ...data });
+        setStoryIsPublic(!fromUser);
         const hasAudio =
           !!data.audioUrl || (Array.isArray(data.audioChunkURLs) && data.audioChunkURLs.length);
         if (!hasAudio) {
@@ -157,7 +160,18 @@ export default function PlayerScreen() {
         backLabel="minimize"
         backIcon={<ChevronDown size={20} color="hsl(var(--foreground))" />}
         right={
-          <Pressable className="h-8 w-8 items-center justify-center rounded-full active:bg-accent">
+          <Pressable
+            onPress={() => {
+              if (!story) return;
+              router.push({
+                pathname: '/regenerate',
+                params: { storyId: story.id, isPublic: storyIsPublic ? 'true' : 'false' },
+              });
+            }}
+            accessibilityLabel="regenerate this story"
+            disabled={!story}
+            className="h-8 w-8 items-center justify-center rounded-full active:bg-accent"
+          >
             <MoreHorizontal size={16} color="hsl(var(--foreground))" />
           </Pressable>
         }

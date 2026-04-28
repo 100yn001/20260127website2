@@ -1,10 +1,15 @@
 import AmbientPicker from '@/components/AmbientPicker';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { db } from '@/config/firebase';
+import { useStoryQueue } from '@/contexts/StoryQueueContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import Slider from '@react-native-community/slider';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import { doc, getDoc } from 'firebase/firestore';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
+    Alert,
     Keyboard,
     SafeAreaView,
     ScrollView,
@@ -22,26 +27,78 @@ export default function RegenerateScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   
+  const { addToQueue } = useStoryQueue();
+
+  // Source of the original story so we can clone its recipe
+  const storyId = (params.storyId as string) || '';
+  const isPublic = params.isPublic === 'true';
+
   const [currentStep, setCurrentStep] = useState<RegenerateStep>('options');
   const [changeContent, setChangeContent] = useState(false);
   const [changeName, setChangeName] = useState(false);
   const [changeVoice, setChangeVoice] = useState(false);
-  
+  // Public-story-only: swap the publisher's name for the listener's
+  const [useMyName, setUseMyName] = useState(isPublic);
+
   // Content changes
   const [contentChanges, setContentChanges] = useState('');
-  
+
   // Name changes
   const [newName, setNewName] = useState('');
-  
-  // Voice changes  
+
+  // Voice changes
   const [newVoiceId, setNewVoiceId] = useState<string | null>(null);
-  
+
   // Narration details
   const [duration, setDuration] = useState<'5min' | '10min' | '15min'>('10min');
   const [narrativeRatio, _setNarrativeRatio] = useState(5);
   const [ambientPrompts, setAmbientPrompts] = useState<string[]>([]);
-  
+
   const [isProcessing, setIsProcessing] = useState(false);
+  const [storedUserName, setStoredUserName] = useState('You');
+  const [originalRecipe, setOriginalRecipe] = useState<any | null>(null);
+
+  // Hydrate the stored name once so 'use my name' has something to swap in.
+  useEffect(() => {
+    AsyncStorage.getItem('userName').then((v) => {
+      if (v) setStoredUserName(v);
+    });
+  }, []);
+
+  // Pull the source story so the regenerate flow has the original recipe to
+  // mutate. Try the user's stories first, then publicStories.
+  useEffect(() => {
+    if (!storyId) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const [userSnap, pubSnap] = await Promise.all([
+          getDoc(doc(db, 'stories', storyId)).catch(() => null),
+          getDoc(doc(db, 'publicStories', storyId)).catch(() => null),
+        ]);
+        const snap = userSnap?.exists() ? userSnap : pubSnap?.exists() ? pubSnap : null;
+        if (!snap || cancelled) return;
+        const data = snap.data() as any;
+        setOriginalRecipe(data);
+        // Pre-fill the controls so the user only edits what they want.
+        if (typeof data.duration === 'string' && /^(5|10|15)min$/.test(data.duration)) {
+          setDuration(data.duration);
+        }
+        if (typeof data.narrativeRatio === 'number') _setNarrativeRatio(data.narrativeRatio);
+        if (typeof data.userName === 'string') setNewName(data.userName);
+        if (typeof data.voiceId === 'string') setNewVoiceId(data.voiceId);
+        if (Array.isArray(data.ambientPrompts)) setAmbientPrompts(data.ambientPrompts);
+      } catch (e) {
+        console.warn('[regenerate] could not load source story', e);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [storyId]);
+
+  // Whether the action button can submit. Need at least the source recipe.
+  const canRegenerate = useMemo(() => !!originalRecipe, [originalRecipe]);
 
   // Receive voice selection back from voice-library
   useEffect(() => {
@@ -93,12 +150,55 @@ export default function RegenerateScreen() {
   };
 
   const handleRegenerate = async () => {
+    if (!originalRecipe) {
+      Alert.alert('still loading', 'wait a moment for the original story to load.');
+      return;
+    }
     setIsProcessing(true);
-    // TODO: Call regeneration service
-    // For now, just navigate back
-    setTimeout(() => {
-      router.back();
-    }, 2000);
+    try {
+      // Clone the original recipe and apply the user's edits. Keep undefined
+      // off the wire — Firestore rejects undefined values when the queue doc
+      // is written.
+      const resolvedName = changeName && newName.trim()
+        ? newName.trim()
+        : isPublic && useMyName
+          ? storedUserName
+          : (originalRecipe.userName || storedUserName);
+
+      const additionalPrompt = changeContent && contentChanges.trim()
+        ? `${(originalRecipe.prompt || '').trim()}\n\nuser-requested changes: ${contentChanges.trim()}`.trim()
+        : (originalRecipe.prompt || '');
+
+      const recipe: any = {
+        setting: originalRecipe.setting || '',
+        location: originalRecipe.location || '',
+        character: originalRecipe.character || '',
+        genderSelf: originalRecipe.genderSelf || '',
+        genderOther: originalRecipe.genderOther || '',
+        trope: originalRecipe.trope || '',
+        features: Array.isArray(originalRecipe.features) ? originalRecipe.features : [],
+        featurePreferences: originalRecipe.featurePreferences || {},
+        isNighttime: !!originalRecipe.isNighttime,
+        userName: resolvedName,
+        duration,
+        narrativeRatio,
+        voiceId: changeVoice && newVoiceId ? newVoiceId : (originalRecipe.voiceId || ''),
+        prompt: additionalPrompt,
+        tags: Array.isArray(originalRecipe.tags) ? originalRecipe.tags : [],
+        coverColor: originalRecipe.coverColor || '',
+        ambientPrompts,
+      };
+      if (originalRecipe.narratorId) recipe.narratorId = originalRecipe.narratorId;
+      if (originalRecipe.narratorData) recipe.narratorData = originalRecipe.narratorData;
+
+      await addToQueue(recipe, [], []);
+      router.replace('/(tabs)/vault');
+    } catch (e: any) {
+      console.error('[regenerate] failed', e);
+      Alert.alert('regenerate failed', e?.message || 'please try again');
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   if (currentStep === 'options') {
@@ -112,6 +212,30 @@ export default function RegenerateScreen() {
             <Text style={[styles.title, { color: colors.text }]}>regenerate story</Text>
             <Text style={[styles.subtitle, { color: colors.textSecondary }]}>choose what you&apos;d like to change</Text>
           </View>
+
+          {isPublic && (
+            <TouchableOpacity
+              style={[
+                styles.optionCard,
+                { backgroundColor: colors.card, borderColor: colors.border },
+                useMyName && { backgroundColor: colors.buttonBackground, borderColor: colors.buttonBackground },
+              ]}
+              onPress={() => setUseMyName(!useMyName)}
+            >
+              <View style={styles.optionContent}>
+                <IconSymbol name="person.crop.circle" size={24} color={useMyName ? colors.buttonText : colors.textSecondary} />
+                <View style={styles.optionText}>
+                  <Text style={[styles.optionTitle, { color: colors.text }, useMyName && { color: colors.buttonText }]}>
+                    use my name
+                  </Text>
+                  <Text style={[styles.optionSubtitle, { color: colors.textSecondary }, useMyName && { color: colors.buttonText, opacity: 0.7 }]}>
+                    swap in &ldquo;{storedUserName}&rdquo; in place of the original listener&apos;s name
+                  </Text>
+                </View>
+              </View>
+              {useMyName && <IconSymbol name="checkmark.circle.fill" size={24} color={colors.buttonText} />}
+            </TouchableOpacity>
+          )}
 
           <TouchableOpacity
             style={[styles.optionCard, { backgroundColor: colors.card, borderColor: colors.border }, changeContent && { backgroundColor: colors.buttonBackground, borderColor: colors.buttonBackground }]}
@@ -169,10 +293,14 @@ export default function RegenerateScreen() {
         </ScrollView>
 
         <View style={[styles.footer, { backgroundColor: colors.background, borderTopColor: colors.border }]}>
-          <TouchableOpacity 
-            style={[styles.continueButton, { backgroundColor: colors.buttonBackground }, !(changeContent || changeName || changeVoice) && styles.continueButtonDisabled]}
+          <TouchableOpacity
+            style={[
+              styles.continueButton,
+              { backgroundColor: colors.buttonBackground },
+              !(changeContent || changeName || changeVoice || useMyName) && styles.continueButtonDisabled,
+            ]}
             onPress={handleOptionsSubmit}
-            disabled={!(changeContent || changeName || changeVoice)}
+            disabled={!(changeContent || changeName || changeVoice || useMyName)}
           >
             <Text style={[styles.continueButtonText, { color: colors.buttonText }]}>continue</Text>
             <IconSymbol name="arrow.right" size={20} color={colors.buttonText} />
@@ -324,17 +452,23 @@ export default function RegenerateScreen() {
       </ScrollView>
 
       <View style={[styles.footer, { backgroundColor: colors.background, borderTopColor: colors.border }]}>
-        <TouchableOpacity 
-          style={[styles.continueButton, { backgroundColor: colors.buttonBackground }]}
+        <TouchableOpacity
+          style={[
+            styles.continueButton,
+            { backgroundColor: colors.buttonBackground },
+            (!canRegenerate || isProcessing) && styles.continueButtonDisabled,
+          ]}
           onPress={handleRegenerate}
-          disabled={isProcessing}
+          disabled={!canRegenerate || isProcessing}
         >
           {isProcessing ? (
             <Text style={[styles.continueButtonText, { color: colors.buttonText }]}>regenerating...</Text>
           ) : (
             <>
               <IconSymbol name="sparkles" size={20} color={colors.buttonText} />
-              <Text style={[styles.continueButtonText, { color: colors.buttonText }]}>regenerate</Text>
+              <Text style={[styles.continueButtonText, { color: colors.buttonText }]}>
+                {canRegenerate ? 'regenerate' : 'loading source story…'}
+              </Text>
             </>
           )}
         </TouchableOpacity>
