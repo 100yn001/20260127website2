@@ -21,6 +21,21 @@ export function coverFor(seed: string | undefined | null): CoverPalette {
 }
 
 /**
+ * Build a gradient from a single hex color (e.g. a story's saved coverColor):
+ * lighter end at the top-left, the saved color at the bottom-right. Stable
+ * for the same input — the same coverColor always yields the same gradient.
+ *
+ * Falls through to coverFor(seed) when `hex` isn't a parseable color.
+ */
+export function coverFromColor(hex: string | undefined | null, seed?: string | null): CoverPalette {
+  if (typeof hex === 'string' && /^#?[0-9a-f]{6}$/i.test(hex.trim())) {
+    const base = hex.trim().startsWith('#') ? hex.trim() : `#${hex.trim()}`;
+    return { a: shiftHsl(base, 0, -0.05, 0.18), b: base };
+  }
+  return coverFor(seed ?? hex ?? null);
+}
+
+/**
  * Take the user's profile tint as a base and produce a slightly-varied gradient
  * keyed by `seed` (e.g. story id). Same seed → same colors, so a story renders
  * identically in vault, library, player, and the now-playing bar.
