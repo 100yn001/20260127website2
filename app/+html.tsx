@@ -5,11 +5,11 @@ import type { PropsWithChildren } from 'react';
 // to a black background from the very first paint so the page never flashes
 // white between route transitions or while the React tree mounts.
 //
-// Favicon: served from /public/icon2.png, which Expo Router exposes under the
-// configured baseUrl at /app/icon2.png. Mirrors 20260127website2-main so the
+// Favicon: served from /public/icon.png, which Expo Router exposes under the
+// configured baseUrl at /app/icon.png. Mirrors 20260127website2-main so the
 // tab icon matches across the landing page and every /app route.
 export default function Root({ children }: PropsWithChildren) {
-  const faviconHref = '/app/icon2.png';
+  const faviconHref = '/app/icon.png';
 
   return (
     <html lang="en">

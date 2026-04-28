@@ -40,7 +40,7 @@ export default {
     },
     web: {
       output: "static",
-      favicon: "./assets/images/icon2.png",
+      favicon: "./assets/images/icon.png",
       name: "yn",
       description: "audio stories, crafted for you",
       backgroundColor: "#000000",
