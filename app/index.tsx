@@ -1,5 +1,4 @@
 import { useAuth } from '@/contexts/AuthContext';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
@@ -31,16 +30,10 @@ export default function IndexScreen() {
       // User is signed in, go to main app
       router.replace('/(tabs)/library');
     } else {
-      // User is not signed in - check if they've completed onboarding
-      const hasCompletedOnboarding = await AsyncStorage.getItem('hasCompletedOnboarding');
-
-      if (hasCompletedOnboarding === 'true') {
-        // Returning user - go to login
-        router.replace('/auth/login');
-      } else {
-        // New user - go to onboarding
-        router.replace('/onboarding');
-      }
+      // Always land on sign-in. The login screen has a 'sign up' link for
+      // new users; onboarding now happens after account creation rather
+      // than as a cold gate to the app.
+      router.replace('/auth/login');
     }
     setChecking(false);
   };
