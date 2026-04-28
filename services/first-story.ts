@@ -8,7 +8,7 @@
  * with the Blob types this app uses on the web target.
  */
 
-export type FirstStoryGender = 'male' | 'female';
+export type FirstStoryGender = 'male' | 'female' | 'neutral';
 export type FirstStoryScenario = 'walk' | 'meditation';
 
 export interface GeneratedFirstStory {

@@ -19,6 +19,7 @@ const FALLBACK_VOICES: Voice[] = [
   { id: 'BpjGufoPiobT79j2vtj4', accent: 'British', gender: 'female', descriptors: ['velvety', 'laid-back'] },
   { id: 'rWArYo7a2NWuBYf5BE4V', accent: 'British', gender: 'female', descriptors: ['sweet', 'young'] },
   { id: 'QBKybXDLvDJ91ojuRiOU', accent: 'American', gender: 'neutral', descriptors: ['calm', 'laid-back'] },
+  { id: 'pCbBcqcQw2exKK3vigeF', accent: '', gender: 'neutral', descriptors: ['whispery', 'intimate'] },
   { id: 'B5jEZPqk2OJ2vkPw3wBM', accent: 'Irish', gender: 'male', descriptors: ['deep', 'laid-back'] },
   { id: 'dtVZnErhiiosqofxDzSH', accent: 'American (southern)', gender: 'male', descriptors: ['drawly', 'deep'] },
 ];

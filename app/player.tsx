@@ -44,8 +44,14 @@ export default function PlayerScreen() {
     setAmbientEnabled,
   } = useAudioPlayer();
 
-  const [story, setStory] = useState<any>(null);
-  const [storyIsPublic, setStoryIsPublic] = useState(false);
+  // Story + origin live in the same state object so the cover memo can never
+  // see story populated while isPublic is still its initial false value
+  // (which was leaking the listener's profile tint onto public-story players).
+  const [storyState, setStoryState] = useState<{ data: any | null; isPublic: boolean }>(
+    { data: null, isPublic: false },
+  );
+  const story = storyState.data;
+  const storyIsPublic = storyState.isPublic;
   const [bookmarked, setBookmarked] = useState(false);
   const [transcriptOpen, setTranscriptOpen] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -82,8 +88,7 @@ export default function PlayerScreen() {
           return;
         }
         const data = snap.data() as any;
-        setStory({ id: snap.id, ...data });
-        setStoryIsPublic(!fromUser);
+        setStoryState({ data: { id: snap.id, ...data }, isPublic: !fromUser });
         const hasAudio =
           !!data.audioUrl || (Array.isArray(data.audioChunkURLs) && data.audioChunkURLs.length);
         if (!hasAudio) {
@@ -129,10 +134,13 @@ export default function PlayerScreen() {
 
   // Defensive math — `duration` and `position` come from the audio context
   // and can be undefined / NaN during the first render while chunks load.
-  const safeDuration = Number.isFinite(duration) && duration > 0 ? duration : NaN;
+  const safeDuration = Number.isFinite(duration) && duration > 0 ? duration : 0;
   // story.duration may be a number (seconds) or a bucket string like '15min'.
-  // Public stories are written as the bucket string; fall back to that so the
-  // scrubber shows the expected total before audio metadata arrives.
+  // Public stories are written as the bucket string; chunked stories report
+  // their per-chunk duration before the full aggregate resolves. Falling back
+  // to the recipe's target gives the scrubber the right total length on
+  // first render, and once all chunks land safeDuration grows past it and
+  // takes over.
   const fallbackMs = (() => {
     const d: any = story?.duration;
     if (typeof d === 'number' && Number.isFinite(d) && d > 0) return Math.round(d * 1000);
@@ -142,11 +150,9 @@ export default function PlayerScreen() {
     }
     return 0;
   })();
-  const dur = Number.isFinite(safeDuration)
-    ? safeDuration
-    : fallbackMs > 0
-    ? fallbackMs
-    : 0;
+  // Use the maximum so partially-loaded chunks never display a duration
+  // shorter than the story's recipe target.
+  const dur = Math.max(safeDuration, fallbackMs);
   const safePosition = Number.isFinite(position) && position >= 0 ? position : 0;
   const pos = dur > 0 ? Math.min(safePosition, dur) : safePosition;
   const remaining = dur > 0 ? Math.max(0, Math.floor((dur - pos) / 1000)) : 0;

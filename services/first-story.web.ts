@@ -20,13 +20,24 @@ import { saveStory, uploadAmbient, uploadAudioChunk } from './story-service';
 
 const ELEVENLABS_API_KEY = Constants.expoConfig?.extra?.ELEVENLABS || '';
 
-const VOICE_IDS = {
-  male: 'Qe9WSybioZxssVEwlBSo',
-  female: 'LEnmbrrxYsUYS7vsRRwD',
-} as const;
-
-export type FirstStoryGender = 'male' | 'female';
+export type FirstStoryGender = 'male' | 'female' | 'neutral';
 export type FirstStoryScenario = 'walk' | 'meditation';
+
+// Hardcoded narrator voices used ONLY by the onboarding first-story step.
+// The rest of the app's voice picker is unaffected — users still see the
+// full voice library (constants/voices.ts + Firestore staticVoices) once
+// they're signed in.
+//   male    → "the British one" already in constants/voices.ts (smooth, calming)
+//   female  → julialovespomegranate's voice (saved public narrator)
+//   neutral → 'whisperer' — designed once via ElevenLabs voice-design and
+//             pinned here as a permanent voice_id. Also added to the
+//             FALLBACK_VOICES list in constants/voices.ts so it shows up
+//             in the broader library too.
+const VOICE_IDS: Record<FirstStoryGender, string> = {
+  male: 'Qe9WSybioZxssVEwlBSo',
+  female: 'p8JbsRMDYK9keH2updon',
+  neutral: 'pCbBcqcQw2exKK3vigeF',
+};
 
 const SCENARIO_LABELS: Record<FirstStoryScenario, string> = {
   walk: 'a walk in the park',
@@ -224,9 +235,14 @@ export async function saveFirstStory(
     }
   }
 
-  const createdAt = new Date();
   const title =
     story.scenario === 'walk' ? 'a walk in the park' : 'a meditation';
+
+  const characterByGender: Record<FirstStoryGender, string> = {
+    male: 'narrator (he)',
+    female: 'narrator (she)',
+    neutral: 'narrator (they)',
+  };
 
   const storyData = {
     title,
@@ -235,7 +251,7 @@ export async function saveFirstStory(
     transcript: story.transcript,
     setting: SCENARIO_LABELS[story.scenario],
     location: SCENARIO_LABELS[story.scenario],
-    character: story.gender === 'male' ? 'narrator (he)' : 'narrator (she)',
+    character: characterByGender[story.gender],
     genderSelf: '',
     genderOther: story.gender,
     trope: 'first-story',

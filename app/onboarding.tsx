@@ -1363,6 +1363,19 @@ export default function OnboardingScreen() {
                       she
                     </Text>
                   </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.firstStoryChoice}
+                    onPress={() => setFirstStoryGender('neutral')}
+                  >
+                    <Text
+                      style={[
+                        styles.firstStoryChoiceText,
+                        firstStoryGender === 'neutral' && styles.selectedText,
+                      ]}
+                    >
+                      they
+                    </Text>
+                  </TouchableOpacity>
                 </View>
                 <Text style={[styles.firstStoryLabel, { marginTop: 28 }]}>scene</Text>
                 <View style={styles.firstStoryColumn}>
