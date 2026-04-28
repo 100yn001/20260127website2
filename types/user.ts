@@ -29,6 +29,19 @@ export interface UserProfile {
     landscapePrompt?: string;
   };
   bookmarkedStories?: string[];
+  /** Stripe Customer object id, populated by the createStripeCustomer Cloud
+   *  Function on first signup. Absent for any user who signed up before the
+   *  Stripe rollout or whose post-signup callable invocation failed. */
+  stripeCustomerId?: string;
+  /** Stripe Subscription object id for the user's $0/month "yn beta" sub. */
+  stripeSubscriptionId?: string;
+  /** Server timestamp set when the Stripe Customer is first created. Used as
+   *  the anchor for "5 free stories a day for a month" beta messaging and
+   *  any future trial-window logic. */
+  betaTrialStartedAt?: Date;
+  /** Per-day generation counter for the client-side beta cap. `date` is a
+   *  local 'YYYY-MM-DD' string so a midnight rollover resets the count. */
+  dailyUsage?: { date: string; count: number };
   createdAt: Date;
   updatedAt: Date;
 }

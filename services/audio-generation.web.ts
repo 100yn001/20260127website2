@@ -7,6 +7,7 @@ import { DEFAULT_COVER_COLOR } from '@/constants/cover-colors';
 import { DepthLayer } from '@/types/story';
 import Constants from 'expo-constants';
 import { saveStory, uploadAmbient, uploadAudioChunk } from './story-service';
+import { checkAndIncrementDailyStoryCount } from './user-service';
 
 // Get API keys from Expo environment variables
 const XAI_API_KEY = Constants.expoConfig?.extra?.XAI || '';
@@ -425,7 +426,12 @@ export async function generateAudioStory(
   followUpAnswers: string[],
   userId: string
 ): Promise<{ audioUrl: string; audioChunkURLs: string[]; transcript: string; storyId: string }> {
-  
+
+  // Beta cap: 5 stories/day. Throws DailyStoryLimitError if the user is at
+  // their limit, in which case we want to surface to the UI before any
+  // expensive Grok/ElevenLabs calls happen. Atomic via Firestore txn.
+  await checkAndIncrementDailyStoryCount(userId);
+
   // Combine questions and answers into Q&A pairs
   const followUpQA = followUpQuestions.map((q, i) => {
     const answer = followUpAnswers[i] || '';

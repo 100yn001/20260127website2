@@ -3,6 +3,7 @@ import Constants from 'expo-constants';
 import { getApp, getApps, initializeApp } from 'firebase/app';
 import { getAuth, initializeAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
+import { getFunctions } from 'firebase/functions';
 import { getStorage } from 'firebase/storage';
 import { Platform } from 'react-native';
 
@@ -51,6 +52,7 @@ if (isNewApp && Platform.OS !== 'web') {
 export const auth = authInstance;
 export const db = getFirestore(app);
 export const storage = getStorage(app);
+export const functions = getFunctions(app);
 
 console.log('✅ Firebase initialized successfully');
 

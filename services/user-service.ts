@@ -1,15 +1,86 @@
 import { db } from '@/config/firebase';
 import { UserProfile } from '@/types/user';
-import { collection, deleteDoc, doc, getDoc, getDocs, query, setDoc, Timestamp, where } from 'firebase/firestore';
+import {
+  collection,
+  deleteDoc,
+  doc,
+  getDoc,
+  getDocs,
+  query,
+  runTransaction,
+  setDoc,
+  Timestamp,
+  where,
+} from 'firebase/firestore';
+
+/** Beta cap: how many stories a user can generate per local day. */
+export const DAILY_STORY_LIMIT = 5;
+
+/** YYYY-MM-DD in the user's local timezone. Used as the rollover key. */
+function localDateKey(d: Date = new Date()): string {
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+/** Thrown by `checkAndIncrementDailyStoryCount` when the user is at the cap. */
+export class DailyStoryLimitError extends Error {
+  constructor() {
+    super("you've used your 5 stories for today — come back tomorrow");
+    this.name = 'DailyStoryLimitError';
+  }
+}
 
 /**
- * Create or update user profile in Firestore
+ * Atomically check the per-day story counter and (if under the cap) bump it.
+ * Throws `DailyStoryLimitError` when the user has already generated their
+ * `DAILY_STORY_LIMIT` for today. Callers should wrap generation with this
+ * BEFORE doing any expensive work.
+ *
+ * Race-safe: a Firestore transaction reads + writes the counter so two
+ * simultaneous create-story taps can't both slip past the cap on the 5th.
+ */
+export async function checkAndIncrementDailyStoryCount(uid: string): Promise<void> {
+  const userRef = doc(db, 'users', uid);
+  const today = localDateKey();
+  await runTransaction(db, async (tx) => {
+    const snap = await tx.get(userRef);
+    const data = snap.exists() ? snap.data() : {};
+    const usage = (data?.dailyUsage as { date?: string; count?: number } | undefined) ?? {};
+    const sameDay = usage.date === today;
+    const current = sameDay && typeof usage.count === 'number' ? usage.count : 0;
+    if (current >= DAILY_STORY_LIMIT) {
+      throw new DailyStoryLimitError();
+    }
+    tx.set(
+      userRef,
+      {
+        dailyUsage: { date: today, count: current + 1 },
+        updatedAt: Timestamp.fromDate(new Date()),
+      },
+      { merge: true },
+    );
+  });
+}
+
+export interface CreateUserProfileExtras {
+  stripeCustomerId?: string;
+  stripeSubscriptionId?: string;
+}
+
+/**
+ * Create or update user profile in Firestore. `extras` carries optional
+ * Stripe-side identifiers populated by the createStripeCustomer Cloud
+ * Function — passed through here so we don't need a second Firestore write
+ * during signup.
  */
 export async function saveUserProfile(
   uid: string,
   email: string,
   name: string,
-  onboardingAnswers: UserProfile['onboardingAnswers']
+  onboardingAnswers: UserProfile['onboardingAnswers'],
+  extras?: CreateUserProfileExtras,
 ): Promise<void> {
   try {
     const userRef = doc(db, 'users', uid);
@@ -25,6 +96,8 @@ export async function saveUserProfile(
       onboardingAnswers,
       createdAt: Timestamp.fromDate(now),
       updatedAt: Timestamp.fromDate(now),
+      ...(extras?.stripeCustomerId ? { stripeCustomerId: extras.stripeCustomerId } : {}),
+      ...(extras?.stripeSubscriptionId ? { stripeSubscriptionId: extras.stripeSubscriptionId } : {}),
     };
 
     await setDoc(userRef, userProfile, { merge: true });

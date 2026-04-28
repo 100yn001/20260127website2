@@ -9,6 +9,11 @@ import { onDocumentCreated } from 'firebase-functions/v2/firestore';
 // Initialize Firebase Admin
 admin.initializeApp();
 
+// Onboarding-time Stripe Customer + free $0 sub provisioning. Lives in its
+// own module so its dependencies (stripe SDK, secret param) don't pollute
+// the story-generation pipeline below.
+export { createStripeCustomer } from './createStripeCustomer';
+
 const db = admin.firestore();
 const storage = admin.storage();
 

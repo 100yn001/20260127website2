@@ -112,12 +112,20 @@ export default function LoadingScreen() {
 
     } catch (error) {
       console.error('Error generating audio:', error);
-      setStatusText('Something went wrong. Please try again.');
-      
+      // The daily-cap error is the one user-facing case where we want the
+      // raw message; everything else is opaque internal failure.
+      const isLimit =
+        (error as { name?: string })?.name === 'DailyStoryLimitError';
+      setStatusText(
+        isLimit
+          ? (error as Error).message
+          : 'Something went wrong. Please try again.',
+      );
+
       // Optionally navigate back after error
       setTimeout(() => {
         router.back();
-      }, 2000);
+      }, isLimit ? 3500 : 2000);
     }
   };
 

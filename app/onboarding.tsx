@@ -1,4 +1,4 @@
-import { auth, db } from '@/config/firebase';
+import { auth, functions } from '@/config/firebase';
 import { personalityInitial, personalityReally } from '@/constants/personality-sets';
 import { useAuth } from '@/contexts/AuthContext';
 import { describeStorytellingStyle } from '@/services/claude-service';
@@ -23,7 +23,7 @@ import { saveSilverCard, saveUserProfile } from '@/services/user-service';
 import CardScene from '@/components/silver-card/CardScene';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
-import { collection, getDocs, query, where } from 'firebase/firestore';
+import { httpsCallable } from 'firebase/functions';
 import React, { useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
@@ -59,7 +59,6 @@ type Step =
   | 'name'
   | 'storyteller-recap'
   | 'first-story'
-  | 'secretcode'
   | 'signup';
 
 const MIN_AGE_YEARS = 18;
@@ -168,7 +167,6 @@ export default function OnboardingScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [secretCode, setSecretCode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState<boolean>(false);
@@ -507,37 +505,6 @@ export default function OnboardingScreen() {
     }, 400);
   };
 
-  const handleSecretCodeSubmit = async () => {
-    if (!secretCode.trim()) {
-      Alert.alert('Error', 'Please enter a secret code');
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      const betaPasswordsRef = collection(db, 'betapasswords');
-      const q = query(betaPasswordsRef, where('password', '==', secretCode.toLowerCase().trim()));
-      const snapshot = await getDocs(q);
-
-      if (snapshot.empty) {
-        Alert.alert('Error', 'Invalid secret code');
-        setIsLoading(false);
-        return;
-      }
-
-      setIsLoading(false);
-      opacity.value = withTiming(0, { duration: 500 });
-      setTimeout(() => {
-        setStep('signup');
-        opacity.value = withTiming(1, { duration: 700 });
-      }, 550);
-    } catch (error) {
-      console.error('Error validating secret code:', error);
-      Alert.alert('Error', 'Could not verify secret code. Please try again.');
-      setIsLoading(false);
-    }
-  };
-
   const handleSignUpSubmit = async () => {
     if (!email.trim() || !password.trim() || !confirmPassword.trim()) {
       Alert.alert('Error', 'Please fill in all fields');
@@ -567,20 +534,46 @@ export default function OnboardingScreen() {
       
       if (!currentUser) throw new Error('Failed to get user');
 
+      // Provision Stripe Customer + free $0 sub server-side. Failure here
+      // is non-blocking: the user still completes signup; missing Stripe
+      // IDs can be backfilled by a follow-up function later. The Cloud
+      // Function also writes betaTrialStartedAt onto the user doc so we
+      // do NOT need to mirror that here.
+      let stripeIds: { stripeCustomerId?: string; stripeSubscriptionId?: string } = {};
+      try {
+        const createStripeCustomer = httpsCallable<
+          { email: string; name: string },
+          { customerId: string; subscriptionId: string }
+        >(functions, 'createStripeCustomer');
+        const result = await createStripeCustomer({ email, name: nameInput });
+        stripeIds = {
+          stripeCustomerId: result.data.customerId,
+          stripeSubscriptionId: result.data.subscriptionId,
+        };
+      } catch (err) {
+        console.warn('createStripeCustomer failed (continuing):', err);
+      }
+
       // Save user profile with onboarding answers to Firestore
       const dob =
         birthMonth && birthDay && birthYear.length === 4
           ? `${birthYear}-${birthMonth.padStart(2, '0')}-${birthDay.padStart(2, '0')}`
           : undefined;
-      await saveUserProfile(currentUser.uid, email, nameInput, {
-        personalityInitial: initialAnswers,
-        personalityReally: reallyAnswers,
-        object: selectedObject || undefined,
-        animal: selectedAnimal || undefined,
-        descriptors: selectedDescriptors,
-        descriptors2: selectedDescriptors2,
-        dob,
-      } as any);
+      await saveUserProfile(
+        currentUser.uid,
+        email,
+        nameInput,
+        {
+          personalityInitial: initialAnswers,
+          personalityReally: reallyAnswers,
+          object: selectedObject || undefined,
+          animal: selectedAnimal || undefined,
+          descriptors: selectedDescriptors,
+          descriptors2: selectedDescriptors2,
+          dob,
+        } as any,
+        stripeIds,
+      );
 
       // Persist the silver card alongside the user profile
       if (
@@ -849,7 +842,7 @@ export default function OnboardingScreen() {
     ambientAudioRef.current?.pause();
     setFirstStoryPlaying(false);
     setFirstStoryProgress(0);
-    advanceStepWithFade('secretcode');
+    advanceStepWithFade('signup');
   };
 
   const handleBirthdaySubmit = () => {
@@ -1489,7 +1482,7 @@ export default function OnboardingScreen() {
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.continueButton}
-                  onPress={() => advanceStepWithFade('secretcode')}
+                  onPress={() => advanceStepWithFade('signup')}
                 >
                   <Text style={styles.continueText}>skip for now →</Text>
                 </TouchableOpacity>
@@ -1568,42 +1561,6 @@ export default function OnboardingScreen() {
     );
   }
 
-  if (step === 'secretcode') {
-    return (
-      <View style={styles.container}>
-        <Animated.View style={[styles.fullScreen, animatedStyle]}>
-          <View style={styles.centered}>
-            <Text style={styles.subtitle}>
-              enter the <Text style={styles.bracket}>secret code</Text>
-            </Text>
-            <TextInput
-              style={styles.nameInput}
-              value={secretCode}
-              onChangeText={setSecretCode}
-              placeholder=""
-              placeholderTextColor="#666"
-              autoFocus
-              autoCapitalize="none"
-            />
-            {secretCode.trim() && (
-              <TouchableOpacity
-                style={[styles.continueButton, isLoading && { opacity: 0.5 }]}
-                onPress={handleSecretCodeSubmit}
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <ActivityIndicator size="small" color="#fff" />
-                ) : (
-                  <Text style={styles.continueText}>continue →</Text>
-                )}
-              </TouchableOpacity>
-            )}
-          </View>
-        </Animated.View>
-      </View>
-    );
-  }
-
   if (step === 'signup') {
     const canSubmit = email.trim() && password.trim() && confirmPassword.trim();
     return (
@@ -1615,7 +1572,9 @@ export default function OnboardingScreen() {
                 <Text style={styles.italic}>create your account</Text>
               </Text>
               <Text style={[styles.signupSub, { textAlign: 'center', marginBottom: 24 }]}>
-                to save your card and your first story,{'\n'}create an account
+                <Text style={styles.bracket}>this is a beta!</Text>
+                {'\n'}sign up now for 5 free stories a day for a month
+                {'\n'}+ access to the public story library
               </Text>
 
               <View style={{ gap: 12 }}>
@@ -2229,6 +2188,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
     textAlign: 'center',
     letterSpacing: 1.5,
+    textTransform: 'lowercase',
   },
   recapContinueWrap: {
     position: 'absolute',
