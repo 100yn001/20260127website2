@@ -158,11 +158,10 @@ export function ShelfCard({ story, onPress }: { story: CardStory; onPress?: () =
         <Text className="text-[0.9rem] font-serif-medium text-foreground" numberOfLines={1}>
           {story.title}
         </Text>
-        {story.narrator ? (
-          <Text className="mt-0.5 text-[11px] font-serif text-muted-foreground" numberOfLines={1}>
-            {story.narrator}
-          </Text>
-        ) : null}
+        <Text className="mt-0.5 text-[11px] font-serif text-muted-foreground" numberOfLines={1}>
+          <Text className="font-sans">{story.durationMin}</Text> min
+          {story.narrator ? <>  ·  {story.narrator}</> : null}
+        </Text>
       </View>
     </Pressable>
   );

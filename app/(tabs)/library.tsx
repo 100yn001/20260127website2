@@ -9,7 +9,9 @@ import { Screen, TopBar } from '@/components/screen';
 import { ContinueCard, ShelfCard, type CardStory } from '@/components/story-card';
 import { db } from '@/config/firebase';
 import { useAuth } from '@/contexts/AuthContext';
+import { useArtworkTint } from '@/hooks/useArtworkTint';
 import { cn } from '@/lib/cn';
+import { variedTint } from '@/lib/cover';
 
 type Row = { name: string; stories: CardStory[] };
 
@@ -18,6 +20,7 @@ const GUTTER = 'px-5 sm:px-8 md:px-10 lg:px-14';
 export default function LibraryScreen() {
   const router = useRouter();
   const { user } = useAuth();
+  const tint = useArtworkTint();
   const [loading, setLoading] = useState(true);
   const [keepListening, setKeepListening] = useState<CardStory[]>([]);
   const [collections, setCollections] = useState<Row[]>([]);
@@ -35,7 +38,7 @@ export default function LibraryScreen() {
           title: d.title ?? 'untitled',
           narrator: d.narratorName,
           durationMin: Math.max(1, Math.round((d.duration ?? 600) / 60)),
-          cover: coverFor(d.coverColor ?? d.id),
+          cover: variedTint(tint, d.id),
           nighttime: !!d.isNighttime,
           collection: (typeof d.collection === 'string' && d.collection.trim()) || null,
         }));
@@ -64,7 +67,7 @@ export default function LibraryScreen() {
     return () => {
       cancelled = true;
     };
-  }, [user?.uid]);
+  }, [user?.uid, tint.id]);
 
   const openStory = (id: string) => router.navigate({ pathname: '/player', params: { id } });
 
@@ -88,7 +91,7 @@ export default function LibraryScreen() {
         <View className={cn(GUTTER, 'pt-2 pb-6')}>
           <Text className="text-[1.9rem] font-serif-medium text-foreground">library</Text>
           <Text className="mt-1 text-[0.95rem] font-serif text-muted-foreground">
-            curated stories and what's still unfinished.
+            stories we think you'll like
           </Text>
         </View>
 
@@ -139,25 +142,4 @@ function Shelf({ title, children }: { title: string; children: React.ReactNode }
       </ScrollView>
     </View>
   );
-}
-
-function coverFor(seed: string): { a: string; b: string } {
-  const palettes: [string, string][] = [
-    ['#d6c2a8', '#8a6c47'],
-    ['#a6b3d5', '#3b4a7a'],
-    ['#cddacb', '#5c7a63'],
-    ['#e5d6b8', '#8a8055'],
-    ['#e8d2c1', '#a37257'],
-    ['#d7e0e8', '#6d8aa0'],
-    ['#c4a8d8', '#593c77'],
-  ];
-  const idx = Math.abs(hashStr(seed)) % palettes.length;
-  const [a, b] = palettes[idx];
-  return { a, b };
-}
-
-function hashStr(s: string) {
-  let h = 0;
-  for (let i = 0; i < s.length; i++) h = (h << 5) - h + s.charCodeAt(i);
-  return h;
 }
