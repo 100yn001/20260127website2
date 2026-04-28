@@ -19,7 +19,9 @@ import { ToggleGroup } from '@/components/ui/toggle-group';
 import { db } from '@/config/firebase';
 import { useAuth } from '@/contexts/AuthContext';
 import { useStoryQueue } from '@/contexts/StoryQueueContext';
+import { useArtworkTint } from '@/hooks/useArtworkTint';
 import { cn } from '@/lib/cn';
+import { variedTint } from '@/lib/cover';
 
 type Filter = 'all' | 'day' | 'night';
 const GUTTER = 'px-5 sm:px-8 md:px-10 lg:px-14';
@@ -28,6 +30,7 @@ export default function VaultScreen() {
   const router = useRouter();
   const { user } = useAuth();
   const { queue, removeFromQueue, retryStory } = useStoryQueue();
+  const tint = useArtworkTint();
 
   const [loading, setLoading] = useState(true);
   const [stories, setStories] = useState<CardStory[]>([]);
@@ -52,14 +55,11 @@ export default function VaultScreen() {
       (snap) => {
         const items: CardStory[] = snap.docs.map((d) => {
           const data = d.data() as any;
-          const rawDur = Number(data.duration);
-          const durationMin =
-            Number.isFinite(rawDur) && rawDur > 0 ? Math.max(1, Math.round(rawDur / 60)) : 10;
           return {
             id: d.id,
             title: data.title ?? 'untitled',
-            durationMin,
-            cover: coverFor(data.coverColor ?? d.id),
+            durationMin: parseDurationMin(data.duration),
+            cover: variedTint(tint, d.id),
             nighttime: !!data.isNighttime,
             narrator: data.narratorName,
           };
@@ -70,7 +70,7 @@ export default function VaultScreen() {
       () => setLoading(false)
     );
     return () => unsub();
-  }, [user?.uid]);
+  }, [user?.uid, tint.id]);
 
   const filtered = useMemo(() => {
     return stories.filter((s) => {
@@ -356,22 +356,19 @@ function QueueRow({
   );
 }
 
-function coverFor(seed: string): { a: string; b: string } {
-  const palettes: [string, string][] = [
-    ['#c4b5a0', '#6a5238'],
-    ['#9ea8cd', '#2e3964'],
-    ['#b4a2c3', '#4a3766'],
-    ['#b2b9c6', '#424c62'],
-    ['#d5cfb1', '#7a6f3c'],
-    ['#d8c0a3', '#8a5c36'],
-  ];
-  const idx = Math.abs(hashStr(seed)) % palettes.length;
-  const [a, b] = palettes[idx];
-  return { a, b };
+// Parses Firestore's `duration` field which historically gets written either
+// as the bucket string '5min'/'10min'/'15min' (current path) or as a number
+// (legacy seconds). Returns minutes; falls back to 10 only when nothing
+// meaningful is present.
+function parseDurationMin(raw: unknown): number {
+  if (typeof raw === 'string') {
+    const m = raw.match(/(\d+)/);
+    if (m) return Math.max(1, parseInt(m[1], 10));
+  }
+  if (typeof raw === 'number' && Number.isFinite(raw) && raw > 0) {
+    // Heuristic: small numbers are minutes, bigger ones are seconds.
+    return raw > 60 ? Math.max(1, Math.round(raw / 60)) : Math.max(1, Math.round(raw));
+  }
+  return 10;
 }
 
-function hashStr(s: string) {
-  let h = 0;
-  for (let i = 0; i < s.length; i++) h = (h << 5) - h + s.charCodeAt(i);
-  return h;
-}

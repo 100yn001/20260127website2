@@ -22,8 +22,9 @@ import { ActivityIndicator, Modal, Platform, Pressable, ScrollView, Text, View }
 import { Screen, TopBar } from '@/components/screen';
 import { db } from '@/config/firebase';
 import { useAudioPlayer } from '@/contexts/AudioPlayerContext';
+import { useArtworkTint } from '@/hooks/useArtworkTint';
 import { cn } from '@/lib/cn';
-import { coverFor } from '@/lib/cover';
+import { variedTint } from '@/lib/cover';
 
 export default function PlayerScreen() {
   const router = useRouter();
@@ -92,7 +93,8 @@ export default function PlayerScreen() {
     };
   }, [id]);
 
-  const cover = useMemo(() => coverFor(story?.coverColor ?? id ?? 'x'), [story, id]);
+  const tint = useArtworkTint();
+  const cover = useMemo(() => variedTint(tint, story?.id ?? id ?? 'x'), [tint, story?.id, id]);
   const mode = story?.isNighttime ? 'night' : 'day';
 
   // Defensive math — `duration` and `position` come from the audio context

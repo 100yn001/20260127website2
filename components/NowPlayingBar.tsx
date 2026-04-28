@@ -1,15 +1,18 @@
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAudioPlayer } from '@/contexts/AudioPlayerContext';
 import { useTheme } from '@/contexts/ThemeContext';
-import { coverFor } from '@/lib/cover';
+import { useArtworkTint } from '@/hooks/useArtworkTint';
+import { variedTint } from '@/lib/cover';
 import { createShadow } from '@/utils/shadow';
 import { LinearGradient } from 'expo-linear-gradient';
 import { usePathname, useRouter } from 'expo-router';
+import { ChevronDown } from 'lucide-react-native';
 import { useEffect, useMemo, useState } from 'react';
 import {
     ActivityIndicator,
     Dimensions,
     Platform,
+    Pressable,
     StyleSheet,
     Text,
     TouchableOpacity,
@@ -17,24 +20,23 @@ import {
 } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
-    runOnJS,
     useAnimatedStyle,
     useSharedValue,
     withSpring,
-    withTiming,
 } from 'react-native-reanimated';
 
-const SWIPE_THRESHOLD_RATIO = 0.25;
-const VELOCITY_THRESHOLD = 500;
 const DESKTOP_BREAKPOINT = 768;
 
 export const NowPlayingBar = () => {
   const { currentTrack, isPlaying, isLoading, togglePlayPause, stop } = useAudioPlayer();
   const { colors } = useTheme();
+  const tint = useArtworkTint();
   const router = useRouter();
   const pathname = usePathname();
   const translateX = useSharedValue(0);
-  const opacity = useSharedValue(1);
+  const translateY = useSharedValue(0);
+  const startX = useSharedValue(0);
+  const startY = useSharedValue(0);
 
   const [windowWidth, setWindowWidth] = useState(() => Dimensions.get('window').width);
   useEffect(() => {
@@ -44,13 +46,12 @@ export const NowPlayingBar = () => {
   const isDesktop = Platform.OS === 'web' && windowWidth >= DESKTOP_BREAKPOINT;
 
   const animatedBarStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: translateX.value }],
-    opacity: opacity.value,
+    transform: [{ translateX: translateX.value }, { translateY: translateY.value }],
   }));
 
   const cover = useMemo(
-    () => coverFor(currentTrack?.id || currentTrack?.coverColor || currentTrack?.title),
-    [currentTrack?.id, currentTrack?.coverColor, currentTrack?.title],
+    () => variedTint(tint, currentTrack?.id || currentTrack?.title || 'x'),
+    [tint, currentTrack?.id, currentTrack?.title],
   );
 
   // Hide on player screen and create workflow screens
@@ -91,38 +92,21 @@ export const NowPlayingBar = () => {
     });
   };
 
-  const dismissPlayer = () => {
-    stop();
-  };
-
-  const screenWidth = Dimensions.get('window').width;
-  const swipeThreshold = screenWidth * SWIPE_THRESHOLD_RATIO;
-
+  // Pan gesture: free drag in both axes, no dismiss-on-fling. The player
+  // window stays where the user drops it. Use the close button to dismiss.
   const panGesture = Gesture.Pan()
-    .activeOffsetX([-10, 10])
-    .failOffsetY([-15, 15])
-    .onUpdate((event) => {
-      translateX.value = event.translationX;
-      opacity.value = 1 - Math.min(0.8, Math.abs(event.translationX) / screenWidth);
+    .onStart(() => {
+      startX.value = translateX.value;
+      startY.value = translateY.value;
     })
-    .onEnd((event) => {
-      const swipedPastThreshold = Math.abs(event.translationX) > swipeThreshold;
-      const flung = Math.abs(event.velocityX) > VELOCITY_THRESHOLD;
-
-      if (swipedPastThreshold || flung) {
-        const direction = event.translationX < 0 ? -1 : 1;
-        const distance = screenWidth - Math.abs(event.translationX);
-        const velocity = Math.max(Math.abs(event.velocityX), 800);
-        const dismissDuration = Math.min(300, Math.max(100, (distance / velocity) * 1000));
-
-        translateX.value = withTiming(direction * screenWidth, { duration: dismissDuration });
-        opacity.value = withTiming(0, { duration: dismissDuration }, () => {
-          runOnJS(dismissPlayer)();
-        });
-      } else {
-        translateX.value = withSpring(0, { damping: 20, stiffness: 200 });
-        opacity.value = withSpring(1);
-      }
+    .onUpdate((event) => {
+      translateX.value = startX.value + event.translationX;
+      translateY.value = startY.value + event.translationY;
+    })
+    .onEnd(() => {
+      // Soft-snap any over-drag back inside; otherwise leave in place.
+      translateX.value = withSpring(translateX.value, { damping: 20, stiffness: 200 });
+      translateY.value = withSpring(translateY.value, { damping: 20, stiffness: 200 });
     });
 
   const PlayPauseButton = (
@@ -142,6 +126,20 @@ export const NowPlayingBar = () => {
     </TouchableOpacity>
   );
 
+  const CloseButton = (
+    <Pressable
+      onPress={(e) => {
+        e.stopPropagation();
+        stop();
+      }}
+      hitSlop={10}
+      accessibilityLabel="close player"
+      style={styles.closeButton}
+    >
+      <ChevronDown size={16} color="rgba(255,255,255,0.85)" />
+    </Pressable>
+  );
+
   if (isDesktop) {
     return (
       <GestureDetector gesture={panGesture}>
@@ -159,6 +157,7 @@ export const NowPlayingBar = () => {
                 style={StyleSheet.absoluteFill}
               />
             </View>
+            <View style={styles.desktopCloseSlot}>{CloseButton}</View>
             <View style={styles.desktopFooter}>
               <View style={styles.desktopTextContainer}>
                 <Text style={[styles.desktopTitle, { color: colors.text }]} numberOfLines={1}>
@@ -217,7 +216,10 @@ export const NowPlayingBar = () => {
                 ) : null}
               </View>
             </View>
-            <View style={styles.mobileControls}>{PlayPauseButton}</View>
+            <View style={styles.mobileControls}>
+              {PlayPauseButton}
+              {CloseButton}
+            </View>
           </View>
         </TouchableOpacity>
       </Animated.View>
@@ -277,6 +279,7 @@ const styles = StyleSheet.create({
   mobileControls: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 6,
   },
 
   // Desktop square card (bottom-right corner)
@@ -332,6 +335,21 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+
+  closeButton: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.12)',
+  },
+  desktopCloseSlot: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    zIndex: 2,
   },
 });
 
