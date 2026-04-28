@@ -47,19 +47,36 @@ export default function PlayerScreen() {
   const [story, setStory] = useState<any>(null);
   const [bookmarked, setBookmarked] = useState(false);
   const [transcriptOpen, setTranscriptOpen] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
+    setLoadError(null);
     (async () => {
-      if (!id) return;
+      if (!id) {
+        setLoadError('no story id provided');
+        return;
+      }
       try {
-        // Try user stories first, then public library.
-        let snap = await getDoc(doc(db, 'stories', id));
-        if (!snap.exists()) {
-          snap = await getDoc(doc(db, 'publicStories', id));
-        }
-        if (cancelled || !snap.exists()) {
+        // Look in user stories and the public library in parallel — public
+        // stories were getting stuck because of the sequential fetch when
+        // rules denied the first one.
+        console.log('[player] fetching', id);
+        const [userSnap, publicSnap] = await Promise.all([
+          getDoc(doc(db, 'stories', id)).catch((e) => {
+            console.warn('[player] stories/{id} read failed', e?.code, e?.message);
+            return null;
+          }),
+          getDoc(doc(db, 'publicStories', id)).catch((e) => {
+            console.warn('[player] publicStories/{id} read failed', e?.code, e?.message);
+            return null;
+          }),
+        ]);
+        const snap = userSnap?.exists() ? userSnap : publicSnap?.exists() ? publicSnap : null;
+        if (cancelled) return;
+        if (!snap) {
           console.warn('[player] story not found in stories or publicStories', id);
+          setLoadError("we couldn't find that story");
           return;
         }
         const data = snap.data() as any;
@@ -68,6 +85,7 @@ export default function PlayerScreen() {
           !!data.audioUrl || (Array.isArray(data.audioChunkURLs) && data.audioChunkURLs.length);
         if (!hasAudio) {
           console.warn('[player] story has no audio yet', id);
+          setLoadError('this story has no audio yet');
           return;
         }
         await loadTrack(
@@ -84,8 +102,9 @@ export default function PlayerScreen() {
           },
           true
         );
-      } catch (e) {
+      } catch (e: any) {
         console.error('[player] load failed', e);
+        if (!cancelled) setLoadError(e?.message || 'failed to load this story');
       }
     })();
     return () => {
@@ -145,7 +164,17 @@ export default function PlayerScreen() {
       />
 
       <View className="flex-1 items-center justify-center px-5 pb-10">
-        <View className="w-full max-w-[420px] items-center">
+        {loadError ? (
+          <View className="px-6">
+            <Text className="text-center text-lg font-serif-medium text-foreground">
+              {loadError}
+            </Text>
+            <Text className="mt-2 text-center text-xs font-serif text-muted-foreground">
+              story id: {id}
+            </Text>
+          </View>
+        ) : null}
+        <View className={cn('w-full max-w-[420px] items-center', loadError && 'opacity-30')}>
           <View className="w-full max-w-[380px] aspect-square overflow-hidden rounded-[28px]">
             <LinearGradient
               colors={[cover.a, cover.b]}
