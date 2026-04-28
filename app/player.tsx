@@ -224,13 +224,13 @@ export default function PlayerScreen() {
             </Pressable>
             <Pressable
               onPress={togglePlayPause}
-              className="h-16 w-16 items-center justify-center bg-black"
+              className="h-16 w-16 items-center justify-center"
               style={Platform.OS === 'web' ? ({ outlineWidth: 0 } as any) : undefined}
             >
               {isPlaying ? (
-                <Pause size={24} color="#fff" fill="#fff" />
+                <Pause size={36} color="hsl(var(--foreground))" fill="hsl(var(--foreground))" />
               ) : (
-                <Play size={24} color="#fff" fill="#fff" />
+                <Play size={36} color="hsl(var(--foreground))" fill="hsl(var(--foreground))" />
               )}
             </Pressable>
             <Pressable onPress={() => skipForward(15)} className="h-12 w-12 items-center justify-center">

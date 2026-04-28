@@ -166,9 +166,9 @@ export default function PublicNarratorsScreen() {
     <Screen wide>
       <TopBar onBack={() => router.back()} />
       <View className={cn(GUTTER, 'pt-2 pb-4')}>
-        <View className="flex-row items-baseline gap-2 mb-1">
-          <Globe size={22} color="hsl(var(--foreground))" style={{ transform: [{ translateY: 3 }] }} />
-          <Text className="text-[1.9rem] font-serif-medium text-foreground leading-none">
+        <View className="flex-row items-center gap-2 mb-1">
+          <Globe size={22} color="hsl(var(--foreground))" />
+          <Text className="text-[1.9rem] font-serif-medium text-foreground">
             public narrators
           </Text>
         </View>
