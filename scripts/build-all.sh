@@ -26,6 +26,13 @@ echo "📦 Combining builds..."
 mkdir -p dist/app
 cp -r dist-expo/* dist/app/
 
+# 4b. Copy /public/* into dist/app/ so static assets like the favicon
+#     (referenced from app/+html.tsx as /app/icon2.png) are actually served.
+if [ -d public ]; then
+  echo "📦 Copying public/ → dist/app/"
+  cp -R public/. dist/app/
+fi
+
 # 5. Clean up
 rm -rf dist-expo
 
