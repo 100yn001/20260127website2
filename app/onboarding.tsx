@@ -191,6 +191,10 @@ export default function OnboardingScreen() {
   const narrationAudioRef = useRef<HTMLAudioElement | null>(null);
   const ambientAudioRef = useRef<HTMLAudioElement | null>(null);
   const narrationChunkIndexRef = useRef(0);
+  // Per-chunk durations in seconds, populated by probing each narration URL
+  // once it lands. Total story duration = sum. Progress bar uses elapsed/total.
+  const [chunkDurations, setChunkDurations] = useState<number[]>([]);
+  const [firstStoryProgress, setFirstStoryProgress] = useState(0);
   // Stable per-onboarding-session seed used as the FNV-1a tiebreak input
   // for the archetype classifier. Generated once at mount; the user's real
   // uid isn't known until signup, but classification needs to run earlier.
@@ -696,11 +700,42 @@ export default function OnboardingScreen() {
       : null;
     setNarrationUrls(nUrls);
     setAmbientUrl(aUrl);
+    setChunkDurations([]);
+    setFirstStoryProgress(0);
     return () => {
       nUrls.forEach((u) => URL.revokeObjectURL(u));
       if (aUrl) URL.revokeObjectURL(aUrl);
     };
   }, [firstStory]);
+
+  // Probe each narration chunk's duration so the progress bar can compute
+  // elapsed/total before the user starts playback. Each probe is cheap (a
+  // throwaway Audio element resolving on `loadedmetadata`); cancellation
+  // flips a local flag so a unit-tested race doesn't write stale state.
+  useEffect(() => {
+    if (narrationUrls.length === 0) return;
+    let cancelled = false;
+    const durations: number[] = new Array(narrationUrls.length).fill(0);
+    let resolved = 0;
+    narrationUrls.forEach((url, i) => {
+      const probe = new Audio();
+      probe.preload = 'metadata';
+      const onMeta = () => {
+        const d = probe.duration;
+        durations[i] = Number.isFinite(d) && d > 0 ? d : 0;
+        resolved += 1;
+        if (resolved === narrationUrls.length && !cancelled) {
+          setChunkDurations(durations);
+        }
+        probe.removeEventListener('loadedmetadata', onMeta);
+      };
+      probe.addEventListener('loadedmetadata', onMeta);
+      probe.src = url;
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [narrationUrls]);
 
   // Tear down audio on unmount so a back-nav doesn't leave anything playing.
   useEffect(() => {
@@ -750,8 +785,22 @@ export default function OnboardingScreen() {
     } else {
       setFirstStoryPlaying(false);
       narrationChunkIndexRef.current = 0;
+      setFirstStoryProgress(0);
       ambientAudioRef.current?.pause();
     }
+  };
+
+  const handleNarrationTimeUpdate = () => {
+    const audio = narrationAudioRef.current;
+    if (!audio) return;
+    const total = chunkDurations.reduce((a, b) => a + b, 0);
+    if (total <= 0) return;
+    const before = chunkDurations
+      .slice(0, narrationChunkIndexRef.current)
+      .reduce((a, b) => a + b, 0);
+    const elapsed = before + (Number.isFinite(audio.currentTime) ? audio.currentTime : 0);
+    const ratio = Math.min(1, Math.max(0, elapsed / total));
+    setFirstStoryProgress(ratio);
   };
 
   const handleFirstStoryPlayPause = () => {
@@ -799,6 +848,7 @@ export default function OnboardingScreen() {
     narrationAudioRef.current?.pause();
     ambientAudioRef.current?.pause();
     setFirstStoryPlaying(false);
+    setFirstStoryProgress(0);
     advanceStepWithFade('secretcode');
   };
 
@@ -1471,6 +1521,14 @@ export default function OnboardingScreen() {
                     </TouchableOpacity>
                   ) : null}
                 </View>
+                <View style={styles.firstStoryProgressTrack}>
+                  <View
+                    style={[
+                      styles.firstStoryProgressFill,
+                      { width: `${Math.round(firstStoryProgress * 100)}%` },
+                    ]}
+                  />
+                </View>
                 <Text style={[styles.firstStoryHint, { marginTop: 32 }]}>
                   sign up to save your card{'\n'}and your first story
                 </Text>
@@ -1486,6 +1544,7 @@ export default function OnboardingScreen() {
                     {React.createElement('audio' as any, {
                       ref: narrationAudioRef,
                       onEnded: handleNarrationEnded,
+                      onTimeUpdate: handleNarrationTimeUpdate,
                       onPause: () => {
                         // Browser-driven pauses (e.g. media-key) should sync state.
                         if (narrationAudioRef.current && !narrationAudioRef.current.ended) {
@@ -2036,6 +2095,19 @@ const styles = StyleSheet.create({
     color: 'rgba(255, 255, 255, 0.85)',
     fontFamily: 'EBGaramond-Regular',
     letterSpacing: 0.5,
+  },
+  firstStoryProgressTrack: {
+    marginTop: 16,
+    width: 220,
+    height: 2,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    borderRadius: 1,
+    overflow: 'hidden',
+  },
+  firstStoryProgressFill: {
+    height: '100%',
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+    borderRadius: 1,
   },
   italic: {
     fontStyle: 'italic',

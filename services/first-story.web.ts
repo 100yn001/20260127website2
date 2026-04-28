@@ -105,7 +105,7 @@ async function generateTranscript(args: {
     `You write short, soothing audio narrations meant to be read aloud by a calm voice over peaceful ambient sound.`,
     `Output PURE narration only — no titles, no headings, no stage directions, no sound-effect cues, no parentheticals, no markdown.`,
     `Second-person, present tense. Address the listener directly using their name a few times, but not so often that it sounds canned.`,
-    `Target ~${TARGET_WORD_COUNT} words (this becomes ~2 minutes of audio).`,
+    `Aim for ${TARGET_WORD_COUNT - 20}–${TARGET_WORD_COUNT + 20} words and DO NOT exceed ${TARGET_WORD_COUNT + 20}; this is a strictly ~2-minute audio.`,
     `No mention of word counts, durations, or that this is a script.`,
   ].join(' ');
 
