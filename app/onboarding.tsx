@@ -12,6 +12,13 @@ import {
     type MuseSub,
     type ShadowSub,
 } from '@/constants/archetypes';
+import {
+    generateFirstStory,
+    saveFirstStory,
+    type FirstStoryGender,
+    type FirstStoryScenario,
+    type GeneratedFirstStory,
+} from '@/services/first-story';
 import { saveSilverCard, saveUserProfile } from '@/services/user-service';
 import CardScene from '@/components/silver-card/CardScene';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -39,6 +46,7 @@ import Animated, {
 
 type Step =
   | 'welcome'
+  | 'birthday'
   | 'intro-audio'
   | 'initial-quiz'
   | 'initial-recap'
@@ -50,8 +58,45 @@ type Step =
   | 'descriptors2'
   | 'name'
   | 'storyteller-recap'
+  | 'first-story'
   | 'secretcode'
   | 'signup';
+
+const MIN_AGE_YEARS = 18;
+
+// Returns a whole-number age in years if the inputs form a valid Gregorian
+// date in the past, otherwise null. Used to gate onboarding on 18+.
+function computeAgeYears(
+  monthStr: string,
+  dayStr: string,
+  yearStr: string,
+  today: Date,
+): number | null {
+  if (!/^\d{1,2}$/.test(monthStr) || !/^\d{1,2}$/.test(dayStr) || !/^\d{4}$/.test(yearStr)) {
+    return null;
+  }
+  const month = parseInt(monthStr, 10);
+  const day = parseInt(dayStr, 10);
+  const year = parseInt(yearStr, 10);
+  if (month < 1 || month > 12) return null;
+  if (day < 1 || day > 31) return null;
+  if (year < 1900) return null;
+  const dob = new Date(year, month - 1, day);
+  if (
+    dob.getFullYear() !== year ||
+    dob.getMonth() !== month - 1 ||
+    dob.getDate() !== day
+  ) {
+    return null;
+  }
+  if (dob.getTime() > today.getTime()) return null;
+  let age = today.getFullYear() - year;
+  const beforeBirthdayThisYear =
+    today.getMonth() < dob.getMonth() ||
+    (today.getMonth() === dob.getMonth() && today.getDate() < dob.getDate());
+  if (beforeBirthdayThisYear) age -= 1;
+  return age;
+}
 
 type Pipeline = {
   words?: string;
@@ -114,6 +159,12 @@ export default function OnboardingScreen() {
   const [initialAnswers, setInitialAnswers] = useState<Record<string, string>>({});
   const [reallyAnswers, setReallyAnswers] = useState<Record<string, string>>({});
   const [nameInput, setNameInput] = useState('');
+  const [birthMonth, setBirthMonth] = useState('');
+  const [birthDay, setBirthDay] = useState('');
+  const [birthYear, setBirthYear] = useState('');
+  const birthMonthRef = useRef<TextInput>(null);
+  const birthDayRef = useRef<TextInput>(null);
+  const birthYearRef = useRef<TextInput>(null);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -124,6 +175,22 @@ export default function OnboardingScreen() {
   const [showExistingAccountModal, setShowExistingAccountModal] = useState(false);
   const [pipeline, setPipeline] = useState<Pipeline>({});
   const pipelineStarted = useRef(false);
+
+  // ── First-story step (after silver-card reveal, before signup) ─────────
+  type FirstStoryStage = 'pick' | 'generating' | 'ready' | 'error';
+  const [firstStoryStage, setFirstStoryStage] = useState<FirstStoryStage>('pick');
+  const [firstStoryGender, setFirstStoryGender] = useState<FirstStoryGender | null>(null);
+  const [firstStoryScenario, setFirstStoryScenario] = useState<FirstStoryScenario | null>(null);
+  const [firstStoryError, setFirstStoryError] = useState<string | null>(null);
+  const [firstStory, setFirstStory] = useState<GeneratedFirstStory | null>(null);
+  // Object URLs for the player. Created after blobs land, revoked on unmount.
+  const [narrationUrls, setNarrationUrls] = useState<string[]>([]);
+  const [ambientUrl, setAmbientUrl] = useState<string | null>(null);
+  const [firstStoryPlaying, setFirstStoryPlaying] = useState(false);
+  const [firstStoryAmbientOn, setFirstStoryAmbientOn] = useState(true);
+  const narrationAudioRef = useRef<HTMLAudioElement | null>(null);
+  const ambientAudioRef = useRef<HTMLAudioElement | null>(null);
+  const narrationChunkIndexRef = useRef(0);
   // Stable per-onboarding-session seed used as the FNV-1a tiebreak input
   // for the archetype classifier. Generated once at mount; the user's real
   // uid isn't known until signup, but classification needs to run earlier.
@@ -497,6 +564,10 @@ export default function OnboardingScreen() {
       if (!currentUser) throw new Error('Failed to get user');
 
       // Save user profile with onboarding answers to Firestore
+      const dob =
+        birthMonth && birthDay && birthYear.length === 4
+          ? `${birthYear}-${birthMonth.padStart(2, '0')}-${birthDay.padStart(2, '0')}`
+          : undefined;
       await saveUserProfile(currentUser.uid, email, nameInput, {
         personalityInitial: initialAnswers,
         personalityReally: reallyAnswers,
@@ -504,6 +575,7 @@ export default function OnboardingScreen() {
         animal: selectedAnimal || undefined,
         descriptors: selectedDescriptors,
         descriptors2: selectedDescriptors2,
+        dob,
       } as any);
 
       // Persist the silver card alongside the user profile
@@ -526,6 +598,18 @@ export default function OnboardingScreen() {
           scenePrompt: pipeline.landscape,
           imageUrl: pipeline.remoteUrl,
         }).catch((err) => console.warn('saveSilverCard failed:', err));
+      }
+
+      // Persist the first-story (generated pre-signup, blobs held in state).
+      // Failure here doesn't block onboarding completion — the user has
+      // already heard the story, and we'd rather land them in the app than
+      // strand them on the signup screen.
+      if (firstStory) {
+        try {
+          await saveFirstStory(currentUser.uid, firstStory);
+        } catch (err) {
+          console.warn('saveFirstStory failed:', err);
+        }
       }
 
       // Also save to AsyncStorage for offline access
@@ -587,9 +671,143 @@ export default function OnboardingScreen() {
     toOpacity.value = withTiming(0, { duration: 900 });
     ynOpacity.value = withTiming(0, { duration: 900 });
     setTimeout(() => {
-      setStep('intro-audio');
+      setStep('birthday');
       opacity.value = withTiming(1, { duration: 900 });
     }, 1000);
+  };
+
+  const birthdayAge = computeAgeYears(birthMonth, birthDay, birthYear, new Date());
+  const birthdayComplete =
+    birthMonth.length > 0 && birthDay.length > 0 && birthYear.length === 4;
+  const birthdayValid = birthdayAge !== null;
+  const birthdayUnderage =
+    birthdayComplete && birthdayValid && (birthdayAge as number) < MIN_AGE_YEARS;
+  const birthdayBadDate = birthdayComplete && !birthdayValid;
+  const birthdayCanContinue =
+    birthdayValid && (birthdayAge as number) >= MIN_AGE_YEARS;
+
+  // Build object URLs for the player when blobs land. Revoke them when the
+  // step unmounts or the user generates a new story so we don't leak.
+  useEffect(() => {
+    if (!firstStory) return;
+    const nUrls = firstStory.narrationBlobs.map((b) => URL.createObjectURL(b));
+    const aUrl = firstStory.ambientBlob
+      ? URL.createObjectURL(firstStory.ambientBlob)
+      : null;
+    setNarrationUrls(nUrls);
+    setAmbientUrl(aUrl);
+    return () => {
+      nUrls.forEach((u) => URL.revokeObjectURL(u));
+      if (aUrl) URL.revokeObjectURL(aUrl);
+    };
+  }, [firstStory]);
+
+  // Tear down audio on unmount so a back-nav doesn't leave anything playing.
+  useEffect(() => {
+    return () => {
+      narrationAudioRef.current?.pause();
+      ambientAudioRef.current?.pause();
+    };
+  }, []);
+
+  const startFirstStoryGeneration = async () => {
+    if (!firstStoryGender || !firstStoryScenario) return;
+    if (Platform.OS !== 'web') {
+      setFirstStoryError('first-story playback is web-only for now');
+      setFirstStoryStage('error');
+      return;
+    }
+    setFirstStoryError(null);
+    setFirstStoryStage('generating');
+    try {
+      const story = await generateFirstStory({
+        name: nameInput.trim() || 'friend',
+        gender: firstStoryGender,
+        scenario: firstStoryScenario,
+      });
+      setFirstStory(story);
+      setFirstStoryStage('ready');
+    } catch (err) {
+      console.error('first-story generation failed:', err);
+      setFirstStoryError(err instanceof Error ? err.message : String(err));
+      setFirstStoryStage('error');
+    }
+  };
+
+  const playNarrationFromIndex = (i: number) => {
+    if (!narrationUrls.length) return;
+    const audio = narrationAudioRef.current;
+    if (!audio) return;
+    narrationChunkIndexRef.current = i;
+    audio.src = narrationUrls[i];
+    audio.play().catch((err) => console.warn('narration play failed:', err));
+  };
+
+  const handleNarrationEnded = () => {
+    const next = narrationChunkIndexRef.current + 1;
+    if (next < narrationUrls.length) {
+      playNarrationFromIndex(next);
+    } else {
+      setFirstStoryPlaying(false);
+      narrationChunkIndexRef.current = 0;
+      ambientAudioRef.current?.pause();
+    }
+  };
+
+  const handleFirstStoryPlayPause = () => {
+    const narration = narrationAudioRef.current;
+    const ambient = ambientAudioRef.current;
+    if (!narration) return;
+    if (firstStoryPlaying) {
+      narration.pause();
+      ambient?.pause();
+      setFirstStoryPlaying(false);
+      return;
+    }
+    if (!narration.src) {
+      playNarrationFromIndex(0);
+    } else {
+      narration.play().catch((err) => console.warn('narration resume failed:', err));
+    }
+    if (firstStoryAmbientOn && ambient && ambientUrl) {
+      if (!ambient.src) ambient.src = ambientUrl;
+      ambient.loop = true;
+      ambient.volume = 0.35;
+      ambient.play().catch((err) => console.warn('ambient play failed:', err));
+    }
+    setFirstStoryPlaying(true);
+  };
+
+  const handleAmbientToggle = () => {
+    const next = !firstStoryAmbientOn;
+    setFirstStoryAmbientOn(next);
+    const ambient = ambientAudioRef.current;
+    if (!ambient || !ambientUrl) return;
+    if (next) {
+      if (!ambient.src) ambient.src = ambientUrl;
+      ambient.loop = true;
+      ambient.volume = 0.35;
+      if (firstStoryPlaying) {
+        ambient.play().catch((err) => console.warn('ambient resume failed:', err));
+      }
+    } else {
+      ambient.pause();
+    }
+  };
+
+  const handleFirstStoryContinue = () => {
+    narrationAudioRef.current?.pause();
+    ambientAudioRef.current?.pause();
+    setFirstStoryPlaying(false);
+    advanceStepWithFade('secretcode');
+  };
+
+  const handleBirthdaySubmit = () => {
+    if (!birthdayCanContinue) return;
+    const mm = birthMonth.padStart(2, '0');
+    const dd = birthDay.padStart(2, '0');
+    setAnswers((prev) => ({ ...prev, dob: `${birthYear}-${mm}-${dd}` }));
+    advanceStepWithFade('intro-audio');
   };
 
   if (step === 'welcome') {
@@ -621,6 +839,79 @@ export default function OnboardingScreen() {
     );
   }
 
+
+  if (step === 'birthday') {
+    return (
+      <View style={styles.container}>
+        <Animated.View style={[styles.fullScreen, animatedStyle]}>
+          <View style={styles.centered}>
+            <Text style={styles.subtitle}>
+              when&apos;s your <Text style={styles.italic}>birthday</Text>?
+            </Text>
+            <View style={styles.birthdayRow}>
+              <TextInput
+                ref={birthMonthRef}
+                style={[styles.birthdayInput, styles.birthdayInputMd]}
+                value={birthMonth}
+                onChangeText={(t) => {
+                  const cleaned = t.replace(/[^0-9]/g, '').slice(0, 2);
+                  setBirthMonth(cleaned);
+                  if (cleaned.length === 2) birthDayRef.current?.focus();
+                }}
+                placeholder="mm"
+                placeholderTextColor="#555"
+                keyboardType="number-pad"
+                maxLength={2}
+                autoFocus
+              />
+              <Text style={styles.birthdaySlash}>/</Text>
+              <TextInput
+                ref={birthDayRef}
+                style={[styles.birthdayInput, styles.birthdayInputMd]}
+                value={birthDay}
+                onChangeText={(t) => {
+                  const cleaned = t.replace(/[^0-9]/g, '').slice(0, 2);
+                  setBirthDay(cleaned);
+                  if (cleaned.length === 2) birthYearRef.current?.focus();
+                }}
+                placeholder="dd"
+                placeholderTextColor="#555"
+                keyboardType="number-pad"
+                maxLength={2}
+              />
+              <Text style={styles.birthdaySlash}>/</Text>
+              <TextInput
+                ref={birthYearRef}
+                style={[styles.birthdayInput, styles.birthdayInputYr]}
+                value={birthYear}
+                onChangeText={(t) => setBirthYear(t.replace(/[^0-9]/g, '').slice(0, 4))}
+                placeholder="yyyy"
+                placeholderTextColor="#555"
+                keyboardType="number-pad"
+                maxLength={4}
+              />
+            </View>
+            {birthdayBadDate ? (
+              <Text style={styles.birthdayHint}>that doesn&apos;t look like a real date</Text>
+            ) : birthdayUnderage ? (
+              <Text style={styles.birthdayHint}>
+                you must be 18 or older to use{' '}
+                <Text style={styles.bracket}>{'{'}yn{'}'}</Text>
+              </Text>
+            ) : null}
+            {birthdayCanContinue ? (
+              <TouchableOpacity
+                style={styles.continueButton}
+                onPress={handleBirthdaySubmit}
+              >
+                <Text style={styles.continueText}>continue →</Text>
+              </TouchableOpacity>
+            ) : null}
+          </View>
+        </Animated.View>
+      </View>
+    );
+  }
 
   if (step === 'intro-audio') {
     return (
@@ -973,7 +1264,7 @@ export default function OnboardingScreen() {
           ) : null}
           {reveal ? (
             <Animated.View style={[styles.recapContinueWrap, cardContinueStyle]}>
-              <TouchableOpacity onPress={() => advanceStepWithFade('secretcode')}>
+              <TouchableOpacity onPress={() => advanceStepWithFade('first-story')}>
                 <Text style={styles.continueText}>continue →</Text>
               </TouchableOpacity>
             </Animated.View>
@@ -1033,6 +1324,178 @@ export default function OnboardingScreen() {
     );
   }
 
+  if (step === 'first-story') {
+    const canGenerate = !!firstStoryGender && !!firstStoryScenario;
+    return (
+      <View style={styles.container}>
+        <Animated.View style={[styles.fullScreen, animatedStyle]}>
+          <View style={styles.centered}>
+            {firstStoryStage === 'pick' ? (
+              <>
+                <Text style={styles.subtitle}>
+                  let&apos;s create your <Text style={styles.italic}>first story</Text>
+                </Text>
+                <Text style={styles.firstStoryLabel}>narrator</Text>
+                <View style={styles.firstStoryRow}>
+                  <TouchableOpacity
+                    style={styles.firstStoryChoice}
+                    onPress={() => setFirstStoryGender('male')}
+                  >
+                    <Text
+                      style={[
+                        styles.firstStoryChoiceText,
+                        firstStoryGender === 'male' && styles.selectedText,
+                      ]}
+                    >
+                      he
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.firstStoryChoice}
+                    onPress={() => setFirstStoryGender('female')}
+                  >
+                    <Text
+                      style={[
+                        styles.firstStoryChoiceText,
+                        firstStoryGender === 'female' && styles.selectedText,
+                      ]}
+                    >
+                      she
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+                <Text style={[styles.firstStoryLabel, { marginTop: 28 }]}>scene</Text>
+                <View style={styles.firstStoryColumn}>
+                  <TouchableOpacity
+                    style={styles.firstStoryChoice}
+                    onPress={() => setFirstStoryScenario('walk')}
+                  >
+                    <Text
+                      style={[
+                        styles.firstStoryChoiceText,
+                        firstStoryScenario === 'walk' && styles.selectedText,
+                      ]}
+                    >
+                      a walk in the park
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.firstStoryChoice}
+                    onPress={() => setFirstStoryScenario('meditation')}
+                  >
+                    <Text
+                      style={[
+                        styles.firstStoryChoiceText,
+                        firstStoryScenario === 'meditation' && styles.selectedText,
+                      ]}
+                    >
+                      a meditation
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+                {canGenerate ? (
+                  <TouchableOpacity
+                    style={styles.continueButton}
+                    onPress={startFirstStoryGeneration}
+                  >
+                    <Text style={styles.continueText}>generate →</Text>
+                  </TouchableOpacity>
+                ) : null}
+              </>
+            ) : firstStoryStage === 'generating' ? (
+              <>
+                <ActivityIndicator size="small" color="rgba(255,255,255,0.6)" />
+                <Text style={[styles.firstStoryHint, { marginTop: 24 }]}>
+                  weaving your story...
+                </Text>
+              </>
+            ) : firstStoryStage === 'error' ? (
+              <>
+                <Text style={styles.subtitle}>something broke</Text>
+                {firstStoryError ? (
+                  <Text style={styles.errorDetailInline}>{firstStoryError}</Text>
+                ) : null}
+                <TouchableOpacity
+                  style={[styles.continueButton, { bottom: 120 }]}
+                  onPress={() => {
+                    setFirstStoryError(null);
+                    setFirstStoryStage('pick');
+                  }}
+                >
+                  <Text style={styles.continueText}>try again →</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.continueButton}
+                  onPress={() => advanceStepWithFade('secretcode')}
+                >
+                  <Text style={styles.continueText}>skip for now →</Text>
+                </TouchableOpacity>
+              </>
+            ) : firstStoryStage === 'ready' ? (
+              <>
+                <Text style={styles.subtitle}>
+                  <Text style={styles.italic}>
+                    {firstStoryScenario === 'walk' ? 'a walk in the park' : 'a meditation'}
+                  </Text>
+                </Text>
+                <View style={styles.firstStoryPlayerRow}>
+                  <TouchableOpacity
+                    style={styles.firstStoryPlayButton}
+                    onPress={handleFirstStoryPlayPause}
+                  >
+                    <Text style={styles.firstStoryPlayText}>
+                      {firstStoryPlaying ? '❚❚' : '▶'}
+                    </Text>
+                  </TouchableOpacity>
+                  {ambientUrl ? (
+                    <TouchableOpacity
+                      style={styles.firstStoryAmbientButton}
+                      onPress={handleAmbientToggle}
+                    >
+                      <Text style={styles.firstStoryAmbientText}>
+                        ambient {firstStoryAmbientOn ? 'on' : 'off'}
+                      </Text>
+                    </TouchableOpacity>
+                  ) : null}
+                </View>
+                <Text style={[styles.firstStoryHint, { marginTop: 32 }]}>
+                  sign up to save your card{'\n'}and your first story
+                </Text>
+                <TouchableOpacity
+                  style={styles.continueButton}
+                  onPress={handleFirstStoryContinue}
+                >
+                  <Text style={styles.continueText}>sign up →</Text>
+                </TouchableOpacity>
+                {Platform.OS === 'web' ? (
+                  <>
+                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                    {React.createElement('audio' as any, {
+                      ref: narrationAudioRef,
+                      onEnded: handleNarrationEnded,
+                      onPause: () => {
+                        // Browser-driven pauses (e.g. media-key) should sync state.
+                        if (narrationAudioRef.current && !narrationAudioRef.current.ended) {
+                          // No-op: an explicit user pause already calls setFirstStoryPlaying(false).
+                        }
+                      },
+                      preload: 'auto',
+                    })}
+                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                    {React.createElement('audio' as any, {
+                      ref: ambientAudioRef,
+                      preload: 'auto',
+                    })}
+                  </>
+                ) : null}
+              </>
+            ) : null}
+          </View>
+        </Animated.View>
+      </View>
+    );
+  }
+
   if (step === 'secretcode') {
     return (
       <View style={styles.container}>
@@ -1080,7 +1543,7 @@ export default function OnboardingScreen() {
                 <Text style={styles.italic}>create your account</Text>
               </Text>
               <Text style={[styles.signupSub, { textAlign: 'center', marginBottom: 24 }]}>
-                to save your card and archetype,{'\n'}create an account
+                to save your card and your first story,{'\n'}create an account
               </Text>
 
               <View style={{ gap: 12 }}>
@@ -1453,6 +1916,113 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     width: 250,
     fontFamily: 'EBGaramond-Regular',
+  },
+  birthdayRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+  },
+  birthdayInput: {
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.3)',
+    color: '#fff',
+    fontSize: 22,
+    paddingVertical: 8,
+    paddingHorizontal: 8,
+    textAlign: 'center',
+    fontFamily: 'EBGaramond-Regular',
+  },
+  birthdayInputMd: {
+    width: 56,
+  },
+  birthdayInputYr: {
+    width: 88,
+  },
+  birthdaySlash: {
+    color: 'rgba(255, 255, 255, 0.4)',
+    fontSize: 22,
+    fontFamily: 'EBGaramond-Regular',
+  },
+  birthdayHint: {
+    marginTop: 24,
+    fontSize: 15,
+    color: 'rgba(255, 255, 255, 0.7)',
+    fontFamily: 'EBGaramond-Regular',
+    textAlign: 'center',
+    paddingHorizontal: 24,
+    lineHeight: 22,
+  },
+  firstStoryLabel: {
+    fontSize: 12,
+    letterSpacing: 1.5,
+    color: 'rgba(255, 255, 255, 0.5)',
+    fontFamily: 'EBGaramond-Regular',
+    textTransform: 'uppercase',
+    marginBottom: 12,
+  },
+  firstStoryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 32,
+  },
+  firstStoryColumn: {
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: 12,
+  },
+  firstStoryChoice: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+  },
+  firstStoryChoiceText: {
+    fontSize: 20,
+    color: '#fff',
+    fontFamily: 'EBGaramond-Regular',
+    textAlign: 'center',
+  },
+  firstStoryHint: {
+    fontSize: 15,
+    color: 'rgba(255, 255, 255, 0.7)',
+    fontFamily: 'EBGaramond-Regular',
+    textAlign: 'center',
+    paddingHorizontal: 24,
+    lineHeight: 22,
+  },
+  firstStoryPlayerRow: {
+    marginTop: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
+  firstStoryPlayButton: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.4)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  firstStoryPlayText: {
+    fontSize: 22,
+    color: '#fff',
+    fontFamily: 'EBGaramond-Regular',
+    lineHeight: 24,
+  },
+  firstStoryAmbientButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.25)',
+  },
+  firstStoryAmbientText: {
+    fontSize: 13,
+    color: 'rgba(255, 255, 255, 0.85)',
+    fontFamily: 'EBGaramond-Regular',
+    letterSpacing: 0.5,
   },
   italic: {
     fontStyle: 'italic',
