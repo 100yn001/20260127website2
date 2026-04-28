@@ -6,6 +6,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import {
   Bookmark,
   BookOpenText,
+  ChevronDown,
   MoreHorizontal,
   Pause,
   Play,
@@ -16,7 +17,7 @@ import {
   X,
 } from 'lucide-react-native';
 import React, { useEffect, useMemo, useState } from 'react';
-import { Modal, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Modal, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 
 import { Screen, TopBar } from '@/components/screen';
 import { db } from '@/config/firebase';
@@ -112,10 +113,20 @@ export default function PlayerScreen() {
   const timingReady = dur > 0;
   const titleReady = !!story?.title;
 
+  const minimize = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(tabs)/library');
+    }
+  };
+
   return (
     <Screen wide mode={mode as 'night' | 'day'} auraIntensity="subtle">
       <TopBar
-        onBack={() => router.back()}
+        onBack={minimize}
+        backLabel="minimize"
+        backIcon={<ChevronDown size={20} color="hsl(var(--foreground))" />}
         right={
           <Pressable className="h-8 w-8 items-center justify-center rounded-full active:bg-accent">
             <MoreHorizontal size={16} color="hsl(var(--foreground))" />
@@ -125,7 +136,7 @@ export default function PlayerScreen() {
 
       <View className="flex-1 items-center justify-center px-5 pb-10">
         <View className="w-full max-w-[420px] items-center">
-          <View className="w-full max-w-[380px] aspect-square overflow-hidden rounded-[22px]">
+          <View className="w-full max-w-[380px] aspect-square overflow-hidden rounded-[28px]">
             <LinearGradient
               colors={[cover.a, cover.b]}
               start={{ x: 0.28, y: 0.22 }}
@@ -154,13 +165,17 @@ export default function PlayerScreen() {
 
           <View className="mt-7 w-full">
             <PlayerScrubber value={pos} max={Math.max(dur, 1)} onSlidingComplete={(v) => seek(v)} />
-            <View className="mt-1 flex-row items-center justify-between">
-              <Text className="text-[11px] font-sans text-foreground/60">
-                {timingReady ? fmt(pos / 1000) : '--:--'}
-              </Text>
-              <Text className="text-[11px] font-sans text-foreground/60">
-                {timingReady ? `-${fmt(remaining)}` : '--:--'}
-              </Text>
+            <View className="mt-1 h-4 flex-row items-center justify-between">
+              {timingReady ? (
+                <>
+                  <Text className="text-[11px] font-sans text-foreground/60">{fmt(pos / 1000)}</Text>
+                  <Text className="text-[11px] font-sans text-foreground/60">-{fmt(remaining)}</Text>
+                </>
+              ) : (
+                <View className="flex-1 items-center">
+                  <ActivityIndicator size="small" color="hsl(var(--foreground) / 0.6)" />
+                </View>
+              )}
             </View>
           </View>
 

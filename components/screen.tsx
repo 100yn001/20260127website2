@@ -55,11 +55,15 @@ export function Screen({
 
 export function TopBar({
   onBack,
+  backIcon,
+  backLabel,
   step,
   total,
   right,
 }: {
   onBack?: () => void;
+  backIcon?: React.ReactNode;
+  backLabel?: string;
   step?: number;
   total?: number;
   right?: React.ReactNode;
@@ -70,9 +74,9 @@ export function TopBar({
         <Pressable
           onPress={onBack}
           className="h-9 w-9 -ml-2 items-center justify-center rounded-full active:bg-accent"
-          accessibilityLabel="back"
+          accessibilityLabel={backLabel ?? 'back'}
         >
-          <ArrowLeft size={18} color="hsl(var(--foreground))" />
+          {backIcon ?? <ArrowLeft size={18} color="hsl(var(--foreground))" />}
         </Pressable>
       ) : (
         <View className="h-9 w-9 -ml-2" />

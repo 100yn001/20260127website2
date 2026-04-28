@@ -237,7 +237,7 @@ const styles = StyleSheet.create({
     bottom: TAB_BAR_HEIGHT + 8,
   },
   mobileContainer: {
-    borderRadius: 0,
+    borderRadius: 8,
     overflow: 'hidden',
     ...createShadow('#000', 0, 2, 8, 0.25, 5),
   },
@@ -257,7 +257,7 @@ const styles = StyleSheet.create({
   mobileArtwork: {
     width: 44,
     height: 44,
-    borderRadius: 0,
+    borderRadius: 6,
     marginRight: 12,
     overflow: 'hidden',
   },
@@ -289,7 +289,7 @@ const styles = StyleSheet.create({
   desktopContainer: {
     width: DESKTOP_SQUARE_SIZE,
     height: DESKTOP_SQUARE_SIZE,
-    borderRadius: 0,
+    borderRadius: 10,
     overflow: 'hidden',
     ...createShadow('#000', 0, 8, 24, 0.4, 10),
   },
@@ -325,11 +325,11 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
 
-  // Sharp, square, black play/pause button (shared)
+  // Slightly-rounded black play/pause button (shared)
   playButton: {
     width: 36,
     height: 36,
-    borderRadius: 0,
+    borderRadius: 6,
     alignItems: 'center',
     justifyContent: 'center',
   },
