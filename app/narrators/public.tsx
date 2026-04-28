@@ -1,8 +1,11 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Audio } from 'expo-av';
+import Constants from 'expo-constants';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { collection, getDocs } from 'firebase/firestore';
-import { Globe, Plus, Search } from 'lucide-react-native';
-import React, { useEffect, useMemo, useState } from 'react';
+import { Globe, Pause, Play, Plus, Search } from 'lucide-react-native';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from 'react-native';
 
 import { Screen, TopBar } from '@/components/screen';
@@ -35,6 +38,71 @@ export default function PublicNarratorsScreen() {
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState<string | null>(null);
   const [q, setQ] = useState('');
+  const [playingId, setPlayingId] = useState<string | null>(null);
+  const [userName, setUserName] = useState('friend');
+  const soundRef = useRef<Audio.Sound | null>(null);
+
+  useEffect(() => {
+    AsyncStorage.getItem('userName').then((v) => v && setUserName(v.split(' ')[0]));
+    return () => {
+      soundRef.current?.unloadAsync().catch(() => {});
+    };
+  }, []);
+
+  const playGreeting = async (n: PublicNarrator) => {
+    const voiceId = (n.raw?.voiceId as string) || '';
+    const apiKey = (Constants.expoConfig?.extra?.ELEVENLABS as string) || '';
+    if (!voiceId || !apiKey) {
+      Alert.alert('preview unavailable', !voiceId ? 'this narrator has no voice yet' : 'voice service not configured');
+      return;
+    }
+    try {
+      // Toggle off if same one is playing
+      if (soundRef.current) {
+        await soundRef.current.stopAsync().catch(() => {});
+        await soundRef.current.unloadAsync().catch(() => {});
+        soundRef.current = null;
+      }
+      if (playingId === n.id) { setPlayingId(null); return; }
+
+      setPlayingId(n.id);
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: false,
+        playsInSilentModeIOS: true,
+        staysActiveInBackground: false,
+        shouldDuckAndroid: true,
+      });
+
+      const r = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'xi-api-key': apiKey },
+        body: JSON.stringify({
+          text: `hello, ${userName}.`,
+          model_id: 'eleven_v3',
+          voice_settings: { stability: 0.5, similarity_boost: 0.5 },
+        }),
+      });
+      if (!r.ok) throw new Error(`elevenlabs ${r.status}`);
+      const blob = await r.blob();
+      const reader = new FileReader();
+      const dataUri = await new Promise<string>((resolve, reject) => {
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+      const { sound } = await Audio.Sound.createAsync(
+        { uri: dataUri },
+        { shouldPlay: true },
+        (status) => {
+          if (status.isLoaded && status.didJustFinish) setPlayingId(null);
+        },
+      );
+      soundRef.current = sound;
+    } catch (err) {
+      console.error('[public-narrators] greeting failed', err);
+      setPlayingId(null);
+    }
+  };
 
   useEffect(() => {
     (async () => {
@@ -132,63 +200,72 @@ export default function PublicNarratorsScreen() {
         </View>
       ) : (
         <ScrollView contentContainerStyle={{ paddingBottom: 110 }}>
-          <View className={cn(GUTTER, 'flex-row flex-wrap gap-3')}>
+          <View className={cn(GUTTER, 'flex-row flex-wrap -mx-1.5')}>
             {filtered.map((n) => {
               const cover = narratorCover(n.color ?? n.id);
               return (
-                <View
-                  key={n.id}
-                  className="rounded-[var(--radius)] border border-border bg-card p-5"
-                  style={{ flexBasis: 320, flexGrow: 1 }}
-                >
-                  <View className="flex-row items-start gap-4">
-                    <View className="h-16 w-16 overflow-hidden rounded-full shrink-0">
-                      <LinearGradient
-                        colors={[cover.a, cover.b]}
-                        start={{ x: 0.3, y: 0.25 }}
-                        end={{ x: 1, y: 1 }}
-                        style={{ flex: 1 }}
-                      />
-                    </View>
-                    <View className="flex-1 min-w-0">
-                      <View className="flex-row items-center gap-2 flex-wrap">
-                        <Text className="text-[1.1rem] font-serif-medium text-foreground">
-                          {n.name}
+                <View key={n.id} className="w-1/3 px-1.5 mb-3">
+                  <View className="rounded-[var(--radius)] border border-border bg-card p-5">
+                    <View className="flex-row items-start gap-4">
+                      <Pressable
+                        onPress={() => playGreeting(n)}
+                        accessibilityLabel="hear a hello from this narrator"
+                        className="h-16 w-16 shrink-0 overflow-hidden rounded-full relative"
+                      >
+                        <LinearGradient
+                          colors={[cover.a, cover.b]}
+                          start={{ x: 0.3, y: 0.25 }}
+                          end={{ x: 1, y: 1 }}
+                          style={{ flex: 1 }}
+                        />
+                        <View className="absolute inset-0 items-center justify-center bg-black/25">
+                          {playingId === n.id ? (
+                            <Pause size={18} color="#fff" fill="#fff" />
+                          ) : (
+                            <Play size={18} color="#fff" fill="#fff" />
+                          )}
+                        </View>
+                      </Pressable>
+                      <View className="flex-1 min-w-0">
+                        <View className="flex-row items-center gap-2 flex-wrap">
+                          <Text className="text-[1.1rem] font-serif-medium text-foreground lowercase">
+                            {n.name}
+                          </Text>
+                          {n.username && (
+                            <Text className="text-xs font-serif text-muted-foreground">
+                              @{n.username.toLowerCase()}
+                            </Text>
+                          )}
+                        </View>
+                        <Text className="mt-0.5 text-xs font-serif text-muted-foreground">
+                          {(n.gender ?? '').toLowerCase()}
+                          {n.accent ? <>  ·  {n.accent.toLowerCase()}</> : null}
                         </Text>
-                        {n.username && (
-                          <Text className="text-xs font-serif text-muted-foreground">
-                            @{n.username}
+                        {n.relationship && (
+                          <Text
+                            className="mt-1.5 text-sm font-serif text-muted-foreground leading-relaxed lowercase"
+                            numberOfLines={2}
+                          >
+                            {n.relationship}
+                          </Text>
+                        )}
+                        {typeof n.storyCount === 'number' && n.storyCount > 0 && (
+                          <Text className="mt-2 text-[11px] font-sans text-muted-foreground">
+                            {n.storyCount} {n.storyCount === 1 ? 'story' : 'stories'}
                           </Text>
                         )}
                       </View>
-                      <Text className="mt-0.5 text-xs font-serif text-muted-foreground">
-                        {n.gender ?? ''}
-                        {n.accent ? <>  ·  {n.accent}</> : null}
-                      </Text>
-                      {n.relationship && (
-                        <Text
-                          className="mt-1.5 text-sm font-serif text-muted-foreground leading-relaxed"
-                          numberOfLines={2}
-                        >
-                          {n.relationship}
-                        </Text>
-                      )}
-                      {typeof n.storyCount === 'number' && n.storyCount > 0 && (
-                        <Text className="mt-2 text-[11px] font-sans text-muted-foreground">
-                          {n.storyCount} {n.storyCount === 1 ? 'story' : 'stories'}
-                        </Text>
-                      )}
                     </View>
+                    <Button
+                      size="sm"
+                      className="mt-4 w-full"
+                      loading={adding === n.id}
+                      onPress={() => saveToLibrary(n)}
+                    >
+                      <Plus size={14} color="hsl(var(--primary-foreground))" />
+                      save to my library
+                    </Button>
                   </View>
-                  <Button
-                    size="sm"
-                    className="mt-4 w-full"
-                    loading={adding === n.id}
-                    onPress={() => saveToLibrary(n)}
-                  >
-                    <Plus size={14} color="hsl(var(--primary-foreground))" />
-                    save to my library
-                  </Button>
                 </View>
               );
             })}
