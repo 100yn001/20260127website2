@@ -99,7 +99,8 @@ export default function VaultScreen() {
 
   const openStory = (id: string) => router.navigate({ pathname: '/player', params: { id } });
 
-  const generatingCount = queue.filter((q) => q.status === 'generating' || q.status === 'pending').length;
+  const activeQueue = queue.filter((q) => q.status !== 'complete');
+  const generatingCount = activeQueue.filter((q) => q.status === 'generating' || q.status === 'pending').length;
 
   return (
     <Screen wide>
@@ -171,7 +172,7 @@ export default function VaultScreen() {
         </View>
 
         {/* queue */}
-        {queue.length > 0 && !selectMode && (
+        {activeQueue.length > 0 && !selectMode && (
           <View className={cn(GUTTER, 'mb-8')}>
             <View className="flex-row items-baseline justify-between mb-3">
               <Text className="text-[1.05rem] font-serif-medium text-foreground">in progress</Text>
@@ -180,7 +181,7 @@ export default function VaultScreen() {
               </Text>
             </View>
             <View className="gap-2">
-              {queue.map((item) => {
+              {activeQueue.map((item) => {
                 const raw = Number(item.progress ?? 0);
                 // progress is sometimes 0..1 (fraction), sometimes 0..100 (percentage)
                 // depending on where in the pipeline it was written from. Normalize.
