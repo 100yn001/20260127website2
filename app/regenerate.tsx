@@ -1,4 +1,4 @@
-import AmbientSoundControl, { type AmbientMode } from '@/components/AmbientSoundControl';
+import AmbientPicker from '@/components/AmbientPicker';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useTheme } from '@/contexts/ThemeContext';
 import Slider from '@react-native-community/slider';
@@ -39,8 +39,7 @@ export default function RegenerateScreen() {
   // Narration details
   const [duration, setDuration] = useState<'5min' | '10min' | '15min'>('10min');
   const [narrativeRatio, _setNarrativeRatio] = useState(5);
-  const [ambientMode, setAmbientMode] = useState<AmbientMode>('auto');
-  const [ambientCustomPrompt, setAmbientCustomPrompt] = useState('');
+  const [ambientPrompts, setAmbientPrompts] = useState<string[]>([]);
   
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -309,13 +308,19 @@ export default function RegenerateScreen() {
           <Text style={[styles.sliderHint, { color: colors.textSecondary }]}>slide to adjust descriptive vs. direct content</Text>
         </View>
 
-        <AmbientSoundControl
-          mode={ambientMode}
-          onModeChange={setAmbientMode}
-          customPrompt={ambientCustomPrompt}
-          onCustomPromptChange={setAmbientCustomPrompt}
-          colors={colors}
-        />
+        <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
+          <AmbientPicker
+            context={{
+              setting: (params.setting as string) || '',
+              location: (params.location as string) || '',
+              character: (params.character as string) || '',
+              trope: (params.trope as string) || '',
+              prompt: (params.prompt as string) || '',
+            }}
+            selected={ambientPrompts}
+            onChange={setAmbientPrompts}
+          />
+        </View>
       </ScrollView>
 
       <View style={[styles.footer, { backgroundColor: colors.background, borderTopColor: colors.border }]}>

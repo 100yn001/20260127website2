@@ -5,6 +5,7 @@ import { ArrowRight, Sparkles } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
+import AmbientPicker from '@/components/AmbientPicker';
 import {
   ContinueButton,
   FlowCluster,
@@ -15,7 +16,6 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Textarea } from '@/components/ui/textarea';
@@ -46,8 +46,7 @@ export default function NarratorStoryScreen() {
   const [prompt, setPrompt] = useState('');
   const [duration, setDuration] = useState<Duration>('10min');
   const [ratio, setRatio] = useState(5);
-  const [ambient, setAmbient] = useState<'auto' | 'off' | 'custom'>('auto');
-  const [ambientPrompt, setAmbientPrompt] = useState('');
+  const [ambientPrompts, setAmbientPrompts] = useState<string[]>([]);
   const [storedName, setStoredName] = useState('User');
 
   useEffect(() => {
@@ -84,8 +83,7 @@ export default function NarratorStoryScreen() {
         tags: JSON.stringify([]),
         narratorId: params.narratorId as string,
         narratorData: params.narratorData as string,
-        ambientMode: ambient,
-        ambientCustomPrompt: ambientPrompt,
+        ambientPrompts: JSON.stringify(ambientPrompts),
       },
     });
   };
@@ -178,28 +176,14 @@ export default function NarratorStoryScreen() {
               <Slider value={ratio} onValueChange={setRatio} min={0} max={10} step={1} />
             </Card>
             <Card className="p-5 gap-4">
-              <View className="flex-row items-baseline justify-between">
-                <Label>ambient sound</Label>
-                <Text className="text-[11px] font-serif text-muted-foreground">
-                  background layer
-                </Text>
-              </View>
-              <ToggleGroup<'auto' | 'off' | 'custom'>
-                value={ambient}
-                onValueChange={setAmbient}
-                options={[
-                  { value: 'auto', label: 'auto' },
-                  { value: 'off', label: 'off' },
-                  { value: 'custom', label: 'custom' },
-                ]}
+              <AmbientPicker
+                context={{
+                  prompt,
+                  character: narrator?.name ?? '',
+                }}
+                selected={ambientPrompts}
+                onChange={setAmbientPrompts}
               />
-              {ambient === 'custom' && (
-                <Input
-                  value={ambientPrompt}
-                  onChangeText={setAmbientPrompt}
-                  placeholder="e.g. soft rain on a tin roof, distant thunder"
-                />
-              )}
             </Card>
           </View>
           <ContinueButton onPress={() => setStep('preview')} />

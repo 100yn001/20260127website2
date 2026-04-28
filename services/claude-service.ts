@@ -65,6 +65,57 @@ function collectUserWords(answers: Record<string, unknown>): string[] {
   return Array.from(words);
 }
 
+export interface AmbientSuggestionContext {
+  setting?: string;
+  location?: string;
+  character?: string;
+  trope?: string;
+  prompt?: string; // free-text seed (e.g. "coffee shop date")
+}
+
+/**
+ * Returns three distinct, single-source background-sound ideas for a story.
+ * Each suggestion should be ONE discrete sound (e.g. "coffee machine hissing"),
+ * not a layered scene. Lowercase, 2-6 words.
+ */
+export async function suggestAmbientSounds(
+  ctx: AmbientSuggestionContext,
+): Promise<string[]> {
+  const seed = [ctx.setting, ctx.location, ctx.character, ctx.trope, ctx.prompt]
+    .filter((s) => typeof s === 'string' && s.trim())
+    .join(' · ')
+    .trim();
+  if (!seed) return [];
+
+  const response = await getClient().messages.create({
+    model: MODEL,
+    max_tokens: 120,
+    temperature: 0.85,
+    system:
+      "Given a story scene, return THREE distinct background-sound ideas as a JSON array of strings. " +
+      "Each item must be ONE discrete sound source (not a layered scene). " +
+      "Examples for 'coffee shop date': [\"soft voices in background\", \"espresso machine hissing\", \"pages of a book turning\"]. " +
+      "Lowercase. 2 to 6 words. No punctuation inside items. No explanation, output ONLY the JSON array.",
+    messages: [{ role: 'user', content: seed }],
+  });
+
+  const raw = extractText(response);
+  // Be defensive: model may wrap in code fences or add stray text.
+  const match = raw.match(/\[[\s\S]*\]/);
+  if (!match) return [];
+  try {
+    const parsed = JSON.parse(match[0]);
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .filter((s) => typeof s === 'string')
+      .map((s: string) => s.trim().toLowerCase())
+      .filter(Boolean)
+      .slice(0, 3);
+  } catch {
+    return [];
+  }
+}
+
 export async function describeStorytellingStyle(
   answers: Record<string, unknown>,
 ): Promise<string> {

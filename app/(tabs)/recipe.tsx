@@ -13,6 +13,7 @@ import {
 import React, { useEffect, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
+import AmbientPicker from '@/components/AmbientPicker';
 import {
   ContinueButton,
   FlowCluster,
@@ -92,8 +93,7 @@ export default function RecipeScreen() {
 
   const [duration, setDuration] = useState<Duration>('10min');
   const [ratio, setRatio] = useState(5);
-  const [ambient, setAmbient] = useState<'auto' | 'off' | 'custom'>('auto');
-  const [ambientPrompt, setAmbientPrompt] = useState('');
+  const [ambientPrompts, setAmbientPrompts] = useState<string[]>([]);
 
   const [nameOpt, setNameOpt] = useState<NameOpt>('my-name');
   const [customName, setCustomName] = useState('');
@@ -162,8 +162,7 @@ export default function RecipeScreen() {
         voiceId: voiceId ?? '',
         prompt: '',
         tags: JSON.stringify(chips),
-        ambientMode: ambient,
-        ambientCustomPrompt: ambientPrompt,
+        ambientPrompts: JSON.stringify(ambientPrompts),
       },
     });
   };
@@ -332,34 +331,16 @@ export default function RecipeScreen() {
               <Slider value={ratio} onValueChange={setRatio} min={0} max={10} step={1} />
             </Card>
             <Card className="p-5 gap-4">
-              <View className="flex-row items-baseline justify-between">
-                <Label>ambient sound</Label>
-                <Text className="text-[11px] font-serif text-muted-foreground">
-                  background layer
-                </Text>
-              </View>
-              <ToggleGroup<'auto' | 'off' | 'custom'>
-                value={ambient}
-                onValueChange={setAmbient}
-                options={[
-                  { value: 'auto', label: 'auto' },
-                  { value: 'off', label: 'off' },
-                  { value: 'custom', label: 'custom' },
-                ]}
+              <AmbientPicker
+                context={{
+                  setting: settingSel ?? '',
+                  location: locationSel ?? '',
+                  character: characterSel ?? '',
+                  trope: tropeSel ?? '',
+                }}
+                selected={ambientPrompts}
+                onChange={setAmbientPrompts}
               />
-              {ambient === 'custom' && (
-                <Input
-                  value={ambientPrompt}
-                  onChangeText={setAmbientPrompt}
-                  placeholder="e.g. soft rain on a tin roof, distant thunder"
-                />
-              )}
-              <Text className="text-xs font-serif text-muted-foreground">
-                {ambient === 'auto' && "we'll pick ambient that fits the scene."}
-                {ambient === 'off' && 'voice only, no background layer.'}
-                {ambient === 'custom' &&
-                  'describe the soundscape you want underneath.'}
-              </Text>
             </Card>
           </View>
           <ContinueButton onPress={goNext} />

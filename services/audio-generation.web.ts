@@ -249,6 +249,11 @@ interface RecipeData {
   coverColor?: string; // User-assigned cover color
   ambientMode?: 'auto' | 'off' | 'custom'; // User-selected ambient mode; defaults to 'auto'
   ambientCustomPrompt?: string; // User-supplied ambient prompt when ambientMode === 'custom'
+  /**
+   * New picker output: up to two discrete background-sound prompts (suggested or custom).
+   * Empty/undefined → fall back to legacy ambientMode/ambientCustomPrompt fields.
+   */
+  ambientPrompts?: string[];
 }
 
 /**
@@ -587,10 +592,24 @@ For example, if the user has indicated that they want the character to be domina
     console.log(`📝 Split into ${chunks.length} chunk(s) for TTS (longest=${longest} chars)`);
 
     // STEP 3a: Kick off ambient generation in parallel with narration chunks.
-    // Respects recipe.ambientMode: 'auto' (default), 'off' (skip), 'custom' (use prompt).
+    // New path: recipe.ambientPrompts (up to 2 discrete sources from the picker).
+    // Legacy path: recipe.ambientMode ('auto' | 'off' | 'custom') + ambientCustomPrompt.
+    const ambientPrompts: string[] = (recipe.ambientPrompts || [])
+      .map((p) => (p || '').trim())
+      .filter(Boolean)
+      .slice(0, 2);
     const ambientMode: 'auto' | 'off' | 'custom' = recipe.ambientMode || 'auto';
     const ambientCustomPrompt: string = (recipe.ambientCustomPrompt || '').trim();
     const ambientPromise = (async (): Promise<{ prompt: string; blob: Blob | null }> => {
+      if (ambientPrompts.length > 0) {
+        // Two prompts get joined with " and " so the sound model layers them
+        // into a single clip. Quality varies; fine for a v1.
+        const prompt = ambientPrompts.join(' and ');
+        console.log(`🌿 Ambient prompts (picker): ${prompt}`);
+        const blob = await fetchAmbientClipAsBlob(prompt);
+        if (blob) console.log(`✅ Ambient clip fetched: ${(blob.size / 1024).toFixed(1)} KB`);
+        return { prompt, blob };
+      }
       if (ambientMode === 'off') {
         console.log('🌿 Ambient mode = off; skipping');
         return { prompt: '', blob: null };
