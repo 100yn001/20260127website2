@@ -6,6 +6,7 @@ import {
   BookOpen,
   Bell,
   ChevronRight,
+  Download,
   LogOut,
   Moon,
   Palette,
@@ -15,10 +16,11 @@ import {
   UserRound,
   X,
 } from 'lucide-react-native';
-import React, { useEffect, useMemo, useState } from 'react';
-import { Alert, Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Alert, Modal, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 
 import { Screen, TopBar } from '@/components/screen';
+import CardScene from '@/components/silver-card/CardScene';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -45,6 +47,26 @@ export default function ProfileScreen() {
   const [bookmarkCount, setBookmarkCount] = useState<number>(0);
   const [silverCard, setSilverCard] = useState<any>(null);
   const [showCard, setShowCard] = useState(false);
+  const cardCanvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  const downloadCardPng = () => {
+    if (Platform.OS !== 'web') return;
+    const canvas = cardCanvasRef.current;
+    if (!canvas) return;
+    try {
+      const url = canvas.toDataURL('image/png');
+      const a = document.createElement('a');
+      a.href = url;
+      const stamp = new Date().toISOString().slice(0, 10);
+      a.download = `silver-card-${stamp}.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } catch (e) {
+      console.error('[profile] save card png failed', e);
+      Alert.alert('save failed', 'could not capture the card right now');
+    }
+  };
   const [aboutYou, setAboutYou] = useState<string>('');
   const [aboutEditing, setAboutEditing] = useState(false);
   const [aboutDraft, setAboutDraft] = useState('');
@@ -215,7 +237,7 @@ export default function ProfileScreen() {
                     your card
                   </Text>
                   <Text
-                    className="mt-0.5 text-sm font-serif text-muted-foreground"
+                    className="mt-0.5 text-sm font-serif text-muted-foreground lowercase"
                     numberOfLines={1}
                   >
                     {silverCard
@@ -410,12 +432,24 @@ export default function ProfileScreen() {
         >
           <Pressable className="w-full max-w-[360px] rounded-[var(--radius)] border border-border bg-card overflow-hidden">
             <View className="flex-row items-center justify-between px-5 pt-4 pb-2">
-              <View>
+              <View className="flex-1">
                 <Text className="text-[11px] font-serif text-muted-foreground">your card</Text>
-                <Text className="text-base font-serif-medium text-foreground" numberOfLines={1}>
+                <Text
+                  className="text-base font-serif-medium text-foreground lowercase"
+                  numberOfLines={1}
+                >
                   {silverCard?.archetypeTitle ?? 'silver archetype'}
                 </Text>
               </View>
+              {Platform.OS === 'web' && silverCard?.imageUrl ? (
+                <Pressable
+                  onPress={downloadCardPng}
+                  accessibilityLabel="save as png"
+                  className="h-8 w-8 items-center justify-center rounded-full active:bg-accent"
+                >
+                  <Download size={16} color="hsl(var(--foreground))" />
+                </Pressable>
+              ) : null}
               <Pressable
                 onPress={() => setShowCard(false)}
                 className="h-8 w-8 items-center justify-center rounded-full"
@@ -424,11 +458,13 @@ export default function ProfileScreen() {
               </Pressable>
             </View>
             {silverCard?.imageUrl && (
-              <View className="aspect-[5/8]">
-                <ExpoImage
-                  source={{ uri: silverCard.imageUrl }}
-                  style={{ width: '100%', height: '100%' }}
-                  contentFit="cover"
+              <View className="aspect-[5/8]" style={{ backgroundColor: '#000' }}>
+                <CardScene
+                  imageUrl={silverCard.imageUrl}
+                  aspectRatio={5 / 8}
+                  onCanvasReady={(c) => {
+                    cardCanvasRef.current = c as HTMLCanvasElement;
+                  }}
                 />
               </View>
             )}

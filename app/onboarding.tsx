@@ -534,22 +534,33 @@ export default function OnboardingScreen() {
       
       if (!currentUser) throw new Error('Failed to get user');
 
-      // Provision Stripe Customer + free $0 sub server-side. Failure here
-      // is non-blocking: the user still completes signup; missing Stripe
-      // IDs can be backfilled by a follow-up function later. The Cloud
-      // Function also writes betaTrialStartedAt onto the user doc so we
-      // do NOT need to mirror that here.
-      let stripeIds: { stripeCustomerId?: string; stripeSubscriptionId?: string } = {};
+      // Provision a Stripe Checkout Session and a Customer (idempotent by
+      // firebaseUid metadata). The Cloud Function also stamps
+      // stripeCustomerId + betaTrialStartedAt on the user doc, so the
+      // local saveUserProfile call below only needs to mirror customerId.
+      // Failure is non-blocking: signup still completes and the user lands
+      // in the library — we just skip the Stripe redirect.
+      let stripeCustomerId: string | undefined;
+      let stripeCheckoutUrl: string | undefined;
       try {
+        const origin =
+          Platform.OS === 'web' && typeof window !== 'undefined'
+            ? window.location.origin
+            : '';
         const createStripeCustomer = httpsCallable<
-          { email: string; name: string },
-          { customerId: string; subscriptionId: string }
+          { email: string; name: string; successUrl: string; cancelUrl: string },
+          { customerId: string; checkoutUrl: string }
         >(functions, 'createStripeCustomer');
-        const result = await createStripeCustomer({ email, name: nameInput });
-        stripeIds = {
-          stripeCustomerId: result.data.customerId,
-          stripeSubscriptionId: result.data.subscriptionId,
-        };
+        const result = await createStripeCustomer({
+          email,
+          name: nameInput,
+          // Stripe redirects here after the user clicks "Subscribe" or "Back".
+          // Both land in the library so onboarding always terminates.
+          successUrl: `${origin}/library?checkout=success`,
+          cancelUrl: `${origin}/library?checkout=cancel`,
+        });
+        stripeCustomerId = result.data.customerId;
+        stripeCheckoutUrl = result.data.checkoutUrl;
       } catch (err) {
         console.warn('createStripeCustomer failed (continuing):', err);
       }
@@ -572,7 +583,7 @@ export default function OnboardingScreen() {
           descriptors2: selectedDescriptors2,
           dob,
         } as any,
-        stripeIds,
+        stripeCustomerId ? { stripeCustomerId } : undefined,
       );
 
       // Persist the silver card alongside the user profile
@@ -615,8 +626,17 @@ export default function OnboardingScreen() {
       await AsyncStorage.setItem('onboardingAnswers', JSON.stringify(answers));
 
       setIsLoading(false);
-      router.replace('/(tabs)/library');
-      
+
+      // If Stripe came back with a Checkout URL, hand the user off there;
+      // Stripe will redirect back to /library?checkout=success once they
+      // confirm. If Stripe was unreachable or we're on native, fall back
+      // to the normal in-app redirect.
+      if (stripeCheckoutUrl && Platform.OS === 'web' && typeof window !== 'undefined') {
+        window.location.assign(stripeCheckoutUrl);
+      } else {
+        router.replace('/(tabs)/library');
+      }
+
     } catch (error: any) {
       setIsLoading(false);
       

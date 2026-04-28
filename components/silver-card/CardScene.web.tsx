@@ -80,12 +80,33 @@ function createCardTextures(
   });
 }
 
+function loadImageTexture(url: string): Promise<THREE.Texture> {
+  return new Promise((resolve, reject) => {
+    const loader = new THREE.TextureLoader();
+    // Stored silver-card images live on Firebase Storage which serves CORS
+    // headers, so anonymous access works for use as a WebGL texture.
+    loader.setCrossOrigin('anonymous');
+    loader.load(
+      url,
+      (tex) => {
+        tex.colorSpace = THREE.SRGBColorSpace;
+        tex.needsUpdate = true;
+        resolve(tex);
+      },
+      undefined,
+      (err) => reject(err),
+    );
+  });
+}
+
 function SilverCard({
   svgString,
+  imageUrl,
   aspectRatio,
   onReady,
 }: {
-  svgString: string;
+  svgString?: string;
+  imageUrl?: string;
   aspectRatio: number;
   onReady?: () => void;
 }) {
@@ -135,29 +156,43 @@ function SilverCard({
     const texH = Math.round(1024 / aspectRatio);
     let cancelled = false;
 
-    createCardTextures(svgString, texW, texH)
-      .then(({ bumpTex, colorTex }) => {
-        if (cancelled || !matRef.current) return;
+    const apply = (bumpTex: THREE.Texture | null, colorTex: THREE.Texture) => {
+      if (cancelled || !matRef.current) return;
+      if (bumpTex) {
         matRef.current.bumpMap = bumpTex;
         matRef.current.bumpScale = 0.06;
-        matRef.current.map = colorTex;
-        matRef.current.needsUpdate = true;
-        setTexturesReady(true);
-        invalidate();
-        // Wait two frames so the textured mesh is actually on screen before
-        // the parent crossfades the loading placeholder out.
+      } else {
+        matRef.current.bumpMap = null;
+        matRef.current.bumpScale = 0;
+      }
+      matRef.current.map = colorTex;
+      matRef.current.needsUpdate = true;
+      setTexturesReady(true);
+      invalidate();
+      requestAnimationFrame(() => {
         requestAnimationFrame(() => {
-          requestAnimationFrame(() => {
-            if (!cancelled) onReady?.();
-          });
+          if (!cancelled) onReady?.();
         });
-      })
-      .catch((err) => console.error('Texture creation failed:', err));
+      });
+    };
+
+    if (svgString) {
+      createCardTextures(svgString, texW, texH)
+        .then(({ bumpTex, colorTex }) => apply(bumpTex, colorTex))
+        .catch((err) => console.error('Texture creation failed:', err));
+    } else if (imageUrl) {
+      // Fallback: re-render an existing silver-card PNG (e.g. from the user's
+      // saved card on profile) as a texture. We lose the SVG-derived bump
+      // map, so the surface is flatter, but spin/zoom still work.
+      loadImageTexture(imageUrl)
+        .then((tex) => apply(null, tex))
+        .catch((err) => console.error('Image texture load failed:', err));
+    }
 
     return () => {
       cancelled = true;
     };
-  }, [svgString, aspectRatio, invalidate, onReady]);
+  }, [svgString, imageUrl, aspectRatio, invalidate, onReady]);
 
   return (
     <mesh ref={meshRef} geometry={cardGeo} visible={texturesReady}>
@@ -208,26 +243,48 @@ function CardControls() {
 
 export default function CardScene({
   svgString,
+  imageUrl,
   aspectRatio,
   onReady,
+  onCanvasReady,
 }: {
-  svgString: string;
+  svgString?: string;
+  imageUrl?: string;
   aspectRatio: number;
   onReady?: () => void;
+  /** Called once the WebGL canvas DOM element exists, so callers can grab a PNG snapshot. */
+  onCanvasReady?: (canvas: HTMLCanvasElement) => void;
 }) {
   return (
     <Canvas
       camera={{ position: [0, 0, 4.41], fov: 35 }}
-      gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, alpha: true, premultipliedAlpha: false }}
+      gl={{
+        antialias: true,
+        toneMapping: THREE.ACESFilmicToneMapping,
+        alpha: true,
+        premultipliedAlpha: false,
+        // Required so toDataURL/toBlob captures the rendered frame instead of
+        // returning a blank PNG (browsers normally clear the framebuffer
+        // immediately after a draw).
+        preserveDrawingBuffer: true,
+      }}
       frameloop="always"
       style={{ background: '#000' }}
+      onCreated={({ gl }) => {
+        onCanvasReady?.(gl.domElement);
+      }}
     >
       <ambientLight intensity={0.3} />
       <directionalLight position={[4, 4, 6]} intensity={1.5} castShadow />
       <directionalLight position={[-3, 2, 4]} intensity={0.4} />
       <directionalLight position={[0, -3, 3]} intensity={0.2} />
 
-      <SilverCard svgString={svgString} aspectRatio={aspectRatio} onReady={onReady} />
+      <SilverCard
+        svgString={svgString}
+        imageUrl={imageUrl}
+        aspectRatio={aspectRatio}
+        onReady={onReady}
+      />
 
       <ContactShadows position={[0, -1.5, 0]} opacity={0.25} blur={2.5} far={4} />
 

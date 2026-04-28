@@ -10,6 +10,8 @@ export default function CardScene({
   imageUrl?: string;
   aspectRatio: number;
   onReady?: () => void;
+  /** Web-only; ignored on native. Present so consumers can be cross-platform. */
+  onCanvasReady?: (canvas: any) => void;
 }) {
   useEffect(() => {
     if (imageUrl) onReady?.();

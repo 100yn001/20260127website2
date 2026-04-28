@@ -1,19 +1,26 @@
 /**
  * createStripeCustomer
  * --------------------
- * Callable function invoked once at signup. Creates the Stripe Customer
- * for the authenticated Firebase user and subscribes them to a free
- * $0/month Price (the "yn beta" offer). The Product + Price are
- * auto-created on first invocation via a stable `lookup_key`, so no
- * manual Stripe Dashboard setup is required.
+ * Callable function invoked at signup. Returns a Stripe Checkout Session
+ * URL that the client redirects into. Behavior:
  *
- * Inputs:  { email, name }
- * Output:  { customerId, subscriptionId }
+ *   1. Looks up an existing Stripe Customer by `firebaseUid` metadata, or
+ *      creates a new one. Avoids duplicate Customer rows if the same user
+ *      retries onboarding.
+ *   2. Auto-resolves (or creates on first call) the "yn beta" free $0/month
+ *      Price keyed by lookup_key, so no manual Dashboard setup is needed.
+ *   3. Creates a Checkout Session in `subscription` mode against that Price
+ *      with `payment_method_collection: 'if_required'`. Because the price is
+ *      $0, Stripe's hosted page does NOT prompt for a card — the user just
+ *      sees a "yn beta · Free" summary and a "Subscribe" button.
+ *   4. Persists `stripeCustomerId` + `betaTrialStartedAt` to users/{uid} so
+ *      we have something to reconcile against even if the user abandons
+ *      Checkout. The Subscription row itself is created by Stripe when the
+ *      user confirms the session — we'll capture its id via webhook in a
+ *      follow-up change.
  *
- * Side-effects:
- *   - stripe.customers.create
- *   - stripe.subscriptions.create
- *   - users/{uid}.{stripeCustomerId, stripeSubscriptionId, betaTrialStartedAt}
+ * Inputs:  { email, name, successUrl, cancelUrl }
+ * Output:  { customerId, checkoutUrl }
  *
  * Stripe secret key is read from a Functions Secret named
  * STRIPE_SECRET_KEY. Set it once with:
@@ -72,14 +79,46 @@ async function getOrCreateFreePriceId(stripe: Stripe): Promise<string> {
   return _cachedFreePriceId;
 }
 
+/**
+ * Find a Customer by firebaseUid metadata, or create one. Uses Stripe's
+ * search API so we don't have to paginate a metadata-filtered list.
+ */
+async function findOrCreateCustomer(
+  stripe: Stripe,
+  uid: string,
+  email: string,
+  name: string | undefined,
+): Promise<Stripe.Customer> {
+  try {
+    const search = await stripe.customers.search({
+      query: `metadata['firebaseUid']:'${uid}'`,
+      limit: 1,
+    });
+    if (search.data.length > 0) {
+      return search.data[0];
+    }
+  } catch (err) {
+    // search isn't critical — if it fails (e.g. account doesn't have search
+    // indexed yet for a brand-new key), fall through to create.
+    console.warn('customer search failed, falling back to create:', err);
+  }
+  return stripe.customers.create({
+    email,
+    name: name || undefined,
+    metadata: { firebaseUid: uid },
+  });
+}
+
 interface CreateStripeCustomerInput {
   email?: string;
   name?: string;
+  successUrl?: string;
+  cancelUrl?: string;
 }
 
 interface CreateStripeCustomerOutput {
   customerId: string;
-  subscriptionId: string;
+  checkoutUrl: string;
 }
 
 export const createStripeCustomer = onCall<CreateStripeCustomerInput, Promise<CreateStripeCustomerOutput>>(
@@ -89,43 +128,55 @@ export const createStripeCustomer = onCall<CreateStripeCustomerInput, Promise<Cr
     if (!uid) {
       throw new HttpsError('unauthenticated', 'must be signed in');
     }
-    const { email, name } = request.data ?? {};
+    const { email, name, successUrl, cancelUrl } = request.data ?? {};
     if (!email) {
       throw new HttpsError('invalid-argument', 'email is required');
+    }
+    if (!successUrl || !cancelUrl) {
+      throw new HttpsError('invalid-argument', 'successUrl and cancelUrl are required');
     }
 
     const stripe = getStripe();
 
-    // 1. Customer
-    const customer = await stripe.customers.create({
-      email,
-      name: name || undefined,
-      metadata: { firebaseUid: uid },
-    });
-
-    // 2. $0 Subscription on the auto-resolved free Price
+    const customer = await findOrCreateCustomer(stripe, uid, email, name);
     const priceId = await getOrCreateFreePriceId(stripe);
-    const subscription = await stripe.subscriptions.create({
+
+    // payment_method_collection: 'if_required' is the magic flag — combined
+    // with a $0 recurring price it lets Stripe Checkout skip the card form
+    // entirely. The user sees a Stripe-branded summary page with a single
+    // "Subscribe" button.
+    const session = await stripe.checkout.sessions.create({
+      mode: 'subscription',
       customer: customer.id,
-      items: [{ price: priceId }],
+      line_items: [{ price: priceId, quantity: 1 }],
+      payment_method_collection: 'if_required',
+      success_url: successUrl,
+      cancel_url: cancelUrl,
+      subscription_data: {
+        metadata: { firebaseUid: uid },
+      },
       metadata: { firebaseUid: uid },
     });
 
-    // 3. Persist the IDs on the user doc so the client doesn't need a
-    //    second round-trip and a future webhook can dedupe by uid.
+    if (!session.url) {
+      throw new HttpsError('internal', 'Stripe Checkout returned no URL');
+    }
+
+    // Persist what we have NOW. The subscription itself only exists once
+    // the user confirms Checkout; a webhook (next change) will fill in
+    // stripeSubscriptionId.
     await admin
       .firestore()
       .doc(`users/${uid}`)
       .set(
         {
           stripeCustomerId: customer.id,
-          stripeSubscriptionId: subscription.id,
           betaTrialStartedAt: admin.firestore.FieldValue.serverTimestamp(),
           updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         },
         { merge: true },
       );
 
-    return { customerId: customer.id, subscriptionId: subscription.id };
+    return { customerId: customer.id, checkoutUrl: session.url };
   },
 );
