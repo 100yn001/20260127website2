@@ -1,0 +1,99 @@
+// ─────────────────────────────────────────────────────────────────────────
+// PROPOSED Firestore rules — REVIEW + TEST BEFORE DEPLOYING.
+//
+// This file is intentionally named `.proposed` so it is NOT the deploy target
+// referenced by firebase.json ("rules": "firestore.rules"). It is a STARTING
+// POINT derived from the app's read/write patterns in code. Your live rules
+// currently exist only in the Firebase console; I cannot see them, so:
+//
+//   1. Diff this against your console rules. Do not assume it is complete.
+//   2. Test every flow in the Rules Playground / a staging project FIRST
+//      (create a story, browse public, share + open in sink, regenerate,
+//       open /admin signed in as an allowlisted email).
+//   3. Only then copy into `firestore.rules` and `firebase deploy --only firestore:rules`.
+//
+// Deploying an incomplete ruleset WILL break the app (denied reads/writes).
+// ─────────────────────────────────────────────────────────────────────────
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Admin = signed in with an allowlisted email. NOTE: email-based admin is
+    // weaker than a custom claim; prefer `request.auth.token.admin == true` set
+    // by a Cloud Function. Listed here to match the app's current allowlist.
+    function isAdmin() {
+      return request.auth != null
+        && request.auth.token.email in ['ellepotterhead2006@gmail.com', 'madxwoods@gmail.com'];
+    }
+    function signedIn() { return request.auth != null; }
+    function isOwner(uid) { return request.auth != null && request.auth.uid == uid; }
+
+    // ── User profile + subcollections (own data only; admin may read) ──
+    match /users/{uid} {
+      allow read:  if isOwner(uid) || isAdmin();
+      allow write: if isOwner(uid);
+
+      // story-generation queue + saved narrators are private to the user.
+      // (Cloud Functions use the Admin SDK and bypass these rules.)
+      match /{sub}/{docId} {
+        allow read, write: if isOwner(uid);
+      }
+    }
+
+    // ── Private stories: owner read/write; admin read (for /admin dashboard) ──
+    match /stories/{storyId} {
+      allow read:   if isOwner(resource.data.userId) || isAdmin();
+      allow create: if signedIn() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isOwner(resource.data.userId);
+    }
+
+    // ── Fable refusal/failure logs (hold prompts → sensitive) ──
+    // Any signed-in user's generation may log ITS OWN failures; only admins read.
+    match /fableRefusals/{docId} {
+      allow create: if signedIn() && request.resource.data.uid == request.auth.uid;
+      allow read:   if isAdmin();
+      allow delete: if isAdmin() || isOwner(resource.data.uid); // account deletion
+      allow update: if false;
+    }
+
+    // ── Shared audio: link IS the secret (unguessable auto-id) ──
+    // Anyone with the link may read; only the sharer may create/delete.
+    // (If the sink uses anonymous auth, change read to `signedIn()`.)
+    match /sharedAudio/{docId} {
+      allow read:   if true;
+      allow create: if signedIn() && request.resource.data.sharedBy == request.auth.uid;
+      allow delete: if signedIn() && resource.data.sharedBy == request.auth.uid;
+      allow update: if false;
+    }
+
+    // ── Public, read-only catalogs ──
+    // Publishing (writes) must be admin-only and server-validated; the current
+    // app gates "publish" client-side only — this rule is the real enforcement.
+    match /publicStories/{id} {
+      allow read:  if signedIn();
+      allow write: if isAdmin();
+    }
+    match /publicNarrators/{id} {
+      allow read:  if signedIn();
+      allow write: if isAdmin();
+    }
+    match /preGeneratedStories/{id} {
+      allow read:  if signedIn();
+      allow write: if false;
+    }
+    match /staticStories/{id} {
+      allow read:  if signedIn();
+      allow write: if false;
+    }
+    match /staticVoices/{id} {
+      allow read:  if signedIn();
+      allow write: if false;
+    }
+
+    // ── Default deny everything else ──
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

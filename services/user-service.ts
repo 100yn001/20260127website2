@@ -292,6 +292,18 @@ export async function deleteUserData(uid: string): Promise<void> {
     const storyDeletePromises = storiesSnapshot.docs.map(storyDoc => deleteDoc(storyDoc.ref));
     await Promise.all(storyDeletePromises);
 
+    // Also remove the user's Fable refusal logs (which hold their prompts) and
+    // any shared-audio links. Fail-soft per collection so the core deletion
+    // still completes even if rules disallow one of them.
+    for (const [coll, field] of [['fableRefusals', 'uid'], ['sharedAudio', 'sharedBy']] as const) {
+      try {
+        const snap = await getDocs(query(collection(db, coll), where(field, '==', uid)));
+        await Promise.all(snap.docs.map(d => deleteDoc(d.ref)));
+      } catch (e) {
+        console.warn(`Account-deletion cleanup of ${coll} failed (continuing):`, e);
+      }
+    }
+
     // Delete user profile
     const userRef = doc(db, 'users', uid);
     await deleteDoc(userRef);

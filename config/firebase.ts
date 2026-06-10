@@ -17,12 +17,14 @@ const firebaseConfig = {
   appId: Constants.expoConfig?.extra?.FIREBASE_APP_ID || "",
 };
 
-// Debug logging (remove in production)
-console.log('🔥 Firebase Config:', {
-  apiKey: firebaseConfig.apiKey ? '✓ (exists)' : '✗ (missing)',
-  authDomain: firebaseConfig.authDomain,
-  projectId: firebaseConfig.projectId,
-});
+// Debug logging — dev only (don't print project identifiers in production)
+if (__DEV__) {
+  console.log('🔥 Firebase Config:', {
+    apiKey: firebaseConfig.apiKey ? '✓ (exists)' : '✗ (missing)',
+    authDomain: firebaseConfig.authDomain,
+    projectId: firebaseConfig.projectId,
+  });
+}
 
 if (!firebaseConfig.apiKey) {
   console.warn('⚠️ Firebase API key not found in environment');
@@ -43,7 +45,7 @@ if (isNewApp && Platform.OS !== 'web') {
   authInstance = initializeAuth(app, {
     persistence: getReactNativePersistence(ReactNativeAsyncStorage),
   });
-  console.log('✅ Auth initialized with AsyncStorage persistence');
+  if (__DEV__) console.log('✅ Auth initialized with AsyncStorage persistence');
 } else {
   // HMR reload or web - get existing auth instance
   authInstance = getAuth(app);
@@ -54,6 +56,6 @@ export const db = getFirestore(app);
 export const storage = getStorage(app);
 export const functions = getFunctions(app);
 
-console.log('✅ Firebase initialized successfully');
+if (__DEV__) console.log('✅ Firebase initialized successfully');
 
 export default app;
