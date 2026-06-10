@@ -208,8 +208,8 @@ export default function PlayerScreen() {
             </Text>
           </View>
         ) : null}
-        <View className={cn('w-full max-w-[420px] items-center', loadError && 'opacity-30')}>
-          <View className="w-full max-w-[380px] aspect-square overflow-hidden rounded-[28px]">
+        <View className={cn('w-full max-w-[420px] md:max-w-[480px] items-center', loadError && 'opacity-30')}>
+          <View className="w-full max-w-[380px] md:max-w-[440px] aspect-square overflow-hidden rounded-[28px]">
             <LinearGradient
               colors={[cover.a, cover.b]}
               start={{ x: 0.28, y: 0.22 }}
@@ -279,7 +279,7 @@ export default function PlayerScreen() {
             </Pressable>
           </View>
 
-          <View className="mt-8 flex-row items-center justify-center gap-3 w-full max-w-[360px]">
+          <View className="mt-8 flex-row items-center justify-center gap-3 w-full max-w-[360px] md:max-w-[420px]">
             {hasAmbient && (
               <Chip
                 active={ambientEnabled}

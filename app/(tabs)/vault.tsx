@@ -233,7 +233,7 @@ export default function VaultScreen() {
             ) : (
               <View className="flex-row flex-wrap -mx-1">
                 {filtered.map((s) => (
-                  <View key={s.id} className="w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 px-1">
+                  <View key={s.id} className="w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 px-1">
                     <StoryCard
                       story={s}
                       selected={selected.has(s.id)}
