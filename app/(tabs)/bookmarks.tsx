@@ -40,6 +40,7 @@ export default function BookmarksScreen() {
   const [bookmarkedStories, setBookmarkedStories] = useState<BookmarkedStory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [loadError, setLoadError] = useState(false);
 
   const loadBookmarkedStories = useCallback(async () => {
     if (!user) {
@@ -48,6 +49,7 @@ export default function BookmarksScreen() {
       return;
     }
     setIsLoading(true);
+    setLoadError(false);
     try {
       const ids = await getBookmarkedStoryIds(user.uid);
       if (ids.length === 0) {
@@ -62,6 +64,7 @@ export default function BookmarksScreen() {
       setBookmarkedStories(stories);
     } catch (error) {
       console.error('Error loading bookmarked stories:', error);
+      setLoadError(true);
     } finally {
       setIsLoading(false);
     }
@@ -127,6 +130,16 @@ export default function BookmarksScreen() {
         <View style={styles.loadingState}>
           <ActivityIndicator size="large" color={colors.text} />
           <Text style={[styles.loadingText, { color: colors.textSecondary }]}>loading your bookmarks...</Text>
+        </View>
+      );
+    }
+
+    if (loadError) {
+      return (
+        <View style={styles.emptyState}>
+          <IconSymbol name="bookmark" size={64} color={colors.textSecondary} />
+          <Text style={[styles.emptyTitle, { color: colors.text }]}>couldn&apos;t load bookmarks</Text>
+          <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>check your connection and pull to refresh</Text>
         </View>
       );
     }

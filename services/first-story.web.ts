@@ -132,11 +132,11 @@ async function generateTranscript(args: {
     if (text) return text;
     throw new Error('No transcript returned');
   } catch (err) {
-    console.warn('⚠️ first-story Fable failed; falling back to Haiku:', (err as any)?.message);
+    console.warn('⚠️ first-story Fable failed; falling back to Opus:', (err as any)?.message);
     const res = await getAnthropic().messages.create({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 900,
-      temperature: 0.85,
+      model: 'claude-opus-4-8',
+      max_tokens: 2000,
+      // no `temperature` — Opus 4.8 uses always-on adaptive thinking; keep params minimal
       system,
       messages: [{ role: 'user', content: user }],
     });

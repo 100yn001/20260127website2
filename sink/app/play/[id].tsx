@@ -1,4 +1,4 @@
-import { getSharedAudio } from '@/services/shared-audio-service';
+import { getSharedAudio, markAsPlayed } from '@/services/shared-audio-service';
 import { SharedAudio } from '@/types/shared-audio';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Audio } from 'expo-av';
@@ -75,10 +75,11 @@ export default function PlayScreen() {
         : [];
 
     if (chunkIndex >= urls.length) {
-      // All chunks played
+      // All chunks played — mark the shared link as listened (idempotent).
       setIsPlaying(false);
       setCurrentChunkIndex(0);
       setPosition(0);
+      if (id) markAsPlayed(id).catch(() => {});
       return;
     }
 
