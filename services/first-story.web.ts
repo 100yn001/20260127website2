@@ -112,9 +112,9 @@ async function generateTranscript(args: {
   const user = `The listener's name is ${name}. ${sceneInstruction} Begin gently. End with a soft closing line that lets ${name} land.`;
 
   const res = await getAnthropic().messages.create({
-    model: 'claude-haiku-4-5-20251001',
-    max_tokens: 900,
-    temperature: 0.85,
+    model: 'claude-fable-5',
+    max_tokens: 2000, // generous headroom: Fable's adaptive thinking shares the budget
+    // NB: no `temperature` — claude-fable-5 rejects it (adaptive thinking always on).
     system,
     messages: [{ role: 'user', content: user }],
   });
