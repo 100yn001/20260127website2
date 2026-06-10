@@ -387,7 +387,7 @@ function Chip({
     <Pressable
       accessibilityLabel={label}
       onPress={onPress}
-      className={cn('h-9 w-9 items-center justify-center rounded-full', active && 'bg-foreground')}
+      className={cn('h-10 w-10 items-center justify-center rounded-full', active && 'bg-foreground')}
     >
       {children}
     </Pressable>

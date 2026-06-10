@@ -31,7 +31,7 @@ import { TINTS, useArtworkTint } from '@/hooks/useArtworkTint';
 import { cn } from '@/lib/cn';
 import { getUserProfile, updateUserProfile } from '@/services/user-service';
 
-const GUTTER = 'px-5 sm:px-8 md:px-10 lg:px-14';
+const GUTTER = 'px-5 sm:px-8 md:px-10 lg:px-14 xl:px-20';
 
 export default function ProfileScreen() {
   const router = useRouter();

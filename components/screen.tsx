@@ -36,7 +36,9 @@ export function Screen({
         edges={['top']}
         className={cn(
           'flex-1 self-center w-full',
-          wide ? 'max-w-[1200px]' : 'max-w-[440px]',
+          // Mobile-first column, but give tablets/desktop more room so the app
+          // isn't a skinny 440px strip on iPad/Mac.
+          wide ? 'max-w-[1200px]' : 'max-w-[440px] md:max-w-[600px]',
           className
         )}
       >

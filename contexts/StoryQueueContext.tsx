@@ -429,12 +429,17 @@ export function StoryQueueProvider({ children }: { children: React.ReactNode }) 
           };
           await saveQueueItem(errorStory);
         } else {
-          // For other errors, mark as error
+          // For other errors, mark as error. Map Fable content-moderation
+          // refusals to a friendly message rather than leaking the raw
+          // "CONTENT_MODERATION: claude-fable-5 refused..." string.
+          const isModeration = errorMessage.includes('content_moderation');
           const errorStory = {
             ...pendingStory,
             status: 'error' as const,
             progress: 0,
-            error: error.message || 'Failed to generate story',
+            error: isModeration
+              ? "we couldn't make this one — try rephrasing your prompt and generate again"
+              : error.message || 'Failed to generate story',
           };
           await saveQueueItem(errorStory);
         }

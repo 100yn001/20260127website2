@@ -19,6 +19,8 @@
 
 import Anthropic from '@anthropic-ai/sdk';
 import Constants from 'expo-constants';
+import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { auth, db } from '@/config/firebase';
 import {
   DEFAULT_NARRATION_MODE,
   immersionEngine,
@@ -28,6 +30,7 @@ import {
   targetWordCount,
   type NarrationMode,
 } from '@/constants/narration-modes';
+import { grokAmbientPrompt, grokFollowUpQuestions, grokTranscript } from './grok-story';
 
 const FABLE_MODEL = 'claude-fable-5';
 
@@ -40,9 +43,20 @@ function getClient(): Anthropic {
   return _client;
 }
 
+/** Error carrying the exact prompt that failed, for refusal logging + fallback. */
+function fableErr(
+  message: string,
+  ctx: { system: string; user: string; label: string; kind: 'refusal' | 'error' },
+): Error {
+  const e = new Error(message);
+  (e as any).__fable = { stage: ctx.label, system: ctx.system, user: ctx.user, kind: ctx.kind };
+  return e;
+}
+
 /**
- * Single Fable text call. Throws a CONTENT_MODERATION error on a refusal or
- * empty output so callers (and the queue UI) can surface a clear message.
+ * Single Fable text call. Throws a tagged error (carrying the prompt + stage)
+ * on a refusal, empty output, or API error so the wrapper can log it and fall
+ * back to Grok.
  */
 async function fableText(args: {
   system: string;
@@ -50,14 +64,22 @@ async function fableText(args: {
   maxTokens: number;
   label: string;
 }): Promise<string> {
-  const msg = await getClient().messages.create({
-    model: FABLE_MODEL,
-    max_tokens: args.maxTokens,
-    system: args.system,
-    messages: [{ role: 'user', content: args.user }],
-  });
+  let msg: Anthropic.Message;
+  try {
+    msg = await getClient().messages.create({
+      model: FABLE_MODEL,
+      max_tokens: args.maxTokens,
+      system: args.system,
+      messages: [{ role: 'user', content: args.user }],
+    });
+  } catch (e: any) {
+    throw fableErr(e?.message || 'claude-fable-5 request failed', { ...args, kind: 'error' });
+  }
   if (msg.stop_reason === 'refusal') {
-    throw new Error(`CONTENT_MODERATION: claude-fable-5 refused at "${args.label}".`);
+    throw fableErr(`CONTENT_MODERATION: claude-fable-5 refused at "${args.label}".`, {
+      ...args,
+      kind: 'refusal',
+    });
   }
   let text = '';
   for (const block of msg.content) {
@@ -67,8 +89,9 @@ async function fableText(args: {
     }
   }
   if (!text) {
-    throw new Error(
+    throw fableErr(
       `CONTENT_MODERATION: claude-fable-5 returned no text at "${args.label}" (stop_reason=${msg.stop_reason}).`,
+      { ...args, kind: 'refusal' },
     );
   }
   return text;
@@ -199,7 +222,7 @@ ${opts.transcript}`;
  * The 3-stage immersion transcript pipeline. `followUpQA` is the assembled
  * "Q: …\nA: …" block built by the caller.
  */
-export async function generateTranscript(
+async function fableTranscript(
   recipe: FableRecipe,
   followUpQA: string,
 ): Promise<string> {
@@ -231,7 +254,7 @@ export async function generateTranscript(
 
 // ── Follow-up questions (migrated verbatim from the old Grok path) ───────────
 
-export async function generateFollowUpQuestions(recipe: FableRecipe): Promise<string[]> {
+async function fableFollowUpQuestions(recipe: FableRecipe): Promise<string[]> {
   const narratorContext = recipe.narratorData
     ? `
 NARRATOR DETAILS (already provided by user):
@@ -322,22 +345,92 @@ Just output the questions, with no preamble or anything after the questions.
   return questions;
 }
 
-// ── Ambient prompt (migrated from the old Grok path; fail-soft) ──────────────
+// ── Ambient prompt (Fable; throws so the wrapper can fall back to Grok) ──────
+
+async function fableAmbientPrompt(setting: string, location: string): Promise<string> {
+  const userPrompt = `Given a story set in "${setting || 'unspecified'}" at a "${location || 'unspecified'}" location, output a single comma-separated list of ambient sounds that would realistically be heard continuously in the background. No music. No speech. No voices. Only environmental, natural, or mechanical sounds that can loop seamlessly. Example output: "wind through leafy trees, distant birdsong, faint gravel footfalls, rustling foliage". Output only the sound list on one line, nothing else.`;
+  const raw = await fableText({
+    system:
+      'You output only comma-separated lists of ambient environmental sounds. You never include music, speech, or voices. You never add preamble or commentary.',
+    user: userPrompt,
+    maxTokens: 256,
+    label: 'ambient-prompt',
+  });
+  return raw.trim().split('\n')[0].trim();
+}
+
+// ── Refusal/failure logging (fail-soft; powers the /admin dashboard) ─────────
+
+/**
+ * Write a Fable failure (content-moderation refusal OR API/timeout error) to
+ * the `fableRefusals` Firestore collection, including the exact prompt that
+ * failed, so admins can see what made Fable refuse. Never throws — logging must
+ * not break generation.
+ */
+async function logFableFailure(
+  err: any,
+  recipe: FableRecipe,
+  call: 'transcript' | 'follow-up' | 'ambient',
+): Promise<void> {
+  try {
+    const meta = err?.__fable || {};
+    await addDoc(collection(db, 'fableRefusals'), {
+      uid: auth.currentUser?.uid ?? null,
+      call,
+      stage: meta.stage ?? null,
+      kind: meta.kind ?? 'error', // 'refusal' | 'error'
+      reason: String(err?.message ?? err).slice(0, 800),
+      systemPrompt: meta.system ?? null,
+      userPrompt: meta.user ?? null,
+      recipe: {
+        setting: recipe.setting ?? null,
+        prompt: recipe.prompt ?? null,
+        narrationMode: recipe.narrationMode ?? null,
+        isNighttime: !!recipe.isNighttime,
+        features: recipe.features ?? [],
+        genderSelf: recipe.genderSelf ?? null,
+        genderOther: recipe.genderOther ?? null,
+      },
+      fellBackTo: 'grok',
+      createdAt: serverTimestamp(),
+    });
+  } catch (e) {
+    console.warn('⚠️ fable refusal logging failed (non-fatal):', e);
+  }
+}
+
+// ── Public API: Fable primary, Grok worst-case fallback ─────────────────────
+
+export async function generateTranscript(recipe: FableRecipe, followUpQA: string): Promise<string> {
+  try {
+    return await fableTranscript(recipe, followUpQA);
+  } catch (err: any) {
+    console.warn(`⚠️ Fable transcript failed (${err?.message}); falling back to Grok`);
+    await logFableFailure(err, recipe, 'transcript');
+    return await grokTranscript(recipe, followUpQA);
+  }
+}
+
+export async function generateFollowUpQuestions(recipe: FableRecipe): Promise<string[]> {
+  try {
+    return await fableFollowUpQuestions(recipe);
+  } catch (err: any) {
+    console.warn(`⚠️ Fable follow-up questions failed (${err?.message}); falling back to Grok`);
+    await logFableFailure(err, recipe, 'follow-up');
+    return await grokFollowUpQuestions(recipe);
+  }
+}
 
 export async function generateAmbientPrompt(setting: string, location: string): Promise<string> {
-  const userPrompt = `Given a story set in "${setting || 'unspecified'}" at a "${location || 'unspecified'}" location, output a single comma-separated list of ambient sounds that would realistically be heard continuously in the background. No music. No speech. No voices. Only environmental, natural, or mechanical sounds that can loop seamlessly. Example output: "wind through leafy trees, distant birdsong, faint gravel footfalls, rustling foliage". Output only the sound list on one line, nothing else.`;
   try {
-    const raw = await fableText({
-      system:
-        'You output only comma-separated lists of ambient environmental sounds. You never include music, speech, or voices. You never add preamble or commentary.',
-      user: userPrompt,
-      maxTokens: 256,
-      label: 'ambient-prompt',
-    });
-    return raw.trim().split('\n')[0].trim();
-  } catch (err) {
-    console.warn('Ambient prompt generation failed:', err);
-    return '';
+    return await fableAmbientPrompt(setting, location);
+  } catch (err: any) {
+    console.warn(`⚠️ Fable ambient failed (${err?.message}); falling back to Grok`);
+    try {
+      return await grokAmbientPrompt(setting, location);
+    } catch {
+      return ''; // ambient is optional — never block a story over it
+    }
   }
 }
 

@@ -76,7 +76,9 @@ export default function FollowUpScreen() {
     isNighttime: params.isNighttime === 'true',
     userName: getStringParam('userName'),
     duration: getStringParam('duration', '10min'),
-    narrationMode: getStringParam('narrationMode', 'intermediate'),
+    narrationMode: ['immersive', 'intermediate', 'cinematic'].includes(getStringParam('narrationMode'))
+      ? getStringParam('narrationMode')
+      : 'intermediate',
     voiceId: getStringParam('voiceId'),
     prompt: getStringParam('prompt'),
     tags: params.tags ? safeParse(params.tags as string, []) : [],

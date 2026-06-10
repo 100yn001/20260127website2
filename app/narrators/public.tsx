@@ -16,7 +16,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/cn';
 import { clonePublicNarratorToUser } from '@/services/public-narrator-service';
 
-const GUTTER = 'px-5 sm:px-8 md:px-10 lg:px-14';
+const GUTTER = 'px-5 sm:px-8 md:px-10 lg:px-14 xl:px-20';
 
 type PublicNarrator = {
   id: string;
@@ -36,6 +36,7 @@ export default function PublicNarratorsScreen() {
   const { user } = useAuth();
   const [narrators, setNarrators] = useState<PublicNarrator[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [adding, setAdding] = useState<string | null>(null);
   const [q, setQ] = useState('');
   const [playingId, setPlayingId] = useState<string | null>(null);
@@ -129,6 +130,7 @@ export default function PublicNarratorsScreen() {
         );
       } catch (e) {
         console.error('[public-narrators] load failed', e);
+        setLoadError(true);
       } finally {
         setLoading(false);
       }
@@ -190,6 +192,12 @@ export default function PublicNarratorsScreen() {
       {loading ? (
         <View className="py-10 items-center">
           <ActivityIndicator color="hsl(var(--foreground))" />
+        </View>
+      ) : loadError ? (
+        <View className="flex-1 items-center justify-center px-6">
+          <Text className="text-sm font-serif text-muted-foreground text-center">
+            couldn&apos;t load public narrators. check your connection and try again.
+          </Text>
         </View>
       ) : filtered.length === 0 ? (
         <View className="flex-1 items-center justify-center px-6">

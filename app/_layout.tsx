@@ -160,6 +160,7 @@ export default function RootLayout() {
                   <Stack.Screen name="story-details" options={{ headerShown: false }} />
                   <Stack.Screen name="loading" options={{ headerShown: false }} />
                   <Stack.Screen name="player" options={{ headerShown: false }} />
+                  <Stack.Screen name="admin" options={{ headerShown: false }} />
                   <Stack.Screen name="modal" options={{ headerShown: false, presentation: 'modal' }} />
                 </Stack>
                 <NowPlayingBar />

@@ -12,7 +12,7 @@ import { db } from '@/config/firebase';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/cn';
 
-const GUTTER = 'px-5 sm:px-8 md:px-10 lg:px-14';
+const GUTTER = 'px-5 sm:px-8 md:px-10 lg:px-14 xl:px-20';
 
 type Narrator = {
   id: string;

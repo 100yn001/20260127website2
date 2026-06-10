@@ -29,7 +29,7 @@ export default function CharacterQuizScreen() {
   const [selectedObject, setSelectedObject] = useState<string | null>(null);
 
   const handleBack = () => {
-    router.push('/(tabs)/mystories');
+    router.push('/(tabs)/vault');
   };
 
   const opacity = useSharedValue(0);

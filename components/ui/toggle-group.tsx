@@ -38,6 +38,7 @@ export function ToggleGroup<T extends string>({
           >
             {opt.icon}
             <Text
+              numberOfLines={1}
               className={cn(
                 'text-sm font-serif',
                 active ? 'text-foreground' : 'text-muted-foreground'

@@ -283,6 +283,9 @@ export async function generateAudioStory(
     // through the hard-limit enforcer so nothing over 4500 chars ever hits
     // the ElevenLabs API.
     const chunks = enforceHardLimit(splitTextIntoChunks(transcript));
+    if (chunks.length === 0) {
+      throw new Error('Transcript produced no audio chunks — nothing to synthesize');
+    }
     const longest = chunks.reduce((m, c) => Math.max(m, c.length), 0);
     console.log(`📝 Split into ${chunks.length} chunk(s) for TTS (longest=${longest} chars)`);
 

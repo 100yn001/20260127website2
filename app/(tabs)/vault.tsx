@@ -24,7 +24,7 @@ import { cn } from '@/lib/cn';
 import { variedTint } from '@/lib/cover';
 
 type Filter = 'all' | 'day' | 'night';
-const GUTTER = 'px-5 sm:px-8 md:px-10 lg:px-14';
+const GUTTER = 'px-5 sm:px-8 md:px-10 lg:px-14 xl:px-20';
 
 export default function VaultScreen() {
   const router = useRouter();

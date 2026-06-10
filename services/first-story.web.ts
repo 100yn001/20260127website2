@@ -111,17 +111,39 @@ async function generateTranscript(args: {
 
   const user = `The listener's name is ${name}. ${sceneInstruction} Begin gently. End with a soft closing line that lets ${name} land.`;
 
-  const res = await getAnthropic().messages.create({
-    model: 'claude-fable-5',
-    max_tokens: 2000, // generous headroom: Fable's adaptive thinking shares the budget
-    // NB: no `temperature` — claude-fable-5 rejects it (adaptive thinking always on).
-    system,
-    messages: [{ role: 'user', content: user }],
-  });
-  for (const block of res.content) {
-    if (block.type === 'text') return block.text.trim();
+  const extractText = (res: Anthropic.Message): string | null => {
+    for (const block of res.content) {
+      if (block.type === 'text') return block.text.trim();
+    }
+    return null;
+  };
+
+  // Fable primary; on any failure fall back to Haiku (its prior model — the
+  // user asked for "back to where we used to have it" worst-case behaviour).
+  try {
+    const res = await getAnthropic().messages.create({
+      model: 'claude-fable-5',
+      max_tokens: 2000, // generous headroom: Fable's adaptive thinking shares the budget
+      // NB: no `temperature` — claude-fable-5 rejects it (adaptive thinking always on).
+      system,
+      messages: [{ role: 'user', content: user }],
+    });
+    const text = extractText(res);
+    if (text) return text;
+    throw new Error('No transcript returned');
+  } catch (err) {
+    console.warn('⚠️ first-story Fable failed; falling back to Haiku:', (err as any)?.message);
+    const res = await getAnthropic().messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 900,
+      temperature: 0.85,
+      system,
+      messages: [{ role: 'user', content: user }],
+    });
+    const text = extractText(res);
+    if (text) return text;
+    throw new Error('No transcript returned');
   }
-  throw new Error('No transcript returned');
 }
 
 async function ttsChunk(text: string, voiceId: string): Promise<Blob> {
