@@ -1,19 +1,23 @@
+// Live Storage rules (versioned here to match what's deployed).
+// NOTE: the previous repo version also had a `static-audio/{filename}` read
+// rule (allow read: if request.auth != null). Your deployed rules do not.
+// If static / pre-generated stories play their audio from a `static-audio/`
+// Storage path and now fail to load, re-add that block.
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
 
-    // Allow authenticated users to read and write their own generated audio files
-    // Filenames follow the pattern: {userId}-{timestamp}-chunk{index}.mp3
-    match /generated-audio/{type}/{filename} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null
-        && filename.matches(request.auth.uid + '-.*');
+    // Generated audio: any signed-in user may READ (playback URLs are shared);
+    // WRITE only your own files (filenames are `{uid}-{timestamp}-chunkN.mp3`).
+    match /generated-audio/{folder}/{file} {
+      allow read:  if request.auth != null;
+      allow write: if request.auth != null && file.matches(request.auth.uid + '-.*');
     }
 
-    // Allow all authenticated users to read static audio
-    match /static-audio/{filename} {
-      allow read: if request.auth != null;
-      allow write: if false; // Only admins can upload via Firebase Console
+    // Shared artwork: world-readable; only the owner may upload to their folder.
+    match /sharedArtwork/{userId}/{allPaths=**} {
+      allow read:  if true;
+      allow write: if request.auth != null && request.auth.uid == userId;
     }
 
     // Deny everything else

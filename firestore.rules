@@ -1,0 +1,95 @@
+// Live Firestore rules (versioned here to match what's deployed).
+// firebase.json points "rules" at this file — `firebase deploy --only firestore:rules`
+// deploys it. If you edited the rules in the console after pasting, reconcile
+// this file with your console version so they stay in sync.
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isSignedIn() &&
+        request.auth.token.email in ['ellepotterhead2006@gmail.com', 'madxwoods@gmail.com'];
+    }
+
+    // User documents and subcollections
+    match /users/{userId} {
+      allow read:  if isOwner(userId) || isAdmin();   // admin read = /admin dashboard
+      allow write: if isOwner(userId);
+
+      match /narrators/{narratorId} {
+        allow read, write: if isOwner(userId) || isAdmin();
+      }
+
+      match /queue/{queueId} {
+        allow read, write: if isOwner(userId);
+      }
+    }
+
+    // Top-level user stories (owner-only; admin may read for the dashboard)
+    match /stories/{storyId} {
+      allow read:   if (isSignedIn() && resource.data.userId == request.auth.uid) || isAdmin();
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    // Fable refusal/failure logs (hold prompts -> admin-read only).
+    // REQUIRED for the /admin dashboard + refusal logging to work.
+    match /fableRefusals/{docId} {
+      allow create: if isSignedIn() && request.resource.data.uid == request.auth.uid;
+      allow read:   if isAdmin();
+      allow delete: if isAdmin() || (isSignedIn() && resource.data.uid == request.auth.uid);
+      allow update: if false;
+    }
+
+    // Static stories (read-only to signed-in users)
+    match /staticStories/{storyId} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+
+    // Public stories (admin-managed, browseable by anyone)
+    match /publicStories/{storyId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /staticVoices/{voiceId} {
+      allow read: if true;
+    }
+
+    // Public/static narrators (admin-managed, browseable by anyone)
+    match /publicNarrators/{narratorId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Beta passwords (admin-only; not read by any client)
+    match /betapasswords/{docId} {
+      allow read:  if isAdmin();
+      allow write: if isAdmin();
+    }
+
+    // Shared audio for the sink app (anyone with the link can read).
+    // Writes scoped to the sharer; expired docs may be cleaned up by any viewer.
+    match /sharedAudio/{docId} {
+      allow read:   if true;
+      allow create: if isSignedIn() && request.resource.data.sharedBy == request.auth.uid;
+      allow update: if isSignedIn() && resource.data.sharedBy == request.auth.uid;
+      allow delete: if isSignedIn() &&
+        (resource.data.sharedBy == request.auth.uid || resource.data.expiresAt < request.time);
+    }
+
+    // Deny everything else unless explicitly allowed
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -90,7 +90,11 @@ export default function RegenerateScreen() {
         if (typeof data.duration === 'string' && /^(5|10|15)min$/.test(data.duration)) {
           setDuration(data.duration);
         }
-        setNarrationMode(data.narrationMode ?? narrationModeFromLegacy(data.narrativeRatio));
+        setNarrationMode(
+          NARRATION_MODES.includes(data.narrationMode)
+            ? data.narrationMode
+            : narrationModeFromLegacy(data.narrativeRatio),
+        );
         if (typeof data.userName === 'string') setNewName(data.userName);
         if (typeof data.voiceId === 'string') setNewVoiceId(data.voiceId);
         if (Array.isArray(data.ambientPrompts)) setAmbientPrompts(data.ambientPrompts);

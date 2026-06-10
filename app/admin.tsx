@@ -30,10 +30,14 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { db } from '@/config/firebase';
+import { auth, db } from '@/config/firebase';
 
 const SECRET_CODE = 'saintaubin694135';
 const UNLOCK_KEY = 'admin_unlocked_v1';
+// The secret code unlocks the UI, but Firestore only returns data to these
+// accounts (rules use the email allowlist). Used purely to show a helpful
+// banner — it is NOT the security boundary.
+const ADMIN_EMAILS = ['ellepotterhead2006@gmail.com', 'madxwoods@gmail.com'];
 
 const MONO = Platform.select({ ios: 'Menlo', android: 'monospace', default: 'monospace' });
 
@@ -252,6 +256,14 @@ function Dashboard({ onLock }: { onLock: () => void }) {
           </Pressable>
         </View>
       </View>
+
+      {!ADMIN_EMAILS.includes(auth.currentUser?.email || '') ? (
+        <View className="mt-4 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3">
+          <Text className="text-[13px] text-amber-300">
+            you&apos;re not signed into the app as an admin account, so the data below won&apos;t load. sign in as an admin email, then reopen /admin.
+          </Text>
+        </View>
+      ) : null}
 
       {loading ? (
         <View className="mt-20 items-center">
