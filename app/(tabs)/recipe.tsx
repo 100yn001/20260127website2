@@ -26,8 +26,13 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Slider } from '@/components/ui/slider';
 import { ToggleGroup } from '@/components/ui/toggle-group';
+import {
+  DEFAULT_NARRATION_MODE,
+  NARRATION_MODES,
+  NARRATION_MODE_LABELS,
+  type NarrationMode,
+} from '@/constants/narration-modes';
 import { useMode } from '@/hooks/useMode';
 import { cn } from '@/lib/cn';
 
@@ -92,7 +97,7 @@ export default function RecipeScreen() {
   const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
 
   const [duration, setDuration] = useState<Duration>('10min');
-  const [ratio, setRatio] = useState(5);
+  const [narrationMode, setNarrationMode] = useState<NarrationMode>(DEFAULT_NARRATION_MODE);
   const [ambientPrompts, setAmbientPrompts] = useState<string[]>([]);
 
   const [nameOpt, setNameOpt] = useState<NameOpt>('my-name');
@@ -158,7 +163,7 @@ export default function RecipeScreen() {
         featurePreferences: JSON.stringify({}),
         isNighttime: String(isNighttime),
         duration,
-        narrativeRatio: String(ratio),
+        narrationMode,
         voiceId: voiceId ?? '',
         prompt: '',
         tags: JSON.stringify(chips),
@@ -301,8 +306,6 @@ export default function RecipeScreen() {
 
   /* ============================================================ NARRATION */
   if (step === 'narration') {
-    const descriptivePct = (10 - ratio) * 10;
-    const directPct = ratio * 10;
     return (
       <Screen mode={mode}>
         <TopBar onBack={goBack} step={progress} total={total} />
@@ -310,7 +313,7 @@ export default function RecipeScreen() {
           <ScreenHeader title="narration style" subtitle="pacing and duration" />
           <View className="gap-4">
             <Card className="p-5 gap-4">
-              <Label>duration</Label>
+              <Label>approximate length</Label>
               <ToggleGroup<Duration>
                 value={duration}
                 onValueChange={setDuration}
@@ -322,13 +325,12 @@ export default function RecipeScreen() {
               />
             </Card>
             <Card className="p-5 gap-4">
-              <View className="flex-row items-baseline justify-between">
-                <Label>descriptive · direct</Label>
-                <Text className="text-xs font-sans text-muted-foreground">
-                  {descriptivePct}% · {directPct}%
-                </Text>
-              </View>
-              <Slider value={ratio} onValueChange={setRatio} min={0} max={10} step={1} />
+              <Label>style</Label>
+              <ToggleGroup<NarrationMode>
+                value={narrationMode}
+                onValueChange={setNarrationMode}
+                options={NARRATION_MODES.map((m) => ({ value: m, label: NARRATION_MODE_LABELS[m] }))}
+              />
             </Card>
             <Card className="p-5 gap-4">
               <AmbientPicker
@@ -470,7 +472,7 @@ export default function RecipeScreen() {
           ))}
         </View>
         <Text className="text-center text-xs font-sans text-muted-foreground">
-          {duration} · {ratio * 10}% direct · {isNighttime ? 'nighttime' : 'daytime'}
+          {duration} · {NARRATION_MODE_LABELS[narrationMode]} · {isNighttime ? 'nighttime' : 'daytime'}
         </Text>
         <View className="flex-row gap-2 self-center w-full max-w-[360px]">
           <Button variant="outline" size="lg" onPress={() => setStep('ingredients')}>

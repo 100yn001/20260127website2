@@ -17,9 +17,14 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { Slider } from '@/components/ui/slider';
 import { Textarea } from '@/components/ui/textarea';
 import { ToggleGroup } from '@/components/ui/toggle-group';
+import {
+  DEFAULT_NARRATION_MODE,
+  NARRATION_MODES,
+  NARRATION_MODE_LABELS,
+  type NarrationMode,
+} from '@/constants/narration-modes';
 import { useMode } from '@/hooks/useMode';
 
 type Step = 'story' | 'narration' | 'preview';
@@ -45,7 +50,7 @@ export default function NarratorStoryScreen() {
   const [step, setStep] = useState<Step>('story');
   const [prompt, setPrompt] = useState('');
   const [duration, setDuration] = useState<Duration>('10min');
-  const [ratio, setRatio] = useState(5);
+  const [narrationMode, setNarrationMode] = useState<NarrationMode>(DEFAULT_NARRATION_MODE);
   const [ambientPrompts, setAmbientPrompts] = useState<string[]>([]);
   const [storedName, setStoredName] = useState('User');
 
@@ -77,7 +82,7 @@ export default function NarratorStoryScreen() {
         featurePreferences: JSON.stringify({}),
         isNighttime: 'false',
         duration,
-        narrativeRatio: String(ratio),
+        narrationMode,
         voiceId: narrator?.voiceId ?? '',
         prompt,
         tags: JSON.stringify([]),
@@ -146,8 +151,6 @@ export default function NarratorStoryScreen() {
 
   /* ============================================================ NARRATION */
   if (step === 'narration') {
-    const descriptivePct = (10 - ratio) * 10;
-    const directPct = ratio * 10;
     return (
       <Screen mode={mode}>
         <TopBar onBack={goBack} step={stepIdx + 1} total={totalSteps} />
@@ -155,7 +158,7 @@ export default function NarratorStoryScreen() {
           <ScreenHeader title="narration style" subtitle="pacing and duration" />
           <View className="gap-4">
             <Card className="p-5 gap-4">
-              <Label>duration</Label>
+              <Label>approximate length</Label>
               <ToggleGroup<Duration>
                 value={duration}
                 onValueChange={setDuration}
@@ -167,13 +170,12 @@ export default function NarratorStoryScreen() {
               />
             </Card>
             <Card className="p-5 gap-4">
-              <View className="flex-row items-baseline justify-between">
-                <Label>descriptive · direct</Label>
-                <Text className="text-xs font-sans text-muted-foreground">
-                  {descriptivePct}% · {directPct}%
-                </Text>
-              </View>
-              <Slider value={ratio} onValueChange={setRatio} min={0} max={10} step={1} />
+              <Label>style</Label>
+              <ToggleGroup<NarrationMode>
+                value={narrationMode}
+                onValueChange={setNarrationMode}
+                options={NARRATION_MODES.map((m) => ({ value: m, label: NARRATION_MODE_LABELS[m] }))}
+              />
             </Card>
             <Card className="p-5 gap-4">
               <AmbientPicker
@@ -217,7 +219,7 @@ export default function NarratorStoryScreen() {
         </View>
         <View className="flex-row flex-wrap gap-2 justify-center self-center max-w-[340px]">
           <Badge>{duration}</Badge>
-          <Badge>{ratio * 10}% direct</Badge>
+          <Badge>{NARRATION_MODE_LABELS[narrationMode]}</Badge>
           {narrator?.gender && <Badge variant="outline">{narrator.gender}</Badge>}
         </View>
         {prompt && (

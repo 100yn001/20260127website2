@@ -1,3 +1,5 @@
+import { NarrationMode } from '@/constants/narration-modes';
+
 export interface DepthLayer {
   x: number;
   y: number;
@@ -25,7 +27,8 @@ export interface Story {
   features?: string[];
   featurePreferences?: Record<string, string[]>;
   duration: '5min' | '10min' | '15min';
-  narrativeRatio: number;
+  narrationMode?: NarrationMode; // immersive | intermediate | cinematic
+  narrativeRatio?: number; // legacy descriptive·direct (kept for back-compat)
   narratorId?: string;
   createdAt: Date;
   coverColor?: string;

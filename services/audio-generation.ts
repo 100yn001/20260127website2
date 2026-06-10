@@ -1,24 +1,28 @@
 /**
- * Audio Generation Service
- * Calls Grok and ElevenLabs APIs directly from React Native
- * No backend server needed - fully self-contained!
+ * Audio Generation Service (native)
+ * Text via the Fable immersion pipeline (./fable-story, claude-fable-5);
+ * audio via ElevenLabs. No backend server needed - fully self-contained!
  */
 
 import { DEFAULT_COVER_COLOR } from '@/constants/cover-colors';
+import {
+  DEFAULT_NARRATION_MODE,
+  LEGACY_RATIO_BY_MODE,
+  type NarrationMode,
+} from '@/constants/narration-modes';
 import { DepthLayer } from '@/types/story';
 import Constants from 'expo-constants';
 import ReactNativeBlobUtil from 'react-native-blob-util';
+import { generateAmbientPrompt, generateTranscript } from './fable-story';
 import { saveStory, uploadAmbient, uploadAudioChunk } from './story-service';
 import { checkAndIncrementDailyStoryCount } from './user-service';
 
-// Get API keys from Expo environment variables
-const XAI_API_KEY = Constants.expoConfig?.extra?.XAI || '';
+// Re-exported so existing callers (e.g. app/followup.tsx) keep resolving
+// generateFollowUpQuestions from '@/services/audio-generation'.
+export { generateFollowUpQuestions } from './fable-story';
+
 const ELEVENLABS_API_KEY = Constants.expoConfig?.extra?.ELEVENLABS || '';
 
-// Debug logging (remove in production)
-if (!XAI_API_KEY) {
-  console.warn('⚠️ XAI API key not found in environment');
-}
 if (!ELEVENLABS_API_KEY) {
   console.warn('⚠️ ELEVENLABS API key not found in environment');
 }
@@ -81,14 +85,14 @@ function splitTextIntoChunks(text: string): string[] {
 
     // Find the last sentence boundary within the limit
     const searchArea = remaining.substring(0, MAX_CHUNK_SIZE);
-    
+
     // Look for sentence endings: . ! ? followed by space or end
     let splitIndex = -1;
-    
+
     // Search backwards from the limit for a good split point
     for (let i = searchArea.length - 1; i >= 0; i--) {
       const char = searchArea[i];
-      if ((char === '.' || char === '!' || char === '?') && 
+      if ((char === '.' || char === '!' || char === '?') &&
           (i === searchArea.length - 1 || searchArea[i + 1] === ' ' || searchArea[i + 1] === '\n')) {
         splitIndex = i + 1;
         break;
@@ -173,7 +177,7 @@ async function fetchAudioChunkToFile(
 function stripID3FromBase64(base64Data: string): string {
   // Decode first 10 bytes (need 14 base64 chars to cover 10 bytes)
   const headerSlice = atob(base64Data.substring(0, 16));
-  
+
   // Check for "ID3" magic bytes
   if (headerSlice.charCodeAt(0) === 0x49 &&
       headerSlice.charCodeAt(1) === 0x44 &&
@@ -184,15 +188,15 @@ function stripID3FromBase64(base64Data: string): string {
                     ((headerSlice.charCodeAt(8) & 0x7F) << 7) |
                     (headerSlice.charCodeAt(9) & 0x7F);
     const totalHeaderBytes = 10 + tagSize;
-    
+
     // Align to 3-byte boundary for clean base64 slicing
     const alignedBytes = Math.ceil(totalHeaderBytes / 3) * 3;
     const base64CharsToSkip = (alignedBytes / 3) * 4;
-    
+
     console.log(`🔧 Stripped ID3v2 header: ${totalHeaderBytes} bytes`);
     return base64Data.substring(base64CharsToSkip);
   }
-  
+
   return base64Data;
 }
 
@@ -217,47 +221,6 @@ async function combineAudioFiles(filePaths: string[]): Promise<string> {
   }
 
   return combinedPath;
-}
-
-/**
- * Ask Grok for a short, comma-separated SFX description that can be
- * fed to ElevenLabs SFX v2 as a seamless-loop ambient bed.
- * Returns empty string if the call fails — caller should treat as optional.
- */
-async function generateAmbientPrompt(setting: string, location: string): Promise<string> {
-  const userPrompt = `Given a story set in "${setting || 'unspecified'}" at a "${location || 'unspecified'}" location, output a single comma-separated list of ambient sounds that would realistically be heard continuously in the background. No music. No speech. No voices. Only environmental, natural, or mechanical sounds that can loop seamlessly. Example output: "wind through leafy trees, distant birdsong, faint gravel footfalls, rustling foliage". Output only the sound list on one line, nothing else.`;
-
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 60_000);
-    let response;
-    try {
-      response = await fetch('https://api.x.ai/v1/responses', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${XAI_API_KEY}`,
-        },
-        body: JSON.stringify({
-          model: 'grok-4-1-fast-reasoning',
-          input: [
-            { role: 'system', content: 'You output only comma-separated lists of ambient environmental sounds. You never include music, speech, or voices. You never add preamble or commentary.' },
-            { role: 'user', content: userPrompt },
-          ],
-        }),
-        signal: controller.signal,
-      });
-    } finally {
-      clearTimeout(timeoutId);
-    }
-    if (!response.ok) return '';
-    const data = await response.json();
-    const text = data.output?.[0]?.content?.[0]?.text || '';
-    return text.trim().split('\n')[0].trim();
-  } catch (err) {
-    console.warn('Ambient prompt generation failed:', err);
-    return '';
-  }
 }
 
 /**
@@ -308,7 +271,8 @@ interface RecipeData {
   featurePreferences: Record<string, string[]>;
   isNighttime: boolean;
   duration?: string;
-  narrativeRatio?: number;
+  narrationMode?: NarrationMode; // immersive | intermediate | cinematic
+  narrativeRatio?: number; // legacy 0–10 descriptive·direct (kept for back-compat)
   voiceId?: string;
   prompt?: string; // From create tab
   tags?: string[]; // From recipe tab
@@ -339,148 +303,6 @@ function generateDepthLayers(count: number = 12): DepthLayer[] {
 }
 
 /**
- * Generate follow-up questions using Grok API
- */
-export async function generateFollowUpQuestions(recipe: RecipeData): Promise<string[]> {
-  // Build narrator context if present
-  const narratorContext = recipe.narratorData ? `
-NARRATOR DETAILS (already provided by user):
-- Narrator name: ${recipe.narratorData.name}
-- Narrator gender: ${recipe.narratorData.gender}
-- Narrator relationship to user: ${recipe.narratorData.relationship}
-- Narrator description: ${recipe.narratorData.description}
-${recipe.narratorData.additionalDetails ? `- Additional narrator details: ${recipe.narratorData.additionalDetails}` : ''}
-- User's name with this narrator: ${recipe.narratorData.userNameWithNarrator}
-- User's gender with this narrator: ${recipe.narratorData.userGenderWithNarrator}
-` : '';
-
-  const recipeString = `
-setting: ${recipe.setting || 'not specified'};
-location: ${recipe.location || 'not specified'};
-character: ${recipe.character || 'not specified'};
-character gender: ${recipe.genderOther || 'not specified'};
-self gender: ${recipe.genderSelf || 'not specified'};
-trope: ${recipe.trope || 'not specified'};
-${recipe.isNighttime && recipe.features && recipe.features.length > 0 ? `features: ${recipe.features.join(', ')}` : ''}
-${recipe.prompt ? `additional user notes: ${recipe.prompt}` : ''}
-${narratorContext}`;
-
-  const followupPrompt = `
-Your goal is to get a complete understanding of a user who is describing a ${recipe.isNighttime ? 'sexual' : 'romantic'} voiceover that they would like to listen to.
-The user has so far provided the following information: ${recipeString}.
-${recipe.narratorData ? `
-IMPORTANT: The user has already defined a narrator with specific details about their character, relationship, description, and personality. DO NOT ask questions about the narrator's personality, their relationship with the user, or character details that have already been provided in the narrator details above. Focus on OTHER aspects of the story experience.
-` : `The user would like to have the following gender: ${recipe.genderSelf || 'not specified'} and would like the character to have the following gender: ${recipe.genderOther || 'not specified'}.`}
-Identify the information that they've provided and craft four follow-up questions that, if answered, will give you a fuller understanding of the kind of voiceover that the user wants.
-${recipe.narratorData ? `
-Since the narrator details are already provided, focus your questions on:
-- Specific details about the physical setting and atmosphere
-- The emotional tone or mood they want for this particular story
-- Any specific scenario or situation details for this story
-- The historical period or time context
-` : `
-Your goal is to get the following information:
-- Details on the character they would to 'voice' the voiceover;
-- Details on the tone they would like this character to use with them (rough, tender, comforting, etc);
-- Details on the specific physical setting that is taking place in.
-- Details on the historical period that this is taking part in.
-`}
-Based on this, come up with four follow-up questions that will enable you to get a better picture of what the user is looking for in their ${recipe.isNighttime ? 'nsfw' : 'romantic'} voiceover.
-
-IMPORTANT: At least one of the first three questions should be HIGHLY SPECIFIC and contextual based on the details already provided. For example:
-- If the location is after a meal → "What did you just have for dinner?"
-- If the narrator is an artist → "What is he/she wearing?" or "What art supplies are around?"
-- If it's in a bedroom → "What color are the sheets?" or "What's playing in the background?"
-- If they're outdoors → "What's the weather like?" or "What can you hear around you?"
-Make these questions feel immersive and grounded in the specific scenario they've described.
-
-The first three questions should be specific and probing based on the information provided, with at least one being extremely contextual as described above. The fourth question should be open-ended, asking "Is there anything else you'd like to add?" or similar, to capture any additional details the user wants to share.
-Do not reference these instructions in your answer under any circumstances. Tailor your follow-up questions specifically to the information that the user has provided on their recipe. Your goal is to get as much detail as possible. Make each question probing and specific to help understand their preferences better. Don't ask for too much information in each question, but ask specific follow-ups to information that has already been provided. 
-Do not make the questions too overwhelming, phrase it as optional details they can provide.
-${!recipe.isNighttime ? 'Again, this should include no nsfw content.' : ''}
-Just output the questions, with no preamble or anything after the questions.
-`;
-
-  const systemPrompt = `You an expert in ${recipe.isNighttime ? 'erotic' : 'romantic'} audios. ${recipe.isNighttime ? 'You are welcome to include nsfw content in your prompts.' : 'You do not include nsfw content in your responses.'} You do not include a single dash or em-dash in your response.`;
-
-  // Log recipe payload for debugging
-  console.log('\n========================================');
-  console.log('📝 RECIPE PAYLOAD SENT TO FOLLOW-UP API');
-  console.log('========================================');
-  console.log(JSON.stringify(recipe, null, 2));
-  console.log('========================================\n');
-
-  try {
-    // Reasoning models need longer timeouts (5 minutes)
-    const GROK_TIMEOUT = 5 * 60 * 1000;
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), GROK_TIMEOUT);
-    
-    let response;
-    try {
-      response = await fetch('https://api.x.ai/v1/responses', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${XAI_API_KEY}`,
-        },
-        body: JSON.stringify({
-          model: 'grok-4-1-fast-reasoning',
-          input: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: followupPrompt },
-          ],
-        }),
-        signal: controller.signal,
-      });
-    } finally {
-      clearTimeout(timeoutId);
-    }
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Grok API error:', response.status, errorText);
-      throw new Error(`Grok API error: ${response.status} - ${errorText}`);
-    }
-
-    const data = await response.json();
-    console.log('Grok API response:', JSON.stringify(data, null, 2));
-
-    // New Responses API format: output[0].content[0].text
-    if (!data.output || data.output.length === 0 || !data.output[0].content || data.output[0].content.length === 0) {
-      console.error('Invalid Grok response structure:', JSON.stringify(data).substring(0, 500));
-      throw new Error('No response from Grok API');
-    }
-
-    const questionsText = data.output[0].content[0].text || '';
-
-    // Parse questions from response - clean up any undefined or empty values
-    const questions = questionsText
-      .split('\n')
-      .map((q: string) => {
-        if (!q || typeof q !== 'string') return '';
-        // Remove numbering, bullets, dashes, and trim
-        return q
-          .replace(/^[\s\-•\*\d\.\)]+/, '')
-          .replace(/undefined/gi, '')
-          .trim();
-      })
-      .filter((q: string) => q && q.length > 5 && /[a-zA-Z]/.test(q))
-      .slice(0, 4);
-
-    // Ensure we have valid questions
-    if (questions.length === 0) {
-      throw new Error('No valid questions parsed from response');
-    }
-
-    return questions;
-  } catch (error) {
-    console.error('Error generating follow-up questions:', error);
-    throw error;
-  }
-}
-
-/**
  * Generate complete audio story from recipe
  * Includes follow-up answers from user
  * Automatically uploads to Firebase Storage and saves metadata to Firestore
@@ -494,7 +316,7 @@ export async function generateAudioStory(
 
   // Beta cap: 5 stories/day. Throws DailyStoryLimitError if the user is at
   // their limit, in which case we want to surface to the UI before any
-  // expensive Grok/ElevenLabs calls happen. Atomic via Firestore txn.
+  // expensive Fable/ElevenLabs calls happen. Atomic via Firestore txn.
   await checkAndIncrementDailyStoryCount(userId);
 
   // Combine questions and answers into Q&A pairs
@@ -502,151 +324,13 @@ export async function generateAudioStory(
     const answer = followUpAnswers[i] || '';
     return answer ? `Q: ${q}\nA: ${answer}` : '';
   }).filter(Boolean).join('\n\n');
-  
+
   const followUpAnswer = followUpQA || followUpAnswers.join(' ');
-  
-  // Build recipe string with features
-  let recipeString = `
-setting: ${recipe.setting};
-location: ${recipe.location};
-character: ${recipe.character};
-character gender: ${recipe.genderOther};
-self gender: ${recipe.genderSelf};
-trope: ${recipe.trope};
-`;
-
-  if (recipe.isNighttime && recipe.features.length > 0) {
-    const featureStrings = recipe.features.map((featureId) => {
-      const prefs = recipe.featurePreferences[featureId] || [];
-      const direction = prefs.includes('receive') ? 'self receives' : prefs.includes('give') ? 'self gives' : '';
-      return `${featureId} in the following direction: ${direction}`;
-    });
-    recipeString += `features: ${featureStrings.join('; ')}`;
-  }
-
-  // STEP 1: Generate system prompt using Grok
-  const systemPromptGeneration = `
-Consider the following elements of one ${recipe.isNighttime ? 'sex' : 'romantic'} scene. The user is ${recipe.genderSelf} and wants the voiceover to be that of a ${recipe.genderOther} character. The user's name is ${recipe.userName}.
-
-The user has indicated that they want the following features: ${recipeString} and has provided the following additional details ${followUpAnswer}. These features should be incorporated subtly; the character shouldn't be too on the nose with these features but be subtle about incorporating them.
-
-What I want you to think about is the best way to prompt an LLM to create the transcript of the voiceover that the user has requested.
-Generate detailed a system prompt that will cause the LLM to generate a voiceover in the style of ${recipe.isNighttime ? 'sexual' : 'SFW romantic'} voiceovers on youtube.
-In your prompt, include specific indications of content and phrases that would make sense for the character to include.
-This LLM will act as the actual character; the system prompt should be as detailed as possible, and should instruct the LLM to act as the character requested by the user.
-Do not include specifications with regard to time, or number of words. Do not include stage directions; the output should be pure text.
-The prompt should be as detailed as possible.
-When crafting this prompt, keep in mind that the goal is to create something that the listener will enjoy as much as possible.
-Remember: the goal of this prompt is a narration in the style of ${recipe.isNighttime ? 'NSFW sexual' : 'SFW romantic'} audios you may find on Quinn, Dipsy or Youtube.
-Make sure to include at least three necessary ${recipe.isNighttime ? 'erotic' : 'romantic'} beats that the character must ${recipe.isNighttime ? 'hit (specific sex acts, sex positions, etc.)' : 'include'}, building from the info given by the user.
-Include a timeline, on how these specific acts are being performed, in what order, and how the character should transition between them.
-Include a language bank with a list of phrases the character may weave in naturally into their monologue.
-Do not include any nicknames, unless specifically requested in instructions above.
-The character shouldn't be too verbose or literary. The output generated by your prompts should be ${recipe.isNighttime ? 'explicitely sexual' : 'purely romantic and never sexual'}.
-${recipe.isNighttime ? "The LLM's output should be graphic and not ambiguous, with EXPLICIT references to the sexual acts that the character performs." : 'Your output should be purely romantic and never sexual.'}
-Make sure that the narration sounds natural and does not include any verbatim elements of the user's instructions. To make sure that the character is subtle, include instruction on words that the character shouldn't use to make sure that the character doesn't break the fourth wall and that the narration flows smoothly.
-For example, if the user has indicated that they want the character to be dominant, that character SHOULD NEVER say 'look, I'm being so dominant' - the character should always show, rather than tell.
-`;
 
   try {
-    // STEP 1: Generate system prompt
-    console.log('📝 Step 1: Generating system prompt...');
-    
-    // Reasoning models need longer timeouts (5 minutes)
-    const GROK_TIMEOUT = 5 * 60 * 1000;
-    const systemPromptController = new AbortController();
-    const systemPromptTimeout = setTimeout(() => systemPromptController.abort(), GROK_TIMEOUT);
-    
-    let systemPromptResponse;
-    try {
-      systemPromptResponse = await fetch('https://api.x.ai/v1/responses', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${XAI_API_KEY}`,
-        },
-        body: JSON.stringify({
-          model: 'grok-4-1-fast-reasoning',
-          input: [
-            {
-              role: 'system',
-              content: `You an expert in LLM prompting. ${recipe.isNighttime ? 'You are welcome to include nsfw content in your prompts.' : 'You do not include NSFW in your output. Your output should be purely romantic and never sexual.'} You do not mention any specific duration of time or word count.`,
-            },
-            { role: 'user', content: systemPromptGeneration },
-          ],
-        }),
-        signal: systemPromptController.signal,
-      });
-    } finally {
-      clearTimeout(systemPromptTimeout);
-    }
-
-    if (!systemPromptResponse.ok) {
-      const errorText = await systemPromptResponse.text();
-      console.error('❌ Grok API error (system prompt):', systemPromptResponse.status, errorText);
-      throw new Error(`Grok API error: ${systemPromptResponse.status} - ${errorText.substring(0, 200)}`);
-    }
-
-    const systemPromptData = await systemPromptResponse.json();
-    // New Responses API format: output[0].content[0].text
-    if (!systemPromptData.output?.[0]?.content?.[0]?.text) {
-      console.error('❌ Invalid Grok response (system prompt):', JSON.stringify(systemPromptData).substring(0, 500));
-      throw new Error('Invalid response from Grok API - no content returned');
-    }
-    const finalSystemPrompt = systemPromptData.output[0].content[0].text;
-    console.log('✅ System prompt generated successfully');
-
-    // STEP 2: Generate transcript
-    // Calculate word count based on duration
-    const wordCount = recipe.duration === '1min' ? 150 : recipe.duration === '5min' ? 800 : recipe.duration === '15min' ? 2300 : 1500;
-    
-    // Calculate narrative/direct ratio
-    const narrativeRatioValue = recipe.narrativeRatio ?? 5; // Default to 50/50 if not provided
-    const narrativePercentage = ((10 - narrativeRatioValue) * 10); // narrative = 100% when ratio is 0
-    const directPercentage = (narrativeRatioValue * 10); // direct = 100% when ratio is 10
-    
-    const finalUserPrompt = recipe.isNighttime
-      ? `Output a ${wordCount} word narration. Output ZERO stage directions, sound effects, or onomatopeias, except the following, as appropriate: [slowly], 'hmmmmm', 'ahhhhh', [chuckles]. Do not output any mention of word count. Your output should be ${narrativePercentage}% narration and ${directPercentage}% direct speech, straight to the point, just plain sex, first person, talking directly to the user, describing the sexual beats. DO NOT describe what you are doing, just do it. The narration should be direct, you should be doing and not describing what you are doing. You should not narrate, you ARE the character. `
-      : `Output a ${wordCount} word SFW romantic narration. Output ZERO stage directions, sound effects, or onomatopeias. Do not output any mention of word count. The narration should be direct, you should be doing and not describing what you are doing. You should not narrate, you ARE the character. `;
-
-    console.log('📝 Step 2: Generating transcript...');
-    const transcriptController = new AbortController();
-    const transcriptTimeout = setTimeout(() => transcriptController.abort(), GROK_TIMEOUT);
-    
-    let transcriptResponse;
-    try {
-      transcriptResponse = await fetch('https://api.x.ai/v1/responses', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${XAI_API_KEY}`,
-        },
-        body: JSON.stringify({
-          model: 'grok-4-1-fast-reasoning',
-          input: [
-            { role: 'system', content: finalSystemPrompt },
-            { role: 'user', content: finalUserPrompt },
-          ],
-        }),
-        signal: transcriptController.signal,
-      });
-    } finally {
-      clearTimeout(transcriptTimeout);
-    }
-
-    if (!transcriptResponse.ok) {
-      const errorText = await transcriptResponse.text();
-      console.error('❌ Grok API error (transcript):', transcriptResponse.status, errorText);
-      throw new Error(`Grok API error: ${transcriptResponse.status} - ${errorText.substring(0, 200)}`);
-    }
-
-    const transcriptData = await transcriptResponse.json();
-    // New Responses API format: output[0].content[0].text
-    if (!transcriptData.output?.[0]?.content?.[0]?.text) {
-      console.error('❌ Invalid Grok response (transcript):', JSON.stringify(transcriptData).substring(0, 500));
-      throw new Error('Invalid response from Grok API - no transcript content returned');
-    }
-    const transcript = transcriptData.output[0].content[0].text;
+    // STEPS 1–2: Transcript via the Fable 3-stage immersion pipeline
+    console.log('📝 Generating transcript with the Fable immersion pipeline...');
+    const transcript = await generateTranscript(recipe, followUpAnswer);
     console.log('✅ Transcript generated successfully, length:', transcript.length);
 
     // STEP 3: Generate audio with ElevenLabs (with chunking for long transcripts)
@@ -654,7 +338,7 @@ For example, if the user has indicated that they want the character to be domina
     const voiceId = recipe.voiceId || VOICE_IDS[recipe.genderOther as 'male' | 'female'];
 
     console.log('🎤 Generating audio with ElevenLabs using voice:', voiceId);
-    
+
     // Always chunk the transcript for reliable, fast generation. Then pass
     // through the hard-limit enforcer so nothing over 4500 chars ever hits
     // the ElevenLabs API.
@@ -716,7 +400,7 @@ For example, if the user has indicated that they want the character to be domina
       const stat = await ReactNativeBlobUtil.fs.stat(filePath);
       console.log(`✅ Chunk ${i + 1} saved: ${(Number(stat.size) / 1024).toFixed(1)} KB`);
     }
-    
+
     // STEP 4: Upload each chunk individually to Firebase Storage
     console.log('📤 Uploading audio chunks to Firebase Storage...');
     const audioChunkURLs: string[] = [];
@@ -753,6 +437,7 @@ For example, if the user has indicated that they want the character to be domina
       hour: 'numeric',
       minute: '2-digit',
     });
+    const mode: NarrationMode = recipe.narrationMode || DEFAULT_NARRATION_MODE;
     const storyData: any = {
       title,
       audioUrl: audioChunkURLs[0],
@@ -770,7 +455,9 @@ For example, if the user has indicated that they want the character to be domina
       features: recipe.features,
       featurePreferences: recipe.featurePreferences,
       duration: (recipe.duration || '10min') as '5min' | '10min' | '15min',
-      narrativeRatio: recipe.narrativeRatio || 5,
+      narrationMode: mode,
+      // Dual-write a derived legacy ratio so old readers still work.
+      narrativeRatio: recipe.narrativeRatio ?? LEGACY_RATIO_BY_MODE[mode],
       createdAt,
       coverColor: recipe.coverColor || DEFAULT_COVER_COLOR,
       topographyLayers: generateDepthLayers(5),
@@ -785,7 +472,7 @@ For example, if the user has indicated that they want the character to be domina
     if (recipe.narratorId) {
       storyData.narratorId = recipe.narratorId;
     }
-    
+
     const storyId = await saveStory(userId, storyData);
 
     console.log('✅ Story saved successfully! ID:', storyId);

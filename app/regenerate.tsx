@@ -4,7 +4,13 @@ import { db } from '@/config/firebase';
 import { useStoryQueue } from '@/contexts/StoryQueueContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Slider from '@react-native-community/slider';
+import {
+  DEFAULT_NARRATION_MODE,
+  NARRATION_MODES,
+  NARRATION_MODE_LABELS,
+  narrationModeFromLegacy,
+  type NarrationMode,
+} from '@/constants/narration-modes';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { doc, getDoc } from 'firebase/firestore';
 import React, { useEffect, useMemo, useState } from 'react';
@@ -51,7 +57,7 @@ export default function RegenerateScreen() {
 
   // Narration details
   const [duration, setDuration] = useState<'5min' | '10min' | '15min'>('10min');
-  const [narrativeRatio, _setNarrativeRatio] = useState(5);
+  const [narrationMode, setNarrationMode] = useState<NarrationMode>(DEFAULT_NARRATION_MODE);
   const [ambientPrompts, setAmbientPrompts] = useState<string[]>([]);
 
   const [isProcessing, setIsProcessing] = useState(false);
@@ -84,7 +90,7 @@ export default function RegenerateScreen() {
         if (typeof data.duration === 'string' && /^(5|10|15)min$/.test(data.duration)) {
           setDuration(data.duration);
         }
-        if (typeof data.narrativeRatio === 'number') _setNarrativeRatio(data.narrativeRatio);
+        setNarrationMode(data.narrationMode ?? narrationModeFromLegacy(data.narrativeRatio));
         if (typeof data.userName === 'string') setNewName(data.userName);
         if (typeof data.voiceId === 'string') setNewVoiceId(data.voiceId);
         if (Array.isArray(data.ambientPrompts)) setAmbientPrompts(data.ambientPrompts);
@@ -181,7 +187,7 @@ export default function RegenerateScreen() {
         isNighttime: !!originalRecipe.isNighttime,
         userName: resolvedName,
         duration,
-        narrativeRatio,
+        narrationMode,
         voiceId: changeVoice && newVoiceId ? newVoiceId : (originalRecipe.voiceId || ''),
         prompt: additionalPrompt,
         tags: Array.isArray(originalRecipe.tags) ? originalRecipe.tags : [],
@@ -416,24 +422,21 @@ export default function RegenerateScreen() {
           </View>
         </View>
 
-        <View style={[styles.sliderCard, { backgroundColor: colors.card }]}>
-          <Text style={[styles.durationLabel, { color: colors.text }]}>narrative style</Text>
-          <View style={styles.sliderLabels}>
-            <Text style={[styles.sliderLabelText, { color: colors.textSecondary }]}>descriptive ({((10 - narrativeRatio) * 10)}%)</Text>
-            <Text style={[styles.sliderLabelText, { color: colors.textSecondary }]}>direct ({narrativeRatio * 10}%)</Text>
+        <View style={[styles.durationCard, { backgroundColor: colors.card }]}>
+          <Text style={[styles.durationLabel, { color: colors.text }]}>style</Text>
+          <View style={styles.durationRow}>
+            {NARRATION_MODES.map((m) => (
+              <TouchableOpacity
+                key={m}
+                style={[styles.durationButton, { backgroundColor: colors.background, borderColor: colors.border }, narrationMode === m && { backgroundColor: colors.buttonBackground, borderColor: colors.buttonBackground }]}
+                onPress={() => setNarrationMode(m)}
+              >
+                <Text style={[styles.durationButtonText, { color: colors.textSecondary }, narrationMode === m && { color: colors.buttonText }]}>
+                  {NARRATION_MODE_LABELS[m]}
+                </Text>
+              </TouchableOpacity>
+            ))}
           </View>
-          <Slider
-            style={styles.slider}
-            minimumValue={0}
-            maximumValue={10}
-            step={1}
-            value={narrativeRatio}
-            onValueChange={_setNarrativeRatio}
-            minimumTrackTintColor={colors.buttonBackground}
-            maximumTrackTintColor={colors.border}
-            thumbTintColor={colors.buttonBackground}
-          />
-          <Text style={[styles.sliderHint, { color: colors.textSecondary }]}>slide to adjust descriptive vs. direct content</Text>
         </View>
 
         <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
