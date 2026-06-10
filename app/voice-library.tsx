@@ -290,7 +290,9 @@ export default function VoiceLibraryScreen() {
         headers: { 'Content-Type': 'application/json', 'xi-api-key': ELEVENLABS_API_KEY },
         body: JSON.stringify({
           voice_description: voiceDescription,
-          text: `Hello ${userName}, welcome to your story. Tell me what you have in mind. I'm so glad you're here.`,
+          // ElevenLabs /text-to-voice/design requires text of 100–1000 chars.
+          // Keep the body ≥100 chars regardless of how short the name is.
+          text: `Hello ${userName}. Settle in and let yourself relax — tonight's story is just for you. I'll be right here with you the whole way through, soft and close. So close your eyes, take a slow breath, and let yourself sink into it.`,
           model_id: 'eleven_ttv_v3',
         }),
       });
