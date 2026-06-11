@@ -24,12 +24,15 @@ service cloud.firestore {
       allow read:  if isOwner(userId) || isAdmin();   // admin read = /admin dashboard
       allow write: if isOwner(userId);
 
-      match /narrators/{narratorId} {
-        allow read, write: if isOwner(userId) || isAdmin();
+      // Owner has full access to ALL their own subcollections (voices, queue,
+      // narrators, and anything added later) — avoids per-subcollection gaps.
+      match /{document=**} {
+        allow read, write: if isOwner(userId);
       }
 
-      match /queue/{queueId} {
-        allow read, write: if isOwner(userId);
+      // Narrators are additionally admin-accessible (publish/clone flows).
+      match /narrators/{narratorId} {
+        allow read, write: if isOwner(userId) || isAdmin();
       }
     }
 
@@ -51,6 +54,12 @@ service cloud.firestore {
 
     // Static stories (read-only to signed-in users)
     match /staticStories/{storyId} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+
+    // Pre-generated sample stories (read-only)
+    match /preGeneratedStories/{storyId} {
       allow read: if isSignedIn();
       allow write: if false;
     }
