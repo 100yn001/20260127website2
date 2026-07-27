@@ -1,8 +1,8 @@
-import { ContactShadows, Environment, OrbitControls } from '@react-three/drei';
+import { ContactShadows, OrbitControls } from '@react-three/drei';
 import { Canvas, useThree } from '@react-three/fiber';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
-import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
+import { RoomEnvironment, type OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 
 interface CardTextures {
   bumpTex: THREE.CanvasTexture;
@@ -210,6 +210,28 @@ function SilverCard({
   );
 }
 
+/**
+ * Procedural studio lighting for the metallic card material. Replaces drei's
+ * <Environment preset="studio">, which downloads an HDR from a third-party
+ * CDN at runtime — a hard failure (crashing the whole card view) whenever
+ * that fetch is blocked or flaky. RoomEnvironment builds a comparable studio
+ * env map entirely on-device.
+ */
+function StudioEnvironment() {
+  const { gl, scene } = useThree();
+  useEffect(() => {
+    const pmrem = new THREE.PMREMGenerator(gl);
+    const rt = pmrem.fromScene(RoomEnvironment(), 0.04);
+    scene.environment = rt.texture;
+    return () => {
+      scene.environment = null;
+      rt.dispose();
+      pmrem.dispose();
+    };
+  }, [gl, scene]);
+  return null;
+}
+
 function CardControls() {
   const controlsRef = useRef<OrbitControlsImpl>(null);
 
@@ -290,7 +312,7 @@ export default function CardScene({
 
       <CardControls />
 
-      <Environment preset="studio" />
+      <StudioEnvironment />
     </Canvas>
   );
 }
