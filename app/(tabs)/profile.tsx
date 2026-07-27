@@ -16,8 +16,17 @@ import {
   UserRound,
   X,
 } from 'lucide-react-native';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Modal, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
+} from 'react-native';
 
 import { Screen, TopBar } from '@/components/screen';
 import CardScene from '@/components/silver-card/CardScene';
@@ -29,7 +38,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { TINTS, useArtworkTint } from '@/hooks/useArtworkTint';
 import { cn } from '@/lib/cn';
-import { restoreSilverCardImage } from '@/services/silver-card-image';
+import { isDurableCardImageUrl, restoreSilverCardImage } from '@/services/silver-card-image';
 import { getUserProfile, updateUserProfile } from '@/services/user-service';
 
 const GUTTER = 'px-5 sm:px-8 md:px-10 lg:px-14 xl:px-20';
@@ -48,6 +57,7 @@ export default function ProfileScreen() {
   const [bookmarkCount, setBookmarkCount] = useState<number>(0);
   const [silverCard, setSilverCard] = useState<any>(null);
   const [showCard, setShowCard] = useState(false);
+  const [cardRestoring, setCardRestoring] = useState(false);
   const cardCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const [deletePrompt, setDeletePrompt] = useState(false);
   const [deletePassword, setDeletePassword] = useState('');
@@ -88,13 +98,18 @@ export default function ProfileScreen() {
         if (sc) {
           setSilverCard(sc);
           // Accounts from before the Storage re-host stored the expiring
-          // Replicate URL — quietly regenerate from the saved scene prompt
-          // and re-host, so the card stays viewable here.
-          restoreSilverCardImage(user.uid, sc)
-            .then((fixed) => {
-              if (fixed) setSilverCard(fixed);
-            })
-            .catch((e) => console.warn('[profile] card image restore failed', e));
+          // Replicate URL — regenerate from the saved scene prompt and
+          // re-host, so the card stays viewable here. `cardRestoring`
+          // surfaces the wait in the UI (this takes ~30-60s).
+          if (!isDurableCardImageUrl(sc.imageUrl)) {
+            setCardRestoring(true);
+            restoreSilverCardImage(user.uid, sc)
+              .then((fixed) => {
+                if (fixed) setSilverCard(fixed);
+              })
+              .catch((e) => console.warn('[profile] card image restore failed', e))
+              .finally(() => setCardRestoring(false));
+          }
         }
         const saved = (profile as any)?.aboutYou;
         if (typeof saved === 'string' && saved.trim().length > 0) {
@@ -103,7 +118,9 @@ export default function ProfileScreen() {
           // Seed from the silver card so the user sees something useful on first visit.
           setAboutYou(deriveAboutYou(sc, profile));
         }
-      } catch {}
+      } catch (e) {
+        console.warn('[profile] profile load failed', e);
+      }
     })();
   }, [user?.uid]);
 
@@ -273,14 +290,16 @@ export default function ProfileScreen() {
                 </View>
                 <View>
                   <Text className="text-[1.05rem] font-serif-medium text-foreground">
-                    your card
+                    view card
                   </Text>
                   <Text
                     className="mt-0.5 text-sm font-serif text-muted-foreground lowercase"
                     numberOfLines={1}
                   >
                     {silverCard
-                      ? silverCard.archetypeTitle ?? 'silver archetype'
+                      ? cardRestoring
+                        ? 'summoning your card…'
+                        : silverCard.archetypeTitle ?? 'silver archetype'
                       : 'finish onboarding to generate yours'}
                   </Text>
                 </View>
@@ -465,39 +484,13 @@ export default function ProfileScreen() {
         animationType="fade"
         onRequestClose={() => setShowCard(false)}
       >
-        <Pressable
-          onPress={() => setShowCard(false)}
-          className="flex-1 items-center justify-center bg-black/80 px-6"
-        >
-          <Pressable className="w-full max-w-[360px] rounded-[var(--radius)] border border-border bg-card overflow-hidden">
-            <View className="flex-row items-center justify-between px-5 pt-4 pb-2">
-              <View className="flex-1">
-                <Text className="text-[11px] font-serif text-muted-foreground">your card</Text>
-                <Text
-                  className="text-base font-serif-medium text-foreground lowercase"
-                  numberOfLines={1}
-                >
-                  {silverCard?.archetypeTitle ?? 'silver archetype'}
-                </Text>
-              </View>
-              {Platform.OS === 'web' && silverCard?.imageUrl ? (
-                <Pressable
-                  onPress={downloadCardPng}
-                  accessibilityLabel="save as png"
-                  className="h-8 w-8 items-center justify-center rounded-full active:bg-accent"
-                >
-                  <Download size={16} color="hsl(var(--foreground))" />
-                </Pressable>
-              ) : null}
-              <Pressable
-                onPress={() => setShowCard(false)}
-                className="h-8 w-8 items-center justify-center rounded-full"
-              >
-                <X size={16} color="hsl(var(--foreground))" />
-              </Pressable>
-            </View>
-            {silverCard?.imageUrl && (
-              <View className="aspect-[5/8]" style={{ backgroundColor: '#000' }}>
+        {/* Bare, full-bleed viewer: black screen, the card, nothing else.
+            Tap anywhere outside the card (or the ×) to leave. */}
+        <View className="flex-1 bg-black">
+          <Pressable onPress={() => setShowCard(false)} className="absolute inset-0" />
+          <View pointerEvents="box-none" className="flex-1 items-center justify-center px-8">
+            <View style={{ width: '100%', maxWidth: 520, aspectRatio: 5 / 8 }}>
+              {isDurableCardImageUrl(silverCard?.imageUrl) ? (
                 <CardScene
                   imageUrl={silverCard.imageUrl}
                   aspectRatio={5 / 8}
@@ -505,21 +498,37 @@ export default function ProfileScreen() {
                     cardCanvasRef.current = c as HTMLCanvasElement;
                   }}
                 />
-              </View>
-            )}
-            {(silverCard?.heroSub || silverCard?.museSub || silverCard?.shadowSub) && (
-              <View className="p-5 gap-2">
-                {silverCard?.heroSub && (
-                  <CardLine label="hero" value={silverCard.heroSub} />
-                )}
-                {silverCard?.museSub && <CardLine label="muse" value={silverCard.museSub} />}
-                {silverCard?.shadowSub && (
-                  <CardLine label="shadow" value={silverCard.shadowSub} />
-                )}
-              </View>
-            )}
-          </Pressable>
-        </Pressable>
+              ) : (
+                <View className="flex-1 items-center justify-center" pointerEvents="none">
+                  <ActivityIndicator size="small" color="rgba(255,255,255,0.6)" />
+                  <Text className="mt-4 text-sm font-serif text-white/60">
+                    {cardRestoring
+                      ? 'summoning your card…'
+                      : 'still being painted — check back soon'}
+                  </Text>
+                </View>
+              )}
+            </View>
+          </View>
+          <View className="absolute top-12 right-5 flex-row items-center gap-2">
+            {Platform.OS === 'web' && isDurableCardImageUrl(silverCard?.imageUrl) ? (
+              <Pressable
+                onPress={downloadCardPng}
+                accessibilityLabel="save as png"
+                className="h-10 w-10 items-center justify-center rounded-full"
+              >
+                <Download size={18} color="rgba(255,255,255,0.7)" />
+              </Pressable>
+            ) : null}
+            <Pressable
+              onPress={() => setShowCard(false)}
+              accessibilityLabel="close"
+              className="h-10 w-10 items-center justify-center rounded-full"
+            >
+              <X size={20} color="rgba(255,255,255,0.8)" />
+            </Pressable>
+          </View>
+        </View>
       </Modal>
 
       <Modal
@@ -574,15 +583,6 @@ export default function ProfileScreen() {
         </View>
       </Modal>
     </Screen>
-  );
-}
-
-function CardLine({ label, value }: { label: string; value: string }) {
-  return (
-    <View className="flex-row items-baseline gap-3">
-      <Text className="text-[11px] font-serif text-muted-foreground w-14">{label}</Text>
-      <Text className="flex-1 text-sm font-serif text-foreground">{value}</Text>
-    </View>
   );
 }
 

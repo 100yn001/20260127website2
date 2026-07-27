@@ -35,8 +35,11 @@ export async function uploadSilverCardImage(uid: string, dataUrl: string): Promi
   return getDownloadURL(storageRef);
 }
 
-/** Pre-fix cards stored the raw Replicate URL; those images are gone. */
-function imageUrlIsDurable(url: string | undefined): url is string {
+/**
+ * Pre-fix cards stored the raw Replicate URL; those images are gone. Only a
+ * re-hosted (Firebase Storage) URL is worth rendering or keeping.
+ */
+export function isDurableCardImageUrl(url: string | undefined): url is string {
   return !!url && !url.includes('replicate.delivery');
 }
 
@@ -53,7 +56,7 @@ export async function restoreSilverCardImage(
   uid: string,
   card: SilverCard,
 ): Promise<SilverCard | null> {
-  if (imageUrlIsDurable(card.imageUrl)) return null;
+  if (isDurableCardImageUrl(card.imageUrl)) return null;
   const scenePrompt = card.scenePrompt ?? card.landscapePrompt;
   if (!scenePrompt) return null;
   if (!restoreInFlight) {

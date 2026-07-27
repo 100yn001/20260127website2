@@ -13,6 +13,11 @@ import {
     type ShadowSub,
 } from '@/constants/archetypes';
 import {
+    FALLBACK_CARD_DIMS,
+    FALLBACK_CARD_SVG,
+    fallbackCardDataUrl,
+} from '@/constants/fallback-card';
+import {
     generateFirstStory,
     saveFirstStory,
     type FirstStoryGender,
@@ -114,6 +119,12 @@ type Pipeline = {
   svg?: string;
   dims?: { width: number; height: number };
   error?: string;
+  /**
+   * True when the last-resort generic card art was substituted for a failed
+   * generation. Fallback art is never uploaded/saved — the profile screen's
+   * self-heal regenerates the real artwork from the scene prompt later.
+   */
+  usedFallbackArt?: boolean;
 };
 
 // Shuffle and pick 10 random questions
@@ -174,6 +185,12 @@ export default function OnboardingScreen() {
   const [showExistingAccountModal, setShowExistingAccountModal] = useState(false);
   const [pipeline, setPipeline] = useState<Pipeline>({});
   const pipelineStarted = useRef(false);
+  // Live snapshot of the pipeline for the retry path, which needs to know
+  // what already succeeded without waiting on a state round-trip.
+  const pipelineRef = useRef<Pipeline>({});
+  pipelineRef.current = pipeline;
+  // Count of failed pipeline attempts; gates the last-resort fallback card.
+  const [pipelineFailures, setPipelineFailures] = useState(0);
 
   // ── First-story step (after silver-card reveal, before signup) ─────────
   type FirstStoryStage = 'pick' | 'generating' | 'ready' | 'error';
@@ -278,9 +295,14 @@ export default function OnboardingScreen() {
   // Trigger the staggered fade-in once the full pipeline has finished AND
   // the 3D card has painted its textures. Until then the overlay shows a
   // spinner; once ready the storyteller sentence reveals word-by-word and
-  // the "reveal" button fades in last.
+  // the "reveal" button fades in last. Web renders the vectorized svg when
+  // available but can fall back to the raw image (CardScene supports both);
+  // native always renders the image.
+  const sceneArtReady =
+    !!pipeline.dims &&
+    (Platform.OS === 'web' ? !!(pipeline.svg || pipeline.imageUrl) : !!pipeline.imageUrl);
   const fullyReady =
-    !!pipeline.words && !!pipeline.archetype && !!pipeline.svg && !!pipeline.dims && cardPainted;
+    !!pipeline.words && !!pipeline.archetype && sceneArtReady && cardPainted;
 
   useEffect(() => {
     if (!fullyReady) return;
@@ -311,16 +333,16 @@ export default function OnboardingScreen() {
     setTimeout(() => setOverlayMounted(false), 950);
   };
 
-  // Kick off the silver-card pipeline as soon as the user lands on the
-  // storyteller-recap screen so the slow Replicate generation overlaps with
-  // the time the user spends reading their archetype.
-  useEffect(() => {
-    if (step !== 'storyteller-recap' || pipelineStarted.current) return;
-    pipelineStarted.current = true;
+  // One pipeline attempt. Idempotent per stage: anything already present in
+  // the pipeline (from a previous attempt) is kept, so the retry button only
+  // re-runs the stages that actually failed.
+  const runPipeline = async () => {
+    setPipeline((p) => ({ ...p, error: undefined }));
+    try {
+      let snap = pipelineRef.current;
 
-    (async () => {
-      try {
-        // 1. Pure-function classification — instant, no network round-trip.
+      // 1. Pure-function classification — instant, cannot fail.
+      if (!snap.archetypeId || !snap.landscape) {
         const classification = classifyArchetype(answers, sessionIdRef.current);
         const archetypeDef = ARCHETYPES_BY_ID[classification.primary];
         const scenePrompt = composeScene(
@@ -329,53 +351,116 @@ export default function OnboardingScreen() {
           classification.museSub,
           classification.shadowSub,
         );
-        setPipeline((p) => ({
-          ...p,
+        snap = {
+          ...snap,
           archetypeId: classification.primary,
           archetype: archetypeDef.title,
           heroSub: classification.heroSub,
           museSub: classification.museSub,
           shadowSub: classification.shadowSub,
           landscape: scenePrompt,
-        }));
+        };
+        const classified = snap;
+        setPipeline((p) => ({ ...p, ...classified }));
+      }
 
-        // 2. Claude (3 adjective words) and Replicate (the slow tarot
-        //    image) both depend only on `answers` / `scenePrompt` — neither
-        //    on each other. Run them in parallel.
-        const [words, card] = await Promise.all([
-          describeStorytellingStyle(answers),
-          generateTarotCard(scenePrompt),
-        ]);
-        setPipeline((p) => ({
-          ...p,
-          words,
-          imageUrl: card.dataUrl,
-          remoteUrl: card.remoteUrl,
-        }));
+      // 2. Claude (3 adjective words) and Replicate (the slow tarot image)
+      //    are independent — run in parallel, but settle separately so one
+      //    failing doesn't discard the other's result.
+      const scenePrompt = snap.landscape!;
+      const [wordsRes, cardRes] = await Promise.allSettled([
+        snap.words ? Promise.resolve(snap.words) : describeStorytellingStyle(answers),
+        snap.imageUrl
+          ? Promise.resolve({ dataUrl: snap.imageUrl, remoteUrl: snap.remoteUrl })
+          : generateTarotCard(scenePrompt),
+      ]);
+
+      const failures: string[] = [];
+      if (wordsRes.status === 'fulfilled') {
+        const words = wordsRes.value;
+        snap = { ...snap, words };
+        setPipeline((p) => ({ ...p, words }));
+      } else {
+        failures.push(
+          `words: ${wordsRes.reason instanceof Error ? wordsRes.reason.message : wordsRes.reason}`,
+        );
+      }
+
+      if (cardRes.status === 'fulfilled') {
+        const { dataUrl, remoteUrl } = cardRes.value;
+        snap = { ...snap, imageUrl: dataUrl, remoteUrl };
+        setPipeline((p) => ({ ...p, imageUrl: dataUrl, remoteUrl }));
 
         // 3. Vectorize on web; just measure on native.
-        if (Platform.OS === 'web') {
-          const { vectorizeImage } = await import('@/services/vectorize');
-          const { svg, width, height } = await vectorizeImage(card.dataUrl);
-          setPipeline((p) => ({ ...p, svg, dims: { width, height } }));
-        } else {
-          const dims = await new Promise<{ width: number; height: number }>((resolve) => {
-            Image.getSize(
-              card.dataUrl,
-              (width, height) => resolve({ width, height }),
-              () => resolve({ width: 2, height: 3 }),
+        if (!snap.svg || !snap.dims) {
+          try {
+            if (Platform.OS === 'web') {
+              const { vectorizeImage } = await import('@/services/vectorize');
+              const { svg, width, height } = await vectorizeImage(dataUrl);
+              setPipeline((p) => ({ ...p, svg, dims: { width, height } }));
+            } else {
+              const dims = await new Promise<{ width: number; height: number }>((resolve) => {
+                Image.getSize(
+                  dataUrl,
+                  (width, height) => resolve({ width, height }),
+                  () => resolve({ width: 2, height: 3 }),
+                );
+              });
+              setPipeline((p) => ({ ...p, dims }));
+            }
+          } catch (err) {
+            failures.push(
+              `card finish: ${err instanceof Error ? err.message : String(err)}`,
             );
-          });
-          setPipeline((p) => ({ ...p, dims }));
+          }
         }
-      } catch (err) {
-        console.error('[silver-card pipeline] failed:', err);
-        setPipeline((p) => ({
-          ...p,
-          error: err instanceof Error ? err.message : String(err),
-        }));
+      } else {
+        failures.push(
+          `card: ${cardRes.reason instanceof Error ? cardRes.reason.message : cardRes.reason}`,
+        );
       }
-    })();
+
+      if (failures.length > 0) throw new Error(failures.join(' · '));
+    } catch (err) {
+      console.error('[silver-card pipeline] failed:', err);
+      setPipelineFailures((n) => n + 1);
+      setPipeline((p) => ({
+        ...p,
+        error: err instanceof Error ? err.message : String(err),
+      }));
+    }
+  };
+
+  // Absolute last resort, offered only after several failed attempts: fill
+  // whatever is still missing from local, offline resources so the reveal can
+  // proceed. Classification is deterministic so archetype/scene are always
+  // present; only the words and the artwork can be missing here.
+  const handlePipelineFallback = () => {
+    setPipeline((p) => {
+      const def = p.archetypeId ? ARCHETYPES_BY_ID[p.archetypeId] : undefined;
+      const hasRealArt = Platform.OS === 'web' ? !!(p.svg || p.imageUrl) : !!p.imageUrl;
+      return {
+        ...p,
+        error: undefined,
+        words: p.words ?? def?.fallbackWords ?? 'quiet, vivid, unhurried',
+        usedFallbackArt: p.usedFallbackArt || !hasRealArt,
+        ...(hasRealArt
+          ? { dims: p.dims ?? FALLBACK_CARD_DIMS }
+          : Platform.OS === 'web'
+            ? { svg: FALLBACK_CARD_SVG, dims: FALLBACK_CARD_DIMS }
+            : { imageUrl: fallbackCardDataUrl(), dims: FALLBACK_CARD_DIMS }),
+      };
+    });
+  };
+
+  // Kick off the silver-card pipeline as soon as the user lands on the
+  // storyteller-recap screen so the slow Replicate generation overlaps with
+  // the time the user spends reading their archetype.
+  useEffect(() => {
+    if (step !== 'storyteller-recap' || pipelineStarted.current) return;
+    pipelineStarted.current = true;
+    runPipeline();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, answers]);
 
   const advanceStepWithFade = (next: Step) => {
@@ -604,7 +689,7 @@ export default function OnboardingScreen() {
         // Replicate delivery URL dies within about an hour, and the profile
         // screen renders the card from silverCard.imageUrl forever after.
         let cardImageUrl = pipeline.remoteUrl;
-        if (pipeline.imageUrl) {
+        if (pipeline.imageUrl && !pipeline.usedFallbackArt) {
           try {
             cardImageUrl = await uploadSilverCardImage(currentUser.uid, pipeline.imageUrl);
           } catch (err) {
@@ -1299,10 +1384,7 @@ export default function OnboardingScreen() {
   }
 
   if (step === 'storyteller-recap') {
-    const sceneReady =
-      Platform.OS === 'web'
-        ? !!(pipeline.svg && pipeline.dims)
-        : !!(pipeline.imageUrl && pipeline.dims);
+    const sceneReady = sceneArtReady;
     const aspectRatio = pipeline.dims
       ? pipeline.dims.width / pipeline.dims.height
       : 2 / 3;
@@ -1328,6 +1410,7 @@ export default function OnboardingScreen() {
             >
               <CardScene
                 svgString={pipeline.svg ?? ''}
+                imageUrl={pipeline.svg ? undefined : pipeline.imageUrl}
                 aspectRatio={aspectRatio}
                 onReady={() => setCardPainted(true)}
               />
@@ -1362,6 +1445,14 @@ export default function OnboardingScreen() {
                   <View style={{ alignItems: 'center', gap: 12 }}>
                     <Text style={styles.subtitle}>something broke</Text>
                     <Text style={styles.errorDetailInline}>{pipeline.error}</Text>
+                    <TouchableOpacity onPress={runPipeline} style={{ marginTop: 16 }}>
+                      <Text style={styles.continueText}>try again →</Text>
+                    </TouchableOpacity>
+                    {pipelineFailures >= 3 ? (
+                      <TouchableOpacity onPress={handlePipelineFallback} style={{ marginTop: 8 }}>
+                        <Text style={styles.revealText}>continue with a classic card →</Text>
+                      </TouchableOpacity>
+                    ) : null}
                   </View>
                 ) : !fullyReady ? (
                   <ActivityIndicator size="small" color="rgba(255,255,255,0.6)" />

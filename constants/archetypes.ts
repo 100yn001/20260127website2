@@ -32,6 +32,13 @@ export type Archetype = {
    * around it.
    */
   coreMotif: string;
+  /**
+   * Three comma-separated adjectives for the storyteller-recap reveal, used
+   * only when the Claude words call is down and the user takes the
+   * last-resort fallback path. Chosen to not collide with the descriptor
+   * words users pick themselves during onboarding.
+   */
+  fallbackWords: string;
 };
 
 export const ARCHETYPES: Archetype[] = [
@@ -41,6 +48,7 @@ export const ARCHETYPES: Archetype[] = [
     subtype: 'warrior',
     title: 'The Duelist',
     coreMotif: 'in dark silvered armor, cloak whipping in wind, ready for combat',
+    fallbackWords: 'fierce, direct, unflinching',
   },
   {
     id: 'hero-ruler',
@@ -48,6 +56,7 @@ export const ARCHETYPES: Archetype[] = [
     subtype: 'ruler',
     title: 'The Regent',
     coreMotif: 'robed on a throne of mossy stone, crown of antlers, heavy velvet drapes',
+    fallbackWords: 'commanding, measured, regal',
   },
   {
     id: 'hero-seeker',
@@ -55,6 +64,7 @@ export const ARCHETYPES: Archetype[] = [
     subtype: 'seeker',
     title: 'The Cartographer',
     coreMotif: 'unrolling an old map, compass and brass telescope at their side',
+    fallbackWords: 'restless, curious, questing',
   },
   {
     id: 'shadow-trickster',
@@ -62,6 +72,7 @@ export const ARCHETYPES: Archetype[] = [
     subtype: 'trickster',
     title: 'The Jester',
     coreMotif: 'masked in a patterned cloak, juggling coins, two ravens perched nearby',
+    fallbackWords: 'sly, playful, quicksilver',
   },
   {
     id: 'shadow-outcast',
@@ -69,6 +80,7 @@ export const ARCHETYPES: Archetype[] = [
     subtype: 'outcast',
     title: 'The Stray',
     coreMotif: 'cloaked beside a gray wolf, breath visible in the cold',
+    fallbackWords: 'solitary, watchful, untamed',
   },
   {
     id: 'shadow-witch',
@@ -76,6 +88,7 @@ export const ARCHETYPES: Archetype[] = [
     subtype: 'witch',
     title: 'The Seeress',
     coreMotif: 'veiled with scattered bones and a dark scrying pool before her',
+    fallbackWords: 'veiled, knowing, uncanny',
   },
   {
     id: 'muse-dreamer',
@@ -83,6 +96,7 @@ export const ARCHETYPES: Archetype[] = [
     subtype: 'dreamer',
     title: 'The Somnambulist',
     coreMotif: 'barefoot in a long white shift, eyes closed, trailing stars',
+    fallbackWords: 'moonlit, drifting, luminous',
   },
   {
     id: 'muse-lover',
@@ -90,6 +104,7 @@ export const ARCHETYPES: Archetype[] = [
     subtype: 'lover',
     title: 'The Troubadour',
     coreMotif: 'cloaked with a wooden lute, rose petals scattered at their feet',
+    fallbackWords: 'ardent, lyrical, warm',
   },
   {
     id: 'muse-maker',
@@ -97,6 +112,7 @@ export const ARCHETYPES: Archetype[] = [
     subtype: 'maker',
     title: 'The Alchemist',
     coreMotif: 'robed with hands cupping amber light, bottles and scrolls nearby',
+    fallbackWords: 'inventive, patient, golden',
   },
 ];
 
