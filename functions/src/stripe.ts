@@ -233,14 +233,17 @@ export const stripeWebhook = onRequest(
           break;
         }
         case 'invoice.paid': {
-          const invoice = event.data.object as Stripe.Invoice;
-          const subId = typeof invoice.subscription === 'string' ? invoice.subscription : invoice.subscription?.id;
-          const reason = invoice.billing_reason;
-          if (subId && (reason === 'subscription_create' || reason === 'subscription_cycle')) {
-            await syncSubscription(stripe, subId, { maybeResetUsage: true });
-          } else if (subId) {
-            await syncSubscription(stripe, subId);
-          }
+          // Payload-shape-proof: pre-Basil API versions carry the sub id at
+          // invoice.subscription; Basil+ (incl. the sandbox default dahlia)
+          // moved it to invoice.parent.subscription_details.subscription.
+          const invoice = event.data.object as any;
+          const rawSub =
+            invoice.subscription ?? invoice.parent?.subscription_details?.subscription;
+          const subId = typeof rawSub === 'string' ? rawSub : rawSub?.id;
+          // Always allow a usage reset here: it's gated on a periodKey change
+          // inside syncSubscription, so one-off/manual invoices (whose period
+          // didn't roll) can never wrongly reset a cycle.
+          if (subId) await syncSubscription(stripe, subId, { maybeResetUsage: true });
           break;
         }
         case 'customer.subscription.updated':
