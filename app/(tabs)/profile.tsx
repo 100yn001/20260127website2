@@ -29,6 +29,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { TINTS, useArtworkTint } from '@/hooks/useArtworkTint';
 import { cn } from '@/lib/cn';
+import { restoreSilverCardImage } from '@/services/silver-card-image';
 import { getUserProfile, updateUserProfile } from '@/services/user-service';
 
 const GUTTER = 'px-5 sm:px-8 md:px-10 lg:px-14 xl:px-20';
@@ -82,9 +83,19 @@ export default function ProfileScreen() {
       try {
         const profile = await getUserProfile(user.uid);
         if (profile?.name) setName(profile.name);
-        setBookmarkCount(profile?.bookmarks?.length ?? 0);
+        setBookmarkCount(profile?.bookmarkedStories?.length ?? 0);
         const sc = (profile as any)?.silverCard;
-        if (sc) setSilverCard(sc);
+        if (sc) {
+          setSilverCard(sc);
+          // Accounts from before the Storage re-host stored the expiring
+          // Replicate URL — quietly regenerate from the saved scene prompt
+          // and re-host, so the card stays viewable here.
+          restoreSilverCardImage(user.uid, sc)
+            .then((fixed) => {
+              if (fixed) setSilverCard(fixed);
+            })
+            .catch((e) => console.warn('[profile] card image restore failed', e));
+        }
         const saved = (profile as any)?.aboutYou;
         if (typeof saved === 'string' && saved.trim().length > 0) {
           setAboutYou(saved);

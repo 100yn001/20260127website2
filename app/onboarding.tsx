@@ -19,6 +19,7 @@ import {
     type FirstStoryScenario,
     type GeneratedFirstStory,
 } from '@/services/first-story';
+import { uploadSilverCardImage } from '@/services/silver-card-image';
 import { saveSilverCard, saveUserProfile } from '@/services/user-service';
 import CardScene from '@/components/silver-card/CardScene';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -599,6 +600,17 @@ export default function OnboardingScreen() {
         pipeline.shadowSub &&
         pipeline.landscape
       ) {
+        // Re-host the card image on Firebase Storage before saving — the
+        // Replicate delivery URL dies within about an hour, and the profile
+        // screen renders the card from silverCard.imageUrl forever after.
+        let cardImageUrl = pipeline.remoteUrl;
+        if (pipeline.imageUrl) {
+          try {
+            cardImageUrl = await uploadSilverCardImage(currentUser.uid, pipeline.imageUrl);
+          } catch (err) {
+            console.warn('silver-card image upload failed (saving remote url):', err);
+          }
+        }
         await saveSilverCard(currentUser.uid, {
           storytellingWords: pipeline.words,
           archetypeId: pipeline.archetypeId,
@@ -607,7 +619,7 @@ export default function OnboardingScreen() {
           museSub: pipeline.museSub,
           shadowSub: pipeline.shadowSub,
           scenePrompt: pipeline.landscape,
-          imageUrl: pipeline.remoteUrl,
+          imageUrl: cardImageUrl,
         }).catch((err) => console.warn('saveSilverCard failed:', err));
       }
 
