@@ -13,7 +13,9 @@ function proxyUrl(path: string) {
   if (typeof window !== 'undefined' && window.location?.origin) {
     return `${window.location.origin}${path}`;
   }
-  return path;
+  // Native has no window — the Vercel proxy lives on the production origin, and
+  // native fetch requires an absolute URL (a bare path throws).
+  return `https://yourname.media${path}`;
 }
 
 function wrapPrompt(landscape: string) {

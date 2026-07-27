@@ -4,7 +4,6 @@ import 'dotenv/config';
 if (process.env.NODE_ENV !== 'production') {
   console.log('📝 Environment check:', {
     XAI: process.env.XAI ? '✓ exists' : '✗ missing',
-    OPENAI_API_KEY: process.env.OPENAI_API_KEY ? '✓ exists' : '✗ missing',
     ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY ? '✓ exists' : '✗ missing',
     REPLICATE_API_TOKEN: process.env.REPLICATE_API_TOKEN ? '✓ exists' : '✗ missing',
     FIREBASE_API_KEY: process.env.FIREBASE_API_KEY ? '✓ exists' : '✗ missing',
@@ -88,7 +87,6 @@ export default {
       },
       XAI: process.env.XAI,
       ELEVENLABS: process.env.ELEVENLABS,
-      OPENAI_API_KEY: process.env.OPENAI_API_KEY,
       ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
       REPLICATE_API_TOKEN: process.env.REPLICATE_API_TOKEN,
       FIREBASE_API_KEY: process.env.FIREBASE_API_KEY,

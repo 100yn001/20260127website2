@@ -271,7 +271,12 @@ export default function VoiceLibraryScreen() {
     if (voiceAccent.trim()) parts.push(`accent: ${voiceAccent.trim()}`);
     if (voiceTags.length > 0) parts.push(`features: ${voiceTags.join(', ')}`);
     if (voiceOtherNotes.trim()) parts.push(voiceOtherNotes.trim());
-    return parts.join('; ');
+    const built = parts.join('; ');
+    // ElevenLabs /text-to-voice/design requires voice_description ≥20 chars.
+    // A minimal selection ("gender: female") is under that, so prepend a
+    // natural descriptor to guarantee a valid, non-empty prompt.
+    const LEAD = 'a warm, natural, expressive narrating voice';
+    return built.length >= 20 ? built : built ? `${LEAD}; ${built}` : LEAD;
   };
 
   const generateVoicePreviews = async (additionalNotes?: string) => {

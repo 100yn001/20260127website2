@@ -17,18 +17,34 @@ import {
   X,
 } from 'lucide-react-native';
 import React, { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Modal, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  DeviceEventEmitter,
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
+} from 'react-native';
 
 import { Screen, TopBar } from '@/components/screen';
 import { db } from '@/config/firebase';
 import { useAudioPlayer } from '@/contexts/AudioPlayerContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { useArtworkTint } from '@/hooks/useArtworkTint';
 import { cn } from '@/lib/cn';
 import { coverFromColor, variedTint } from '@/lib/cover';
+import { shareStory } from '@/lib/share-story';
+import { addBookmark, getBookmarkedStoryIds, removeBookmark } from '@/services/user-service';
 
 export default function PlayerScreen() {
   const router = useRouter();
-  const { id } = useLocalSearchParams<{ id?: string }>();
+  // Some callers (bookmarks, story-details) pass `storyId` instead of `id` —
+  // accept both.
+  const params = useLocalSearchParams<{ id?: string; storyId?: string }>();
+  const id = params.id ?? params.storyId;
+  const { user } = useAuth();
   const {
     currentTrack,
     isPlaying,
@@ -55,6 +71,67 @@ export default function PlayerScreen() {
   const [bookmarked, setBookmarked] = useState(false);
   const [transcriptOpen, setTranscriptOpen] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [sharing, setSharing] = useState(false);
+  const [shareToast, setShareToast] = useState<string | null>(null);
+
+  // Bookmark state lives in users/{uid}.bookmarkedStories — load it so the
+  // chip reflects (and persists) reality instead of local-only state.
+  useEffect(() => {
+    let cancelled = false;
+    if (!user || !id) return;
+    getBookmarkedStoryIds(user.uid)
+      .then((ids) => {
+        if (!cancelled) setBookmarked(ids.includes(id));
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.uid, id]);
+
+  const toggleBookmark = async () => {
+    if (!user || !id) return;
+    const next = !bookmarked;
+    setBookmarked(next);
+    try {
+      if (next) await addBookmark(user.uid, id);
+      else await removeBookmark(user.uid, id);
+      DeviceEventEmitter.emit('bookmarkChanged');
+    } catch (e) {
+      console.warn('[player] bookmark toggle failed', e);
+      setBookmarked(!next); // revert on failure
+    }
+  };
+
+  const flashShareToast = (msg: string) => {
+    setShareToast(msg);
+    setTimeout(() => setShareToast(null), 2200);
+  };
+
+  const handleShare = async () => {
+    if (!user || !story || sharing) return;
+    setSharing(true);
+    try {
+      const outcome = await shareStory({
+        userId: user.uid,
+        storyId: story.id,
+        title: story.title || 'untitled',
+        audioChunkURLs: story.audioChunkURLs || [],
+        audioUrl: story.audioUrl,
+        narratorId: story.narratorId,
+        coverColor: story.coverColor,
+        topographyLayers: story.topographyLayers,
+        duration: story.duration,
+        isNighttime: !!story.isNighttime,
+      });
+      if (outcome === 'copied') flashShareToast('link copied');
+    } catch (e) {
+      console.error('[player] share failed', e);
+      flashShareToast('share failed — try again');
+    } finally {
+      setSharing(false);
+    }
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -292,7 +369,7 @@ export default function PlayerScreen() {
                 />
               </Chip>
             )}
-            <Chip active={bookmarked} onPress={() => setBookmarked((v) => !v)} label="bookmark">
+            <Chip active={bookmarked} onPress={toggleBookmark} label="bookmark">
               <Bookmark
                 size={14}
                 color={bookmarked ? 'hsl(var(--background))' : 'hsl(var(--foreground))'}
@@ -302,11 +379,16 @@ export default function PlayerScreen() {
             <Chip onPress={() => setTranscriptOpen(true)} label="transcript">
               <BookOpenText size={14} color="hsl(var(--foreground))" />
             </Chip>
-            <Chip onPress={() => {}} label="share">
+            <Chip onPress={handleShare} label="share">
               <Share2 size={14} color="hsl(var(--foreground))" />
             </Chip>
           </View>
         </View>
+        {shareToast && (
+          <View className="absolute bottom-6 self-center rounded-full bg-foreground px-4 py-2">
+            <Text className="text-xs font-serif text-background">{shareToast}</Text>
+          </View>
+        )}
       </View>
 
       <Modal

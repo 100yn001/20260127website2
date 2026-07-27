@@ -1,8 +1,11 @@
 import { auth } from '@/config/firebase';
+import { deleteUserData } from '@/services/user-service';
 import {
+    EmailAuthProvider,
     User,
     createUserWithEmailAndPassword,
     deleteUser,
+    reauthenticateWithCredential,
     signOut as firebaseSignOut,
     onAuthStateChanged,
     sendPasswordResetEmail,
@@ -17,7 +20,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
-  deleteAccount: () => Promise<void>;
+  deleteAccount: (password?: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -68,14 +71,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const deleteAccount = async () => {
+  const deleteAccount = async (password?: string) => {
+    const current = auth.currentUser;
+    if (!current) return;
+    const uid = current.uid;
     try {
-      if (auth.currentUser) {
-        await deleteUser(auth.currentUser);
-        setUser(null);
+      // Recent-login requirement: re-authenticate with the password if given.
+      if (password && current.email) {
+        const credential = EmailAuthProvider.credential(current.email, password);
+        await reauthenticateWithCredential(current, credential);
       }
+      // Purge Firestore data FIRST (owner rules require the user still exists),
+      // then remove the auth account.
+      await deleteUserData(uid);
+      await deleteUser(current);
+      setUser(null);
     } catch (error: any) {
-      throw new Error(error.message);
+      throw new Error(error.code ?? error.message);
     }
   };
 

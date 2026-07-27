@@ -8,7 +8,7 @@ import { Platform } from 'react-native';
 const SHARED_AUDIO_COLLECTION = 'sharedAudio';
 const EXPIRY_DAYS = 7;
 
-interface ShareStoryParams {
+export interface ShareStoryParams {
   userId: string;
   storyId: string;
   title: string;

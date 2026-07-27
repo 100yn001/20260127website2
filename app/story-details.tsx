@@ -4,7 +4,7 @@ import { auth, db } from '@/config/firebase';
 import { DEFAULT_COVER_COLOR, THEME_COLOR_OPTIONS } from '@/constants/cover-colors';
 import { useTheme } from '@/contexts/ThemeContext';
 import { addPublicStory } from '@/services/public-story-service';
-import { shareStoryToSink } from '@/services/share-service';
+import { shareStory } from '@/lib/share-story';
 import { DepthLayer } from '@/types/story';
 import { createShadow } from '@/utils/shadow';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -132,7 +132,7 @@ export default function StoryDetailsScreen() {
     setIsSynking(true);
 
     try {
-      const link = await shareStoryToSink({
+      const outcome = await shareStory({
         userId: currentUser.uid,
         storyId,
         title: storyTitle || 'untitled',
@@ -144,29 +144,9 @@ export default function StoryDetailsScreen() {
         isNighttime,
       });
 
-      const shareText = `${storyTitle || 'a story'} · listen on sink`;
-
-      if (Platform.OS === 'web' && typeof navigator !== 'undefined') {
-        // Prefer the OS share sheet on mobile browsers; fall back to clipboard on desktop.
-        const nav: any = navigator;
-        if (nav.share) {
-          try {
-            await nav.share({ title: shareText, url: link });
-          } catch {
-            /* user canceled — no-op */
-          }
-        } else if (nav.clipboard?.writeText) {
-          await nav.clipboard.writeText(link);
-          setSynkToast('link copied');
-          setTimeout(() => setSynkToast(null), 2200);
-        } else {
-          // Last-resort fallback: open in a new tab so the user can copy from address bar.
-          window.open(link, '_blank');
-        }
-      } else {
-        // Native: defer-import Share so web bundles don't pull it in unnecessarily.
-        const { Share } = require('react-native');
-        await Share.share({ message: `${shareText}\n${link}`, url: link });
+      if (outcome === 'copied') {
+        setSynkToast('link copied');
+        setTimeout(() => setSynkToast(null), 2200);
       }
     } catch (error: any) {
       console.error('Error synking story:', error);

@@ -85,7 +85,11 @@ export default function CreateScreen() {
             <Pressable
               key={opt.slug}
               onPress={() =>
-                router.navigate({ pathname: `/${opt.slug}` as never, params: { mode } })
+                // 'narrator' has no standalone screen — the narrators tab is
+                // where "use in story" lives.
+                opt.slug === 'narrator'
+                  ? router.navigate('/(tabs)/narrators')
+                  : router.navigate({ pathname: `/${opt.slug}` as never, params: { mode } })
               }
               className="overflow-hidden rounded-[var(--radius)] border border-border bg-card px-5 py-5"
             >

@@ -20,6 +20,7 @@ export default function NarratorStoriesScreen() {
   const params = useLocalSearchParams<{ narratorId?: string; narratorName?: string }>();
   const [stories, setStories] = useState<CardStory[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user || !params.narratorId) {
@@ -49,7 +50,17 @@ export default function NarratorStoriesScreen() {
         );
         setLoading(false);
       },
-      () => setLoading(false)
+      (err) => {
+        // Most likely a missing composite index (failed-precondition) — surface
+        // it instead of silently rendering an empty "no stories yet" state.
+        console.warn('[narrator-stories] query failed', err?.code, err?.message);
+        setLoadError(
+          err?.code === 'failed-precondition'
+            ? "couldn't load these stories (index building) — try again shortly"
+            : "couldn't load these stories"
+        );
+        setLoading(false);
+      }
     );
     return () => unsub();
   }, [user?.uid, params.narratorId]);
@@ -68,6 +79,12 @@ export default function NarratorStoriesScreen() {
       {loading ? (
         <View className="py-10 items-center">
           <ActivityIndicator color="hsl(var(--foreground))" />
+        </View>
+      ) : loadError ? (
+        <View className="flex-1 items-center justify-center px-6">
+          <Text className="text-sm font-serif text-muted-foreground text-center">
+            {loadError}
+          </Text>
         </View>
       ) : stories.length === 0 ? (
         <View className="flex-1 items-center justify-center px-6">

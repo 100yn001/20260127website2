@@ -47,7 +47,9 @@ service cloud.firestore {
     // REQUIRED for the /admin dashboard + refusal logging to work.
     match /fableRefusals/{docId} {
       allow create: if isSignedIn() && request.resource.data.uid == request.auth.uid;
-      allow read:   if isAdmin();
+      // Owner may read (needed for account-deletion cleanup to find its own
+      // docs); admins read all for the dashboard.
+      allow read:   if isAdmin() || (isSignedIn() && resource.data.uid == request.auth.uid);
       allow delete: if isAdmin() || (isSignedIn() && resource.data.uid == request.auth.uid);
       allow update: if false;
     }

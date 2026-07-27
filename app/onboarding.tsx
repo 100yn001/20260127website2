@@ -543,10 +543,13 @@ export default function OnboardingScreen() {
       let stripeCustomerId: string | undefined;
       let stripeCheckoutUrl: string | undefined;
       try {
+        // Stripe requires absolute success/cancel URLs. On native there's no
+        // window.location, so fall back to the canonical production origin
+        // instead of '' (which produced relative URLs Stripe rejects).
         const origin =
           Platform.OS === 'web' && typeof window !== 'undefined'
             ? window.location.origin
-            : '';
+            : 'https://yourname.media';
         const createStripeCustomer = httpsCallable<
           { email: string; name: string; successUrl: string; cancelUrl: string },
           { customerId: string; checkoutUrl: string }

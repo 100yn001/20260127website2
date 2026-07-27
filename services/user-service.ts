@@ -304,6 +304,17 @@ export async function deleteUserData(uid: string): Promise<void> {
       }
     }
 
+    // Delete the user's owned subcollections (queue, voices, narrators). Owner
+    // rules permit these; fail-soft so one bad collection can't abort the rest.
+    for (const sub of ['queue', 'voices', 'narrators'] as const) {
+      try {
+        const snap = await getDocs(collection(db, 'users', uid, sub));
+        await Promise.all(snap.docs.map(d => deleteDoc(d.ref)));
+      } catch (e) {
+        console.warn(`Account-deletion cleanup of users/${uid}/${sub} failed (continuing):`, e);
+      }
+    }
+
     // Delete user profile
     const userRef = doc(db, 'users', uid);
     await deleteDoc(userRef);

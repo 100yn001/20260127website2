@@ -40,7 +40,6 @@ export interface QueuedStory {
   transcript?: string;
   error?: string;
   retryCount?: number; // Track network retry attempts
-  fcmToken?: string; // For push notifications when story completes
 }
 
 interface StoryQueueContextType {
@@ -195,7 +194,6 @@ export function StoryQueueProvider({ children }: { children: React.ReactNode }) 
         audioChunkURLs: item.audioChunkURLs || [],
         transcript: item.transcript || null,
         error: item.error || null,
-        fcmToken: item.fcmToken || null,
       });
       console.log('[Queue] saved', item.id, 'status=', item.status, 'uid=', user.uid);
     } catch (error) {

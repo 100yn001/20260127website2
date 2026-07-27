@@ -50,14 +50,21 @@ interface QueueItem {
   progress: number;
   currentStep?: string;
   createdAt: admin.firestore.Timestamp;
-  fcmToken?: string;
   storyId?: string;
   audioUrl?: string;
   audioChunkURLs?: string[];
   transcript?: string;
   completedAt?: admin.firestore.Timestamp;
   error?: string;
+  generatedBy?: string;
 }
+
+// The client app claims and generates queue items itself (StoryQueueContext →
+// Fable pipeline) within a second of writing them. This function is only a
+// BACKUP for items nobody claimed (app closed/crashed right after queueing):
+// wait, then claim atomically so a live client can never be raced.
+const BACKUP_DELAY_MS = 90_000;
+const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
 const DEFAULT_COVER_COLOR = '#8B7355';
 const MAX_CHUNK_SIZE = 1000; // eleven_v3 has a lower char limit than older models
@@ -181,39 +188,8 @@ async function updateQueueStatus(
 }
 
 /**
- * Send push notification when story is ready
- */
-async function sendPushNotification(fcmToken: string, title: string) {
-  if (!fcmToken) return;
-  
-  try {
-    await admin.messaging().send({
-      token: fcmToken,
-      notification: {
-        title: 'yourname',
-        body: 'your story is ready',
-      },
-      data: {
-        type: 'story_ready',
-        title,
-      },
-      apns: {
-        payload: {
-          aps: {
-            sound: 'default',
-            badge: 1,
-          },
-        },
-      },
-    });
-    console.log('✅ Push notification sent');
-  } catch (error) {
-    console.error('❌ Failed to send push notification:', error);
-  }
-}
-
-/**
- * Main Cloud Function: Generate story when queue item is created
+ * Backup Cloud Function: generate a story for queue items the client never
+ * claimed (see BACKUP_DELAY_MS above).
  */
 export const generateStory = onDocumentCreated(
   {
@@ -238,20 +214,35 @@ export const generateStory = onDocumentCreated(
       return;
     }
 
-    const recipe = data.recipeData;
-    const followUpQuestions = data.followUpQuestions || [];
-    const followUpAnswers = data.followUpAnswers || [];
-    const fcmToken = data.fcmToken;
-
-    console.log(`🚀 Starting story generation for user ${userId}, queue ${queueId}`);
-
-    try {
-      // Mark as generating
-      await updateQueueStatus(userId, queueId, {
+    // BACKUP GUARD: give the client its normal window to claim the item,
+    // then claim it in a transaction. If the client (or anything else)
+    // already moved it off 'pending', this run is not needed.
+    await sleep(BACKUP_DELAY_MS);
+    const queueDocRef = db.doc(`users/${userId}/queue/${queueId}`);
+    const claimed = await db.runTransaction(async (tx) => {
+      const snap = await tx.get(queueDocRef);
+      if (!snap.exists || snap.data()?.status !== 'pending') return false;
+      tx.update(queueDocRef, {
         status: 'generating',
         currentStep: 'generating_prompt',
         progress: 10,
+        generatedBy: 'cloud-function',
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       });
+      return true;
+    });
+    if (!claimed) {
+      console.log(`Queue ${queueId} already claimed by the client — backup not needed`);
+      return;
+    }
+
+    const recipe = data.recipeData;
+    const followUpQuestions = data.followUpQuestions || [];
+    const followUpAnswers = data.followUpAnswers || [];
+
+    console.log(`🚀 [backup] Starting story generation for user ${userId}, queue ${queueId}`);
+
+    try {
 
       // Build follow-up Q&A
       const followUpQA = followUpQuestions
@@ -333,8 +324,13 @@ Make sure that the narration sounds natural and does not include any verbatim el
       }
 
       const systemPromptData = await systemPromptResponse.json();
-      const finalSystemPrompt = systemPromptData.output?.[0]?.content?.[0]?.text;
-      
+      // Reasoning models return output[0] as the reasoning block (no text);
+      // the actual message is the `type: 'message'` entry.
+      const systemPromptMessage = systemPromptData.output?.find(
+        (o: any) => o?.type === 'message'
+      );
+      const finalSystemPrompt = systemPromptMessage?.content?.[0]?.text;
+
       if (!finalSystemPrompt) {
         throw new Error('No system prompt generated');
       }
@@ -383,7 +379,10 @@ Make sure that the narration sounds natural and does not include any verbatim el
       }
 
       const transcriptData = await transcriptResponse.json();
-      const transcript = transcriptData.output?.[0]?.content?.[0]?.text;
+      const transcriptMessage = transcriptData.output?.find(
+        (o: any) => o?.type === 'message'
+      );
+      const transcript = transcriptMessage?.content?.[0]?.text;
 
       if (!transcript) {
         throw new Error('No transcript generated');
@@ -481,7 +480,13 @@ Make sure that the narration sounds natural and does not include any verbatim el
         minute: '2-digit',
       });
 
+      // Write to the top-level `stories` collection — the one the app reads —
+      // with the same doc shape the client pipeline produces
+      // (services/audio-generation*.ts + story-service saveStory).
+      const storyRef = db.collection('stories').doc();
       const storyData: any = {
+        id: storyRef.id,
+        userId,
         title,
         audioUrl,
         audioChunkURLs,
@@ -504,11 +509,17 @@ Make sure that the narration sounds natural and does not include any verbatim el
         topographyLayers: generateDepthLayers(5),
       };
 
+      if ((recipe as any).narrationMode) {
+        storyData.narrationMode = (recipe as any).narrationMode;
+      }
       if (recipe.narratorId) {
         storyData.narratorId = recipe.narratorId;
       }
+      if (recipe.narratorData?.name) {
+        storyData.narratorName = recipe.narratorData.name;
+      }
 
-      const storyRef = await db.collection(`users/${userId}/stories`).add(storyData);
+      await storyRef.set(storyData);
       const storyId = storyRef.id;
 
       console.log('✅ Story saved with ID:', storyId);
@@ -525,12 +536,7 @@ Make sure that the narration sounds natural and does not include any verbatim el
         completedAt: admin.firestore.FieldValue.serverTimestamp() as any,
       });
 
-      // STEP 7: Send push notification
-      if (fcmToken) {
-        await sendPushNotification(fcmToken, title);
-      }
-
-      console.log(`🎉 Story generation complete for queue ${queueId}`);
+      console.log(`🎉 [backup] Story generation complete for queue ${queueId}`);
     } catch (error: any) {
       console.error('❌ Story generation failed:', error);
 

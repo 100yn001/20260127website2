@@ -204,8 +204,10 @@ export default function FollowUpScreen() {
                 try {
                   await addToQueue(recipeData, [], []);
                   router.replace('/(tabs)/vault');
-                } catch {
+                } catch (e: any) {
                   setSubmitting(false);
+                  if (Platform.OS === 'web') window.alert(`could not queue: ${e?.message ?? ''}`);
+                  else Alert.alert('could not queue story', e?.message ?? 'please try again');
                 }
               }}
               className="py-2 self-center"

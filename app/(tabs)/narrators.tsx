@@ -22,6 +22,17 @@ type Narrator = {
   colorA: string;
   colorB: string;
   isPublic?: boolean;
+  // Carried so "use in story" can hand the full persona (incl. voice) to
+  // narrator-story → followup → the generation recipe.
+  description?: string;
+  additionalDetails?: string;
+  voiceId?: string;
+  voiceGender?: string;
+  accent?: string;
+  age?: string;
+  features?: string[];
+  userNameWithNarrator?: string;
+  userGenderWithNarrator?: string;
 };
 
 export default function NarratorsTab() {
@@ -51,6 +62,15 @@ export default function NarratorsTab() {
             colorA: pickColor(data.color ?? d.id).a,
             colorB: pickColor(data.color ?? d.id).b,
             isPublic: data.isPublic,
+            description: data.description,
+            additionalDetails: data.additionalDetails,
+            voiceId: data.voiceId,
+            voiceGender: data.voiceGender,
+            accent: data.accent,
+            age: data.age,
+            features: data.features,
+            userNameWithNarrator: data.userNameWithNarrator,
+            userGenderWithNarrator: data.userGenderWithNarrator,
           };
         });
         setNarrators(items);
@@ -176,7 +196,13 @@ export default function NarratorsTab() {
                     onPress={() =>
                       router.navigate({
                         pathname: '/narrator-story',
-                        params: { narratorId: selected.id, narratorName: selected.name },
+                        params: {
+                          narratorId: selected.id,
+                          narratorName: selected.name,
+                          // Full persona — narrator-story/followup need name,
+                          // gender, voiceId etc. to build the recipe.
+                          narratorData: JSON.stringify(selected),
+                        },
                       })
                     }
                     className="flex-1 h-10 items-center justify-center rounded-full border border-border"

@@ -48,6 +48,10 @@ export default function ProfileScreen() {
   const [silverCard, setSilverCard] = useState<any>(null);
   const [showCard, setShowCard] = useState(false);
   const cardCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const [deletePrompt, setDeletePrompt] = useState(false);
+  const [deletePassword, setDeletePassword] = useState('');
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const downloadCardPng = () => {
     if (Platform.OS !== 'web') return;
@@ -110,22 +114,46 @@ export default function ProfileScreen() {
     }
   };
 
+  const runDelete = async (password?: string) => {
+    // deleteAccount purges Firestore data then removes the auth user. A stale
+    // session throws requires-recent-login → prompt for the password and retry.
+    try {
+      if (deleteAccount) await deleteAccount(password);
+      setDeletePrompt(false);
+      router.replace('/onboarding');
+    } catch (e: any) {
+      const code = e?.message ?? '';
+      if (code.includes('requires-recent-login') || code.includes('user-token-expired')) {
+        setDeletePrompt(true); // ask for password, then retry via handleConfirmDelete
+        return;
+      }
+      if (code.includes('wrong-password') || code.includes('invalid-credential')) {
+        setDeleteError('incorrect password');
+        return;
+      }
+      setDeleteError(code || 'could not delete account');
+    }
+  };
+
   const confirmDelete = () => {
+    setDeleteError(null);
+    if (Platform.OS === 'web') {
+      // Alert with buttons doesn't return a choice on web — open the modal,
+      // which also collects the password for re-auth.
+      setDeletePrompt(true);
+      return;
+    }
     Alert.alert('delete account?', 'this is permanent.', [
       { text: 'cancel', style: 'cancel' },
-      {
-        text: 'delete',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            if (deleteAccount) await deleteAccount();
-            router.replace('/onboarding');
-          } catch (e: any) {
-            Alert.alert('error', e.message ?? '');
-          }
-        },
-      },
+      { text: 'delete', style: 'destructive', onPress: () => runDelete() },
     ]);
+  };
+
+  const handleConfirmDelete = async () => {
+    setDeleteError(null);
+    setDeleting(true);
+    await runDelete(deletePassword || undefined);
+    setDeleting(false);
   };
 
   const tint = currentTint;
@@ -481,6 +509,58 @@ export default function ProfileScreen() {
             )}
           </Pressable>
         </Pressable>
+      </Modal>
+
+      <Modal
+        visible={deletePrompt}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setDeletePrompt(false)}
+      >
+        <View className="flex-1 bg-black/50 items-center justify-center px-6">
+          <View className="w-full max-w-[380px] rounded-[var(--radius)] border border-border bg-card p-6 gap-4">
+            <Text className="text-lg font-serif-medium text-foreground">delete account?</Text>
+            <Text className="text-sm font-serif text-muted-foreground">
+              this permanently deletes your account and all your stories, narrators, and voices.
+              enter your password to confirm.
+            </Text>
+            <Input
+              value={deletePassword}
+              onChangeText={(t) => {
+                setDeletePassword(t);
+                setDeleteError(null);
+              }}
+              placeholder="password"
+              secureTextEntry
+              autoCapitalize="none"
+            />
+            {deleteError && (
+              <Text className="text-sm font-serif text-destructive">{deleteError}</Text>
+            )}
+            <View className="flex-row gap-3">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onPress={() => {
+                  setDeletePrompt(false);
+                  setDeletePassword('');
+                  setDeleteError(null);
+                }}
+              >
+                cancel
+              </Button>
+              <Button
+                className="flex-1 bg-destructive"
+                textClassName="text-destructive-foreground"
+                loading={deleting}
+                disabled={!deletePassword}
+                onPress={handleConfirmDelete}
+              >
+                delete
+              </Button>
+            </View>
+          </View>
+        </View>
       </Modal>
     </Screen>
   );

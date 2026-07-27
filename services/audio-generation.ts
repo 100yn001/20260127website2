@@ -334,8 +334,11 @@ export async function generateAudioStory(
     console.log('✅ Transcript generated successfully, length:', transcript.length);
 
     // STEP 3: Generate audio with ElevenLabs (with chunking for long transcripts)
-    // Use the selected voice ID if provided, otherwise fall back to default based on gender
-    const voiceId = recipe.voiceId || VOICE_IDS[recipe.genderOther as 'male' | 'female'];
+    // Use the selected voice ID if provided, otherwise fall back to default based on gender.
+    // Final `|| VOICE_IDS.male` guard: genderOther can be '' (narrator flows),
+    // and ElevenLabs must never be called with an undefined voice.
+    const voiceId =
+      recipe.voiceId || VOICE_IDS[recipe.genderOther as 'male' | 'female'] || VOICE_IDS.male;
 
     console.log('🎤 Generating audio with ElevenLabs using voice:', voiceId);
 
@@ -471,9 +474,13 @@ export async function generateAudioStory(
       storyData.ambientPrompt = ambientPrompt;
     }
 
-    // Only include narratorId if it exists
+    // Only include narrator fields if they exist. narratorName is what the
+    // vault card / player byline render.
     if (recipe.narratorId) {
       storyData.narratorId = recipe.narratorId;
+    }
+    if (recipe.narratorData?.name) {
+      storyData.narratorName = recipe.narratorData.name;
     }
 
     const storyId = await saveStory(userId, storyData);

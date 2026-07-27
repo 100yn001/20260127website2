@@ -36,7 +36,11 @@ async function callGrok(input: GrokMessage[]): Promise<string> {
       throw new Error(`Grok API error: ${response.status} - ${errorText.substring(0, 200)}`);
     }
     const data = await response.json();
-    const text = data.output?.[0]?.content?.[0]?.text;
+    // Reasoning models (grok-4-1-fast-reasoning) return output[0] as the
+    // reasoning block (no text); the actual message is the `type: 'message'`
+    // entry. Never index output[0] directly.
+    const message = data.output?.find((o: any) => o?.type === 'message');
+    const text = message?.content?.[0]?.text;
     if (!text) throw new Error('Invalid Grok response - no content returned');
     return text as string;
   } finally {

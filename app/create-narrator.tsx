@@ -1,8 +1,8 @@
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { Check, Save, Shuffle } from 'lucide-react-native';
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Alert, Pressable, Text, View } from 'react-native';
 
 import {
@@ -51,6 +51,7 @@ const FEATURES = [
 
 export default function CreateNarratorScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ selectedVoiceId?: string }>();
   const { user } = useAuth();
 
   const [step, setStep] = useState<Step>('basic');
@@ -67,8 +68,15 @@ export default function CreateNarratorScreen() {
   const [accent, setAccent] = useState('');
   const [age, setAge] = useState<Age | null>(null);
   const [features, setFeatures] = useState<string[]>([]);
+  // ElevenLabs voice id, picked/designed in /voice-library (returned via
+  // router.back() + setParams — same hand-off recipe.tsx uses).
+  const [voiceId, setVoiceId] = useState<string | null>(null);
 
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (params.selectedVoiceId) setVoiceId(params.selectedVoiceId as string);
+  }, [params.selectedVoiceId]);
 
   const stepIndex = STEPS.indexOf(step);
   const total = STEPS.length;
@@ -114,6 +122,7 @@ export default function CreateNarratorScreen() {
         accent: accent.trim(),
         age,
         features,
+        ...(voiceId ? { voiceId } : {}),
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
@@ -312,6 +321,33 @@ export default function CreateNarratorScreen() {
                 })}
               </View>
             </Card>
+            <Card className="p-5 gap-3">
+              <View className="flex-row items-baseline justify-between">
+                <Label>their voice</Label>
+                <Text className="text-[11px] font-serif text-muted-foreground">
+                  {voiceId ? 'selected' : 'optional'}
+                </Text>
+              </View>
+              <Text className="text-sm font-serif text-muted-foreground">
+                {voiceId
+                  ? 'a voice is set for this narrator.'
+                  : 'pick or design the exact voice they speak with — otherwise a default voice matching the register above is used.'}
+              </Text>
+              <Button
+                variant="outline"
+                onPress={() =>
+                  router.push({
+                    pathname: '/voice-library' as never,
+                    params: {
+                      genderHint: voiceGender === 'androgynous' ? '' : voiceGender,
+                      userName: name.trim() || 'you',
+                    },
+                  })
+                }
+              >
+                {voiceId ? 'change voice' : 'choose or design a voice'}
+              </Button>
+            </Card>
           </View>
           <ContinueButton disabled={!canAdvance} onPress={goNext} />
         </FlowCluster>
@@ -329,7 +365,10 @@ export default function CreateNarratorScreen() {
         <Card className="p-5 gap-2">
           <Row label="gender" value={gender === 'custom' ? customGender : gender ?? '—'} />
           <Row label="relationship" value={relationship || '—'} />
-          <Row label="voice" value={`${voiceGender}${age ? ` · ${age}` : ''}`} />
+          <Row
+            label="voice"
+            value={`${voiceGender}${age ? ` · ${age}` : ''}${voiceId ? ' · custom voice' : ' · default voice'}`}
+          />
           {features.length > 0 && <Row label="qualities" value={features.join(', ')} />}
         </Card>
         <Button size="lg" className="w-full" onPress={handleSave} loading={saving}>
