@@ -117,7 +117,7 @@ export default function ScratchScreen() {
             <Textarea
               value={idea}
               onChangeText={(t) => setIdea(t.slice(0, 1000))}
-              placeholder="e.g. a mysterious librarian discovers a book that writes itself"
+              placeholder="e.g. an old flame knocks on your door in the middle of a storm"
               numberOfLines={8}
               className="min-h-[220px] pb-8"
             />

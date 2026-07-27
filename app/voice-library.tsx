@@ -448,7 +448,7 @@ export default function VoiceLibraryScreen() {
               style={[styles.input, { backgroundColor: colors.card, color: colors.text }]}
               value={voiceName}
               onChangeText={setVoiceName}
-              placeholder="e.g., deep storyteller, soft whisper..."
+              placeholder="e.g., low and warm, soft whisper..."
               placeholderTextColor={colors.textSecondary}
             />
           </View>
