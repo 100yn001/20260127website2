@@ -351,7 +351,12 @@ export default function ProfileScreen() {
                   if (entIsSubscribed) await openBillingPortal();
                   else await startSubscriptionCheckout(user?.email ?? undefined);
                 } catch (e: any) {
-                  Alert.alert('billing error', e?.message ?? 'please try again');
+                  if (e?.code === 'functions/already-exists') {
+                    // Server refused a duplicate subscription and re-synced
+                    // entitlements — the card flips to "manage" on its own.
+                  } else {
+                    Alert.alert('billing error', e?.message ?? 'please try again');
+                  }
                 } finally {
                   setBillingBusy(false);
                 }

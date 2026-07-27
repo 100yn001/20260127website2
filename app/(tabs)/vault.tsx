@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
   collection,
   onSnapshot,
@@ -6,8 +6,8 @@ import {
   query,
   where,
 } from 'firebase/firestore';
-import { AlertTriangle, Pencil, Plus, Search, Trash2 } from 'lucide-react-native';
-import React, { useEffect, useMemo, useState } from 'react';
+import { AlertTriangle, CheckCircle2, Pencil, Plus, Search, Trash2 } from 'lucide-react-native';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 
 import { ProfileButton } from '@/components/profile-button';
@@ -19,6 +19,7 @@ import { ToggleGroup } from '@/components/ui/toggle-group';
 import { db } from '@/config/firebase';
 import { useAuth } from '@/contexts/AuthContext';
 import { useStoryQueue } from '@/contexts/StoryQueueContext';
+import { isSubscribed } from '@/services/entitlements-service';
 import { useArtworkTint } from '@/hooks/useArtworkTint';
 import { cn } from '@/lib/cn';
 import { variedTint } from '@/lib/cover';
@@ -29,8 +30,10 @@ const GUTTER = 'px-5 sm:px-8 md:px-10 lg:px-14 xl:px-20';
 export default function VaultScreen() {
   const router = useRouter();
   const { user } = useAuth();
-  const { queue, removeFromQueue, retryStory } = useStoryQueue();
+  const { queue, queueLoaded, entitlements, removeFromQueue, retryStory, resumeBlockedStories } =
+    useStoryQueue();
   const tint = useArtworkTint();
+  const { billing } = useLocalSearchParams<{ billing?: string }>();
 
   const [loading, setLoading] = useState(true);
   const [stories, setStories] = useState<CardStory[]>([]);
@@ -38,6 +41,28 @@ export default function VaultScreen() {
   const [filter, setFilter] = useState<Filter>('all');
   const [selectMode, setSelectMode] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
+
+  // Return from Stripe Checkout (?billing=success|cancel). Success shows an
+  // "activating → active" banner and resumes the story that hit the paywall;
+  // cancel just strips the param.
+  const [billingBanner, setBillingBanner] = useState<'activating' | 'confirmed' | null>(null);
+  const resumedAfterCheckoutRef = useRef(false);
+  useEffect(() => {
+    if (billing === 'success') setBillingBanner('activating');
+    if (billing) router.setParams({ billing: undefined });
+  }, [billing]);
+  useEffect(() => {
+    if (billingBanner !== 'activating' || !entitlements || !queueLoaded) return;
+    if (isSubscribed(entitlements)) {
+      setBillingBanner('confirmed');
+      if (!resumedAfterCheckoutRef.current) {
+        resumedAfterCheckoutRef.current = true;
+        resumeBlockedStories().catch(() => {});
+      }
+      const t = setTimeout(() => setBillingBanner(null), 6000);
+      return () => clearTimeout(t);
+    }
+  }, [billingBanner, entitlements, queueLoaded, resumeBlockedStories]);
 
   useEffect(() => {
     if (!user) {
@@ -170,6 +195,24 @@ export default function VaultScreen() {
             </View>
           )}
         </View>
+
+        {/* return-from-checkout banner */}
+        {billingBanner && (
+          <View className={cn(GUTTER, 'mb-5')}>
+            <View className="flex-row items-center gap-3 rounded-[var(--radius)] border border-border bg-card px-4 py-3">
+              {billingBanner === 'activating' ? (
+                <ActivityIndicator size="small" color="hsl(var(--foreground))" />
+              ) : (
+                <CheckCircle2 size={18} color="hsl(var(--foreground))" />
+              )}
+              <Text className="flex-1 text-sm font-serif text-foreground">
+                {billingBanner === 'activating'
+                  ? 'payment received — activating your subscription…'
+                  : "you're subscribed — 15 stories a month unlocked."}
+              </Text>
+            </View>
+          </View>
+        )}
 
         {/* queue */}
         {activeQueue.length > 0 && !selectMode && (

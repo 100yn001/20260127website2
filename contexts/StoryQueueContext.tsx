@@ -1,4 +1,9 @@
 import { db } from '@/config/firebase';
+import {
+  canGenerate,
+  subscribeToEntitlements,
+  type Entitlements,
+} from '@/services/entitlements-service';
 import { sendStoryReadyNotification } from '@/services/notification-service';
 import { collection, deleteDoc, doc, onSnapshot, orderBy, query, setDoc, Timestamp } from 'firebase/firestore';
 import React, { createContext, useContext, useEffect, useState } from 'react';
@@ -55,11 +60,17 @@ export interface QueuedStory {
 
 interface StoryQueueContextType {
   queue: QueuedStory[];
+  /** False until the first queue snapshot arrives for the current user. */
+  queueLoaded: boolean;
   /** Most recent item blocked on payment, if any — drives the paywall sheet. */
   paymentRequiredItem: QueuedStory | null;
+  /** Live view of the server-only entitlements doc (null before first snapshot). */
+  entitlements: Entitlements | null;
   addToQueue: (recipeData: any, followUpQuestions: string[], followUpAnswers: string[]) => Promise<string>;
   removeFromQueue: (id: string) => void;
   retryStory: (id: string) => Promise<void>;
+  /** Re-pend payment_required items (once each) — used right after subscribing. */
+  resumeBlockedStories: () => Promise<number>;
   clearQueue: () => Promise<void>;
   resetStuckStories: () => Promise<void>;
 }
@@ -68,7 +79,11 @@ const StoryQueueContext = createContext<StoryQueueContextType | undefined>(undef
 
 export function StoryQueueProvider({ children }: { children: React.ReactNode }) {
   const [queue, setQueue] = useState<QueuedStory[]>([]);
+  const [queueLoaded, setQueueLoaded] = useState(false);
+  const [entitlements, setEntitlements] = useState<Entitlements | null>(null);
   const prevStatusRef = React.useRef<Record<string, string>>({});
+  const autoResumedRef = React.useRef<Set<string>>(new Set());
+  const prevCanGenerateRef = React.useRef<boolean | null>(null);
   const { user } = useAuth();
 
   // Mirror the Firestore queue. The Cloud Function writes real progress, so
@@ -76,7 +91,10 @@ export function StoryQueueProvider({ children }: { children: React.ReactNode }) 
   useEffect(() => {
     if (!user) {
       setQueue([]);
+      setQueueLoaded(false);
       prevStatusRef.current = {};
+      autoResumedRef.current = new Set();
+      prevCanGenerateRef.current = null;
       return;
     }
 
@@ -137,13 +155,25 @@ export function StoryQueueProvider({ children }: { children: React.ReactNode }) 
         prevStatusRef.current = Object.fromEntries(loadedQueue.map((i) => [i.id, i.status]));
 
         setQueue(loadedQueue);
+        setQueueLoaded(true);
       },
       (error) => {
         console.error('Error loading queue:', error);
+        setQueueLoaded(true);
       }
     );
 
     return () => unsubscribe();
+  }, [user]);
+
+  // Mirror the entitlements doc alongside the queue so the paywall sheet and
+  // billing-return flows share one live view.
+  useEffect(() => {
+    if (!user) {
+      setEntitlements(null);
+      return;
+    }
+    return subscribeToEntitlements(user.uid, setEntitlements);
   }, [user]);
 
   // Recursively strip undefined values — Firestore rejects writes that
@@ -241,6 +271,41 @@ export function StoryQueueProvider({ children }: { children: React.ReactNode }) 
     });
   };
 
+  /**
+   * Re-pend every payment_required item so the server re-checks entitlements —
+   * called right after a subscription activates. Each item is only ever
+   * auto-resumed once (if the server blocks it again, it stays blocked until
+   * the user retries by hand).
+   */
+  const resumeBlockedStories = React.useCallback(async (): Promise<number> => {
+    const blocked = queue.filter(
+      (s) => s.status === 'payment_required' && !autoResumedRef.current.has(s.id)
+    );
+    blocked.forEach((s) => autoResumedRef.current.add(s.id));
+    await Promise.all(
+      blocked.map((item) =>
+        saveQueueItem({ ...item, status: 'pending', progress: 0, error: undefined })
+      )
+    );
+    if (blocked.length > 0) console.log('[Queue] resumed blocked stories:', blocked.length);
+    return blocked.length;
+  }, [queue, user]);
+
+  // Same-session unlock (native checkout browser, or webhook landing while the
+  // app is open): when entitlements flip from "can't generate" to "can",
+  // resume anything that was blocked on payment. A fresh page load lands with
+  // canGenerate already true (no transition) — the vault's ?billing=success
+  // handler covers that path explicitly.
+  useEffect(() => {
+    if (!entitlements || !queueLoaded) return;
+    const can = canGenerate(entitlements);
+    const prev = prevCanGenerateRef.current;
+    prevCanGenerateRef.current = can;
+    if (prev === false && can) {
+      resumeBlockedStories().catch((e) => console.warn('[Queue] auto-resume failed:', e));
+    }
+  }, [entitlements, queueLoaded, resumeBlockedStories]);
+
   const clearQueue = async () => {
     const itemsToDelete = queue.filter(s => s.status === 'pending' || s.status === 'error' || s.status === 'payment_required');
     await Promise.all(itemsToDelete.map(item => deleteQueueItem(item.id)));
@@ -262,7 +327,7 @@ export function StoryQueueProvider({ children }: { children: React.ReactNode }) 
   const paymentRequiredItem = queue.find(s => s.status === 'payment_required') ?? null;
 
   return (
-    <StoryQueueContext.Provider value={{ queue, paymentRequiredItem, addToQueue, removeFromQueue, retryStory, clearQueue, resetStuckStories }}>
+    <StoryQueueContext.Provider value={{ queue, queueLoaded, paymentRequiredItem, entitlements, addToQueue, removeFromQueue, retryStory, resumeBlockedStories, clearQueue, resetStuckStories }}>
       {children}
     </StoryQueueContext.Provider>
   );

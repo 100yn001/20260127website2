@@ -58,13 +58,27 @@ async function getOrCreateMonthlyPriceId(stripe: Stripe): Promise<string> {
   return _cachedPriceId;
 }
 
-/** Find a Customer by firebaseUid metadata, or create one (ported from createStripeCustomer.ts). */
+/**
+ * Find a Customer by (in order): a known id, firebaseUid metadata search, or
+ * create one. The known-id path matters: customers.search is eventually
+ * consistent, so right after a customer is created a search can miss it and
+ * mint a duplicate — retrieve-by-id never does.
+ */
 async function findOrCreateCustomer(
   stripe: Stripe,
   uid: string,
   email: string | undefined,
   name?: string,
+  knownCustomerId?: string | null,
 ): Promise<Stripe.Customer> {
+  if (knownCustomerId) {
+    try {
+      const existing = await stripe.customers.retrieve(knownCustomerId);
+      if (!existing.deleted) return existing as Stripe.Customer;
+    } catch (err) {
+      console.warn(`customer ${knownCustomerId} not retrievable, falling back:`, err);
+    }
+  }
   try {
     const search = await stripe.customers.search({ query: `metadata['firebaseUid']:'${uid}'`, limit: 1 });
     if (search.data.length > 0) return search.data[0];
@@ -141,9 +155,29 @@ export const createSubscriptionCheckout = onCall(
     const successUrl = String(request.data?.successUrl || 'https://yourname.media/app/profile?billing=success');
     const cancelUrl = String(request.data?.cancelUrl || 'https://yourname.media/app/profile?billing=cancel');
 
+    // First line of defense: our own entitlements doc (webhook-maintained,
+    // strongly consistent). An entitled user never gets a second checkout.
+    const ent = readEntitlements(await entitlementsRef(uid).get());
+    if (ent.subscriptionStatus === 'active' || ent.subscriptionStatus === 'trialing') {
+      throw new HttpsError('already-exists', 'you already have an active subscription');
+    }
+
     const stripe = getStripe();
-    const customer = await findOrCreateCustomer(stripe, uid, email, request.data?.name);
+    const customer = await findOrCreateCustomer(
+      stripe, uid, email, request.data?.name, ent.stripeCustomerId,
+    );
     const priceId = await getOrCreateMonthlyPriceId(stripe);
+
+    // Second line: a live sub on the Stripe customer that our doc doesn't know
+    // about (missed webhook) — sync it and refuse rather than double-charge.
+    const existing = await stripe.subscriptions.list({ customer: customer.id, status: 'all', limit: 20 });
+    const live = existing.data.find(
+      (s) => (s.status === 'active' || s.status === 'trialing') && subscriptionHasMonthlyPrice(s),
+    );
+    if (live) {
+      await syncSubscription(stripe, live.id);
+      throw new HttpsError('already-exists', 'you already have an active subscription');
+    }
 
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
