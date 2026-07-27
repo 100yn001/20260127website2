@@ -38,7 +38,11 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { TINTS, useArtworkTint } from '@/hooks/useArtworkTint';
 import { cn } from '@/lib/cn';
-import { isDurableCardImageUrl, restoreSilverCardImage } from '@/services/silver-card-image';
+import {
+  hasBakedTextures,
+  isDurableCardImageUrl,
+  restoreSilverCardImage,
+} from '@/services/silver-card-image';
 import {
   DEFAULT_ENTITLEMENTS,
   FREE_STORY_LIMIT,
@@ -73,9 +77,7 @@ export default function ProfileScreen() {
   const [silverCard, setSilverCard] = useState<any>(null);
   const [showCard, setShowCard] = useState(false);
   const [cardRestoring, setCardRestoring] = useState(false);
-  // Silver-embossed SVG derived from the stored artwork. The raw color image
-  // is never shown — the silver card is the only face the user ever sees.
-  const [cardSvg, setCardSvg] = useState<string | null>(null);
+  const [cardPrepFailed, setCardPrepFailed] = useState(false);
   const cardCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const [deletePrompt, setDeletePrompt] = useState(false);
   const [deletePassword, setDeletePassword] = useState('');
@@ -131,19 +133,10 @@ export default function ProfileScreen() {
         const sc = (profile as any)?.silverCard;
         if (sc) {
           setSilverCard(sc);
-          // Accounts from before the Storage re-host stored the expiring
-          // Replicate URL — regenerate from the saved scene prompt and
-          // re-host, so the card stays viewable here. `cardRestoring`
-          // surfaces the wait in the UI (this takes ~30-60s).
-          if (!isDurableCardImageUrl(sc.imageUrl)) {
-            setCardRestoring(true);
-            restoreSilverCardImage(user.uid, sc)
-              .then((fixed) => {
-                if (fixed) setSilverCard(fixed);
-              })
-              .catch((e) => console.warn('[profile] card image restore failed', e))
-              .finally(() => setCardRestoring(false));
-          }
+          // Older accounts stored the expiring Replicate URL and/or predate
+          // the baked silver textures — bring the card up to date in the
+          // background. `cardRestoring` surfaces the wait in the UI.
+          prepareCard(sc);
         }
         const saved = (profile as any)?.aboutYou;
         if (typeof saved === 'string' && saved.trim().length > 0) {
@@ -158,37 +151,33 @@ export default function ProfileScreen() {
     })();
   }, [user?.uid]);
 
-  // The stored artwork is the raw color image; on web we vectorize it
-  // client-side (the same treatment the onboarding reveal uses) so the viewer
-  // renders the silver card, never the color art. Runs when the viewer first
-  // opens, then caches for the rest of the visit.
-  useEffect(() => {
-    if (!showCard || Platform.OS !== 'web' || cardSvg) return;
-    const url = silverCard?.imageUrl;
-    if (!isDurableCardImageUrl(url)) return;
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await fetch(url);
-        if (!res.ok) throw new Error(`artwork fetch ${res.status}`);
-        const blob = await res.blob();
-        const dataUrl = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result as string);
-          reader.onerror = () => reject(reader.error);
-          reader.readAsDataURL(blob);
-        });
-        const { vectorizeImage } = await import('@/services/vectorize');
-        const { svg } = await vectorizeImage(dataUrl);
-        if (!cancelled) setCardSvg(svg);
-      } catch (e) {
-        console.warn('[profile] card silvering failed', e);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [showCard, silverCard?.imageUrl, cardSvg]);
+  // Bring the card fully up to date — regenerate expired artwork, bake and
+  // persist the silver textures — and reflect progress in the UI. Safe to
+  // call repeatedly; the service dedupes concurrent runs. Once the textures
+  // exist this is a no-op forever.
+  const prepareCard = (sc: any) => {
+    if (!user || !sc) return;
+    const needsPrep =
+      !isDurableCardImageUrl(sc.imageUrl) ||
+      (Platform.OS === 'web' && !hasBakedTextures(sc));
+    if (!needsPrep) return;
+    setCardPrepFailed(false);
+    setCardRestoring(true);
+    restoreSilverCardImage(user.uid, sc)
+      .then((fixed) => {
+        if (fixed) {
+          setSilverCard(fixed);
+          if (Platform.OS === 'web' && !hasBakedTextures(fixed)) {
+            setCardPrepFailed(true);
+          }
+        }
+      })
+      .catch((e) => {
+        console.warn('[profile] card prep failed', e);
+        setCardPrepFailed(true);
+      })
+      .finally(() => setCardRestoring(false));
+  };
 
   const saveName = async () => {
     setEditingName(false);
@@ -587,32 +576,45 @@ export default function ProfileScreen() {
           <View pointerEvents="box-none" className="flex-1 items-center justify-center px-8">
             <View style={{ width: '100%', maxWidth: 520, aspectRatio: 5 / 8 }}>
               {(Platform.OS === 'web'
-                ? !!cardSvg
-                : isDurableCardImageUrl(silverCard?.imageUrl)) ? (
+                ? hasBakedTextures(silverCard)
+                : !!(silverCard?.colorTexUrl || isDurableCardImageUrl(silverCard?.imageUrl))) ? (
                 <CardScene
-                  svgString={Platform.OS === 'web' ? (cardSvg as string) : undefined}
-                  imageUrl={Platform.OS === 'web' ? undefined : silverCard.imageUrl}
+                  textures={
+                    hasBakedTextures(silverCard)
+                      ? { colorUrl: silverCard.colorTexUrl, bumpUrl: silverCard.bumpTexUrl }
+                      : undefined
+                  }
+                  imageUrl={Platform.OS === 'web' ? undefined : silverCard?.imageUrl}
                   aspectRatio={5 / 8}
                   onCanvasReady={(c) => {
                     cardCanvasRef.current = c as HTMLCanvasElement;
                   }}
                 />
               ) : (
-                <View className="flex-1 items-center justify-center" pointerEvents="none">
-                  <ActivityIndicator size="small" color="rgba(255,255,255,0.6)" />
+                <View className="flex-1 items-center justify-center" pointerEvents="box-none">
+                  {cardRestoring ? (
+                    <ActivityIndicator size="small" color="rgba(255,255,255,0.6)" />
+                  ) : null}
                   <Text className="mt-4 text-sm font-serif text-white/60">
                     {cardRestoring
-                      ? 'summoning your card…'
-                      : isDurableCardImageUrl(silverCard?.imageUrl)
+                      ? isDurableCardImageUrl(silverCard?.imageUrl)
                         ? 'polishing the silver…'
+                        : 'summoning your card…'
+                      : cardPrepFailed
+                        ? "the silver wouldn't take"
                         : 'still being painted — check back soon'}
                   </Text>
+                  {cardPrepFailed && !cardRestoring ? (
+                    <Pressable onPress={() => prepareCard(silverCard)} className="mt-4">
+                      <Text className="text-sm font-serif text-white/90">try again →</Text>
+                    </Pressable>
+                  ) : null}
                 </View>
               )}
             </View>
           </View>
           <View className="absolute top-12 right-5 flex-row items-center gap-2">
-            {Platform.OS === 'web' && cardSvg ? (
+            {Platform.OS === 'web' && hasBakedTextures(silverCard) ? (
               <Pressable
                 onPress={downloadCardPng}
                 accessibilityLabel="save as png"

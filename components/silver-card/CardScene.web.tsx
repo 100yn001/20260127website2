@@ -3,84 +3,34 @@ import { Canvas, useThree } from '@react-three/fiber';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { RoomEnvironment, type OrbitControls as OrbitControlsImpl } from 'three-stdlib';
+import { bakeSilverCanvases } from './bake-textures';
 
 interface CardTextures {
   bumpTex: THREE.CanvasTexture;
   colorTex: THREE.CanvasTexture;
 }
 
-function createCardTextures(
+/** Persisted texture URLs for a previously baked silver skin. */
+export interface CardTextureUrls {
+  colorUrl: string;
+  bumpUrl: string;
+}
+
+async function createCardTextures(
   svgString: string,
   texW: number,
   texH: number,
 ): Promise<CardTextures> {
-  return new Promise((resolve, reject) => {
-    let svg = svgString
-      .replace(/width="[^"]*"/, `width="${texW}"`)
-      .replace(/height="[^"]*"/, `height="${texH}"`);
-    if (!svg.includes('xmlns="')) {
-      svg = svg.replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" ');
-    }
-
-    const img = new Image();
-    img.onload = () => {
-      const raw = document.createElement('canvas');
-      raw.width = texW;
-      raw.height = texH;
-      const rCtx = raw.getContext('2d')!;
-      rCtx.fillStyle = '#000000';
-      rCtx.fillRect(0, 0, texW, texH);
-      rCtx.drawImage(img, 0, 0, texW, texH);
-
-      const id = rCtx.getImageData(0, 0, texW, texH);
-      const d = id.data;
-      for (let i = 0; i < d.length; i += 4) {
-        const g = d[i] * 0.299 + d[i + 1] * 0.587 + d[i + 2] * 0.114;
-        const inv = 255 - g;
-        d[i] = d[i + 1] = d[i + 2] = inv;
-      }
-      rCtx.putImageData(id, 0, 0);
-
-      let src: HTMLCanvasElement = raw;
-      for (let pass = 0; pass < 3; pass++) {
-        const blurred = document.createElement('canvas');
-        blurred.width = texW;
-        blurred.height = texH;
-        const bCtx = blurred.getContext('2d')!;
-        bCtx.filter = 'blur(6px)';
-        bCtx.drawImage(src, 0, 0);
-        bCtx.filter = 'none';
-        src = blurred;
-      }
-
-      const bumpTex = new THREE.CanvasTexture(src);
-      bumpTex.needsUpdate = true;
-
-      const colorCanvas = document.createElement('canvas');
-      colorCanvas.width = texW;
-      colorCanvas.height = texH;
-      const cCtx = colorCanvas.getContext('2d')!;
-      cCtx.drawImage(src, 0, 0);
-      const colorData = cCtx.getImageData(0, 0, texW, texH);
-      const cd = colorData.data;
-      for (let i = 0; i < cd.length; i += 4) {
-        const t = cd[i] / 255;
-        const val = 130 + t * 80;
-        cd[i] = cd[i + 1] = cd[i + 2] = val;
-      }
-      cCtx.putImageData(colorData, 0, 0);
-      const colorTex = new THREE.CanvasTexture(colorCanvas);
-      colorTex.colorSpace = THREE.SRGBColorSpace;
-      colorTex.needsUpdate = true;
-
-      resolve({ bumpTex, colorTex });
-    };
-    img.onerror = () => reject(new Error('SVG rasterize failed'));
-    img.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
-  });
+  const { bumpCanvas, colorCanvas } = await bakeSilverCanvases(svgString, texW, texH);
+  const bumpTex = new THREE.CanvasTexture(bumpCanvas);
+  bumpTex.needsUpdate = true;
+  const colorTex = new THREE.CanvasTexture(colorCanvas);
+  colorTex.colorSpace = THREE.SRGBColorSpace;
+  colorTex.needsUpdate = true;
+  return { bumpTex, colorTex };
 }
 
-function loadImageTexture(url: string): Promise<THREE.Texture> {
+function loadImageTexture(url: string, srgb = true): Promise<THREE.Texture> {
   return new Promise((resolve, reject) => {
     const loader = new THREE.TextureLoader();
     // Stored silver-card images live on Firebase Storage which serves CORS
@@ -89,7 +39,8 @@ function loadImageTexture(url: string): Promise<THREE.Texture> {
     loader.load(
       url,
       (tex) => {
-        tex.colorSpace = THREE.SRGBColorSpace;
+        // Bump maps stay linear; only color maps are sRGB.
+        if (srgb) tex.colorSpace = THREE.SRGBColorSpace;
         tex.needsUpdate = true;
         resolve(tex);
       },
@@ -102,11 +53,13 @@ function loadImageTexture(url: string): Promise<THREE.Texture> {
 function SilverCard({
   svgString,
   imageUrl,
+  textures,
   aspectRatio,
   onReady,
 }: {
   svgString?: string;
   imageUrl?: string;
+  textures?: CardTextureUrls;
   aspectRatio: number;
   onReady?: () => void;
 }) {
@@ -151,6 +104,9 @@ function SilverCard({
     return geo;
   }, [cardWidth, cardHeight]);
 
+  const bakedBumpUrl = textures?.bumpUrl;
+  const bakedColorUrl = textures?.colorUrl;
+
   useEffect(() => {
     const texW = 1024;
     const texH = Math.round(1024 / aspectRatio);
@@ -180,6 +136,15 @@ function SilverCard({
       createCardTextures(svgString, texW, texH)
         .then(({ bumpTex, colorTex }) => apply(bumpTex, colorTex))
         .catch((err) => console.error('Texture creation failed:', err));
+    } else if (bakedBumpUrl && bakedColorUrl) {
+      // Previously baked silver skin: two small PNGs applied directly — the
+      // instant path used by the profile viewer.
+      Promise.all([
+        loadImageTexture(bakedBumpUrl, false),
+        loadImageTexture(bakedColorUrl, true),
+      ])
+        .then(([bumpTex, colorTex]) => apply(bumpTex, colorTex))
+        .catch((err) => console.error('Baked texture load failed:', err));
     } else if (imageUrl) {
       // Fallback: re-render an existing silver-card PNG (e.g. from the user's
       // saved card on profile) as a texture. We lose the SVG-derived bump
@@ -192,7 +157,7 @@ function SilverCard({
     return () => {
       cancelled = true;
     };
-  }, [svgString, imageUrl, aspectRatio, invalidate, onReady]);
+  }, [svgString, imageUrl, bakedBumpUrl, bakedColorUrl, aspectRatio, invalidate, onReady]);
 
   return (
     <mesh ref={meshRef} geometry={cardGeo} visible={texturesReady}>
@@ -266,12 +231,14 @@ function CardControls() {
 export default function CardScene({
   svgString,
   imageUrl,
+  textures,
   aspectRatio,
   onReady,
   onCanvasReady,
 }: {
   svgString?: string;
   imageUrl?: string;
+  textures?: CardTextureUrls;
   aspectRatio: number;
   onReady?: () => void;
   /** Called once the WebGL canvas DOM element exists, so callers can grab a PNG snapshot. */
@@ -304,6 +271,7 @@ export default function CardScene({
       <SilverCard
         svgString={svgString}
         imageUrl={imageUrl}
+        textures={textures}
         aspectRatio={aspectRatio}
         onReady={onReady}
       />

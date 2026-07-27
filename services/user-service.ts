@@ -77,6 +77,8 @@ export async function saveSilverCard(
     shadowSub: string;
     scenePrompt: string;
     imageUrl?: string;
+    colorTexUrl?: string;
+    bumpTexUrl?: string;
   }
 ): Promise<void> {
   try {

@@ -24,6 +24,11 @@ export interface UserProfile {
     shadowSub: ShadowSub;
     scenePrompt: string;             // composed prompt actually sent to Replicate
     imageUrl?: string;
+    /** Storage URLs of the baked silver material textures (color + emboss
+     *  bump). The 3D card rebuilds instantly from these — geometry, lights
+     *  and controls are trivial; only this "skin" is expensive to derive. */
+    colorTexUrl?: string;
+    bumpTexUrl?: string;
     generatedAt?: Date;
     /** Legacy field — kept for back-compat reads of pre-classifier docs. */
     landscapePrompt?: string;

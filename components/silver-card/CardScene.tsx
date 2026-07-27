@@ -3,25 +3,32 @@ import { Image, StyleSheet, Text, View } from 'react-native';
 
 export default function CardScene({
   imageUrl,
+  textures,
   aspectRatio,
   onReady,
 }: {
   svgString?: string;
   imageUrl?: string;
+  /** Baked silver skin URLs; native shows the color map as a flat image. */
+  textures?: { colorUrl: string; bumpUrl: string };
   aspectRatio: number;
   onReady?: () => void;
   /** Web-only; ignored on native. Present so consumers can be cross-platform. */
   onCanvasReady?: (canvas: any) => void;
 }) {
+  // Prefer the baked silver face over the raw artwork — the user should only
+  // ever see the silver card.
+  const displayUrl = textures?.colorUrl ?? imageUrl;
+
   useEffect(() => {
-    if (imageUrl) onReady?.();
-  }, [imageUrl, onReady]);
+    if (displayUrl) onReady?.();
+  }, [displayUrl, onReady]);
 
   return (
     <View style={styles.container}>
-      {imageUrl ? (
+      {displayUrl ? (
         <Image
-          source={{ uri: imageUrl }}
+          source={{ uri: displayUrl }}
           style={{ width: '85%', aspectRatio, borderRadius: 12 }}
           resizeMode="contain"
         />

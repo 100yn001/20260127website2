@@ -26,7 +26,7 @@ interface GeneratedFirstStory {
   audioChunkURLs: string[];
   ambientUrl: string | null;
 }
-import { uploadSilverCardImage } from '@/services/silver-card-image';
+import { bakeAndUploadCardTextures, uploadSilverCardImage } from '@/services/silver-card-image';
 import { saveSilverCard, saveUserProfile } from '@/services/user-service';
 import CardScene from '@/components/silver-card/CardScene';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -127,6 +127,9 @@ type Pipeline = {
    * self-heal regenerates the real artwork from the scene prompt later.
    */
   usedFallbackArt?: boolean;
+  /** True when `svg` holds the generic fallback face rather than the real
+   *  vectorized artwork — never baked into persistent textures. */
+  usedFallbackSvg?: boolean;
 };
 
 // Shuffle and pick 10 random questions
@@ -471,6 +474,7 @@ export default function OnboardingScreen() {
         if (!next.svg) {
           next.svg = FALLBACK_CARD_SVG;
           next.dims = FALLBACK_CARD_DIMS;
+          next.usedFallbackSvg = true;
           if (!next.imageUrl) next.usedFallbackArt = true;
         }
       } else if (!next.imageUrl) {
@@ -693,6 +697,22 @@ export default function OnboardingScreen() {
             console.warn('silver-card image upload failed (saving remote url):', err);
           }
         }
+        // Bake + persist the silver skin (color + bump textures) so the
+        // profile viewer rebuilds the 3D card instantly instead of
+        // re-vectorizing. Generic fallback faces are never persisted; the
+        // profile backfills textures from the real artwork later.
+        let cardTextures: { colorTexUrl?: string; bumpTexUrl?: string } = {};
+        if (pipeline.svg && !pipeline.usedFallbackSvg && pipeline.dims) {
+          try {
+            cardTextures = await bakeAndUploadCardTextures(
+              currentUser.uid,
+              pipeline.svg,
+              pipeline.dims.width / pipeline.dims.height,
+            );
+          } catch (err) {
+            console.warn('silver-card texture upload failed (profile will backfill):', err);
+          }
+        }
         await saveSilverCard(currentUser.uid, {
           storytellingWords: pipeline.words,
           archetypeId: pipeline.archetypeId,
@@ -702,6 +722,7 @@ export default function OnboardingScreen() {
           shadowSub: pipeline.shadowSub,
           scenePrompt: pipeline.landscape,
           imageUrl: cardImageUrl,
+          ...cardTextures,
         }).catch((err) => console.warn('saveSilverCard failed:', err));
       }
 
