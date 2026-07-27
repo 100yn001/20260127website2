@@ -1,5 +1,4 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Image as ExpoImage } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import {
@@ -11,6 +10,7 @@ import {
   Moon,
   Palette,
   Pencil,
+  Sparkles,
   Sun,
   Trash2,
   UserRound,
@@ -73,6 +73,9 @@ export default function ProfileScreen() {
   const [silverCard, setSilverCard] = useState<any>(null);
   const [showCard, setShowCard] = useState(false);
   const [cardRestoring, setCardRestoring] = useState(false);
+  // Silver-embossed SVG derived from the stored artwork. The raw color image
+  // is never shown — the silver card is the only face the user ever sees.
+  const [cardSvg, setCardSvg] = useState<string | null>(null);
   const cardCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const [deletePrompt, setDeletePrompt] = useState(false);
   const [deletePassword, setDeletePassword] = useState('');
@@ -154,6 +157,38 @@ export default function ProfileScreen() {
       }
     })();
   }, [user?.uid]);
+
+  // The stored artwork is the raw color image; on web we vectorize it
+  // client-side (the same treatment the onboarding reveal uses) so the viewer
+  // renders the silver card, never the color art. Runs when the viewer first
+  // opens, then caches for the rest of the visit.
+  useEffect(() => {
+    if (!showCard || Platform.OS !== 'web' || cardSvg) return;
+    const url = silverCard?.imageUrl;
+    if (!isDurableCardImageUrl(url)) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`artwork fetch ${res.status}`);
+        const blob = await res.blob();
+        const dataUrl = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = () => reject(reader.error);
+          reader.readAsDataURL(blob);
+        });
+        const { vectorizeImage } = await import('@/services/vectorize');
+        const { svg } = await vectorizeImage(dataUrl);
+        if (!cancelled) setCardSvg(svg);
+      } catch (e) {
+        console.warn('[profile] card silvering failed', e);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [showCard, silverCard?.imageUrl, cardSvg]);
 
   const saveName = async () => {
     setEditingName(false);
@@ -346,17 +381,8 @@ export default function ProfileScreen() {
           >
             <View className="flex-row items-center justify-between">
               <View className="flex-row items-center gap-3">
-                <View
-                  className="h-10 w-8 overflow-hidden rounded-md bg-muted"
-                  style={silverCard?.imageUrl ? undefined : { backgroundColor: '#1f1f1f' }}
-                >
-                  {silverCard?.imageUrl ? (
-                    <ExpoImage
-                      source={{ uri: silverCard.imageUrl }}
-                      style={{ width: '100%', height: '100%' }}
-                      contentFit="cover"
-                    />
-                  ) : null}
+                <View className="h-9 w-9 items-center justify-center rounded-full bg-accent">
+                  <Sparkles size={16} color="hsl(var(--foreground))" />
                 </View>
                 <View>
                   <Text className="text-[1.05rem] font-serif-medium text-foreground">
@@ -560,9 +586,12 @@ export default function ProfileScreen() {
           <Pressable onPress={() => setShowCard(false)} className="absolute inset-0" />
           <View pointerEvents="box-none" className="flex-1 items-center justify-center px-8">
             <View style={{ width: '100%', maxWidth: 520, aspectRatio: 5 / 8 }}>
-              {isDurableCardImageUrl(silverCard?.imageUrl) ? (
+              {(Platform.OS === 'web'
+                ? !!cardSvg
+                : isDurableCardImageUrl(silverCard?.imageUrl)) ? (
                 <CardScene
-                  imageUrl={silverCard.imageUrl}
+                  svgString={Platform.OS === 'web' ? (cardSvg as string) : undefined}
+                  imageUrl={Platform.OS === 'web' ? undefined : silverCard.imageUrl}
                   aspectRatio={5 / 8}
                   onCanvasReady={(c) => {
                     cardCanvasRef.current = c as HTMLCanvasElement;
@@ -574,14 +603,16 @@ export default function ProfileScreen() {
                   <Text className="mt-4 text-sm font-serif text-white/60">
                     {cardRestoring
                       ? 'summoning your card…'
-                      : 'still being painted — check back soon'}
+                      : isDurableCardImageUrl(silverCard?.imageUrl)
+                        ? 'polishing the silver…'
+                        : 'still being painted — check back soon'}
                   </Text>
                 </View>
               )}
             </View>
           </View>
           <View className="absolute top-12 right-5 flex-row items-center gap-2">
-            {Platform.OS === 'web' && isDurableCardImageUrl(silverCard?.imageUrl) ? (
+            {Platform.OS === 'web' && cardSvg ? (
               <Pressable
                 onPress={downloadCardPng}
                 accessibilityLabel="save as png"

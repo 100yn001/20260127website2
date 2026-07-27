@@ -307,12 +307,12 @@ export default function OnboardingScreen() {
   // Trigger the staggered fade-in once the full pipeline has finished AND
   // the 3D card has painted its textures. Until then the overlay shows a
   // spinner; once ready the storyteller sentence reveals word-by-word and
-  // the "reveal" button fades in last. Web renders the vectorized svg when
-  // available but can fall back to the raw image (CardScene supports both);
-  // native always renders the image.
+  // the "reveal" button fades in last. On web the user only ever sees the
+  // silver (vectorized) card — never the raw color image; native renders
+  // the image since vectorization is web-only.
   const sceneArtReady =
     !!pipeline.dims &&
-    (Platform.OS === 'web' ? !!(pipeline.svg || pipeline.imageUrl) : !!pipeline.imageUrl);
+    (Platform.OS === 'web' ? !!pipeline.svg : !!pipeline.imageUrl);
   const fullyReady =
     !!pipeline.words && !!pipeline.archetype && sceneArtReady && cardPainted;
 
@@ -458,18 +458,27 @@ export default function OnboardingScreen() {
   const handlePipelineFallback = () => {
     setPipeline((p) => {
       const def = p.archetypeId ? ARCHETYPES_BY_ID[p.archetypeId] : undefined;
-      const hasRealArt = Platform.OS === 'web' ? !!(p.svg || p.imageUrl) : !!p.imageUrl;
-      return {
+      const next: Pipeline = {
         ...p,
         error: undefined,
         words: p.words ?? def?.fallbackWords ?? 'quiet, vivid, unhurried',
-        usedFallbackArt: p.usedFallbackArt || !hasRealArt,
-        ...(hasRealArt
-          ? { dims: p.dims ?? FALLBACK_CARD_DIMS }
-          : Platform.OS === 'web'
-            ? { svg: FALLBACK_CARD_SVG, dims: FALLBACK_CARD_DIMS }
-            : { imageUrl: fallbackCardDataUrl(), dims: FALLBACK_CARD_DIMS }),
       };
+      if (Platform.OS === 'web') {
+        // Web only ever shows the silver svg. If vectorization (or the whole
+        // generation) failed, display the generic silver face — but only mark
+        // the art as fallback when there's no real image at all: a real image
+        // still gets uploaded at signup, and profile re-silvers from it.
+        if (!next.svg) {
+          next.svg = FALLBACK_CARD_SVG;
+          next.dims = FALLBACK_CARD_DIMS;
+          if (!next.imageUrl) next.usedFallbackArt = true;
+        }
+      } else if (!next.imageUrl) {
+        next.imageUrl = fallbackCardDataUrl();
+        next.usedFallbackArt = true;
+      }
+      next.dims = next.dims ?? FALLBACK_CARD_DIMS;
+      return next;
     });
   };
 
