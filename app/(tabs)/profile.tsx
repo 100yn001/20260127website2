@@ -13,7 +13,6 @@ import {
   Sparkles,
   Sun,
   Trash2,
-  UserRound,
   X,
 } from 'lucide-react-native';
 import React, { useEffect, useRef, useState } from 'react';
@@ -398,26 +397,6 @@ export default function ProfileScreen() {
             </View>
           </Pressable>
 
-          <Pressable
-            onPress={() => router.navigate('/(tabs)/narrators')}
-            className="rounded-[var(--radius)] border border-border bg-card p-5"
-          >
-            <View className="flex-row items-center justify-between">
-              <View className="flex-row items-center gap-3">
-                <View className="h-9 w-9 items-center justify-center rounded-full bg-accent">
-                  <UserRound size={16} color="hsl(var(--foreground))" />
-                </View>
-                <View>
-                  <Text className="text-[1.05rem] font-serif-medium text-foreground">personas</Text>
-                  <Text className="mt-0.5 text-sm font-serif text-muted-foreground">
-                    tune and reuse your narrators
-                  </Text>
-                </View>
-              </View>
-              <ChevronRight size={16} color="hsl(var(--muted-foreground))" />
-            </View>
-          </Pressable>
-
           <View className="rounded-[var(--radius)] border border-border bg-card p-5">
             <Text className="text-[1.05rem] font-serif-medium text-foreground">preferences</Text>
             <View className="mt-4">
@@ -706,8 +685,9 @@ function deriveAboutYou(silverCard: any, profile: any): string {
   const hero = silverCard?.heroSub?.trim();
   const parts: string[] = [];
   if (words) parts.push(`you like stories that feel ${words}.`);
-  if (archetype) parts.push(`your card is the ${archetype}.`);
-  if (hero) parts.push(hero);
+  // archetypeTitle already carries its article ("The Regent") — no extra
+  // "the". The raw subtype token ("ruler") reads as a typo, so skip it.
+  if (archetype) parts.push(`your card is ${archetype}.`);
   const ob = profile?.onboardingAnswers as any;
   if (ob?.descriptors?.length || ob?.descriptors2?.length) {
     const descs = [
