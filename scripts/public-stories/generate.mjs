@@ -1,0 +1,458 @@
+#!/usr/bin/env node
+/**
+ * Batch generator for the public library (`publicStories`).
+ *
+ * Three phases, all resumable via out/manifest.json:
+ *
+ *   node scripts/public-stories/generate.mjs --phase narrators
+ *       Resolve every narratorKey referenced by specs.mjs against the live
+ *       publicNarrators collection; create the NEW_NARRATORS that are missing.
+ *       Needs the admin password (YN_ADMIN_PASSWORD env or interactive prompt).
+ *
+ *   node scripts/public-stories/generate.mjs --phase text [--dry-run]
+ *       Generate transcripts with claude-fable-5 (3-stage pipeline) into
+ *       out/<slug>.txt. Only needs ANTHROPIC_API_KEY. Existing .txt files are
+ *       skipped (edit them freely; --force regenerates). Review/edit the
+ *       transcripts by hand before publishing — this is the review gate.
+ *
+ *   node scripts/public-stories/generate.mjs --phase publish [--dry-run]
+ *       Chunk → ElevenLabs TTS (cached in out/audio/<slug>/) → Firebase
+ *       Storage upload → publicStories doc. Prints a cost preflight (total
+ *       chars ≈ eleven_v3 credits) and asks for confirmation before any TTS.
+ *       Needs ELEVENLABS + Firebase env + admin password.
+ *
+ * Common flags: --only <slug> (repeatable) · --limit N · --force · --yes
+ *
+ * Un-publishing a story: delete its publicStories doc in the Firebase console
+ * and remove its entry from out/manifest.json (not automated on purpose).
+ */
+
+import dotenv from 'dotenv';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import Anthropic from '@anthropic-ai/sdk';
+import { initializeApp } from 'firebase/app';
+import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
+import {
+  addDoc,
+  collection,
+  getDocs,
+  getFirestore,
+  query,
+  Timestamp,
+  where,
+} from 'firebase/firestore';
+import { getDownloadURL, getStorage, ref, uploadBytes } from 'firebase/storage';
+
+import {
+  announcementCount,
+  ask,
+  askHidden,
+  enforceHardLimit,
+  generateDepthLayers,
+  generateTranscript,
+  loadManifest,
+  mapWithConcurrency,
+  retryable,
+  saveManifest,
+  sha256,
+  splitTextIntoChunks,
+  ttsChunk,
+  TTS_CONCURRENCY,
+} from './lib.mjs';
+import { colorForSpec, NEW_NARRATORS, SPECS, validateSpecs } from './specs.mjs';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+dotenv.config();
+dotenv.config({ path: path.join(__dirname, '../../.env') });
+
+const OUT_DIR = path.join(__dirname, 'out');
+const AUDIO_DIR = path.join(OUT_DIR, 'audio');
+const MANIFEST_FILE = path.join(OUT_DIR, 'manifest.json');
+const ADMIN_EMAIL = 'ellepotterhead2006@gmail.com';
+
+// ── args ────────────────────────────────────────────────────────────────────
+function parseArgs(argv) {
+  const args = { phase: null, only: [], limit: Infinity, force: false, dryRun: false, yes: false };
+  for (let i = 2; i < argv.length; i++) {
+    const a = argv[i];
+    if (a === '--phase') args.phase = argv[++i];
+    else if (a === '--only') args.only.push(argv[++i]);
+    else if (a === '--limit') args.limit = parseInt(argv[++i], 10);
+    else if (a === '--force') args.force = true;
+    else if (a === '--dry-run') args.dryRun = true;
+    else if (a === '--yes') args.yes = true;
+    else {
+      console.error(`unknown arg: ${a}`);
+      process.exit(1);
+    }
+  }
+  if (!['narrators', 'text', 'publish'].includes(args.phase)) {
+    console.error('usage: node scripts/public-stories/generate.mjs --phase narrators|text|publish [--only <slug>] [--limit N] [--force] [--dry-run] [--yes]');
+    process.exit(1);
+  }
+  return args;
+}
+
+function selectSpecs({ only, limit }) {
+  let specs = SPECS;
+  if (only.length) {
+    const wanted = new Set(only);
+    specs = specs.filter((s) => wanted.has(s.slug));
+    const missing = only.filter((slug) => !SPECS.some((s) => s.slug === slug));
+    if (missing.length) {
+      console.error(`unknown slug(s): ${missing.join(', ')}`);
+      process.exit(1);
+    }
+  }
+  return specs.slice(0, limit);
+}
+
+// Cover colors cycle per shelf — index each spec within its collection once.
+const COLLECTION_INDEX = (() => {
+  const counters = {};
+  const map = {};
+  for (const spec of SPECS) {
+    counters[spec.collection] = counters[spec.collection] ?? 0;
+    map[spec.slug] = counters[spec.collection]++;
+  }
+  return map;
+})();
+
+const txtPath = (slug) => path.join(OUT_DIR, `${slug}.txt`);
+const durationLabel = (d) => d.replace(/^(\d+)min$/, '$1 min'); // '10min' → '10 min' (existing doc convention)
+
+// ── firebase ────────────────────────────────────────────────────────────────
+let fb = null;
+async function firebaseSignIn() {
+  if (fb) return fb;
+  const required = ['FIREBASE_API_KEY', 'FIREBASE_AUTH_DOMAIN', 'FIREBASE_PROJECT_ID', 'FIREBASE_STORAGE_BUCKET', 'FIREBASE_MESSAGING_SENDER_ID', 'FIREBASE_APP_ID'];
+  const missing = required.filter((k) => !process.env[k]);
+  if (missing.length) {
+    console.error(`missing env: ${missing.join(', ')}`);
+    process.exit(1);
+  }
+  const app = initializeApp({
+    apiKey: process.env.FIREBASE_API_KEY,
+    authDomain: process.env.FIREBASE_AUTH_DOMAIN,
+    projectId: process.env.FIREBASE_PROJECT_ID,
+    storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
+    appId: process.env.FIREBASE_APP_ID,
+  });
+  const auth = getAuth(app);
+  const password = process.env.YN_ADMIN_PASSWORD || (await askHidden(`Enter password for ${ADMIN_EMAIL}: `));
+  console.log('🔑 signing in…');
+  const cred = await signInWithEmailAndPassword(auth, ADMIN_EMAIL, password);
+  console.log(`✅ signed in as ${cred.user.uid}\n`);
+  fb = { db: getFirestore(app), storage: getStorage(app), uid: cred.user.uid };
+  return fb;
+}
+
+// ── phase: narrators ────────────────────────────────────────────────────────
+async function phaseNarrators(args, manifest) {
+  const referenced = [...new Set(SPECS.filter((s) => s.narratorKey).map((s) => s.narratorKey))];
+  console.log(`narrator keys referenced by specs: ${referenced.join(', ')}\n`);
+  if (args.dryRun) {
+    const missing = referenced.filter((k) => !manifest.narrators[k]);
+    console.log(`resolved in manifest: ${referenced.length - missing.length}, unresolved: ${missing.length} (${missing.join(', ') || 'none'})`);
+    return;
+  }
+  const { db } = await firebaseSignIn();
+
+  for (const key of referenced) {
+    const snap = await getDocs(query(collection(db, 'publicNarrators'), where('usernameLowercase', '==', key)));
+    if (!snap.empty) {
+      const d = snap.docs[0];
+      const data = d.data();
+      manifest.narrators[key] = { docId: d.id, voiceId: data.voiceId || null, name: data.name || key };
+      console.log(`✅ found ${key} → ${d.id} (voice ${data.voiceId || 'none'})`);
+      continue;
+    }
+    const seed = NEW_NARRATORS.find((n) => n.usernameLowercase === key);
+    if (!seed) {
+      console.error(`❌ narrator "${key}" not found in publicNarrators and not defined in NEW_NARRATORS`);
+      process.exitCode = 1;
+      continue;
+    }
+    const now = Timestamp.now();
+    const docRef = await addDoc(collection(db, 'publicNarrators'), {
+      ...seed,
+      publishedAt: now,
+      createdAt: now,
+      updatedAt: now,
+    });
+    manifest.narrators[key] = { docId: docRef.id, voiceId: seed.voiceId, name: seed.name };
+    console.log(`✨ created ${seed.name} → ${docRef.id} (voice ${seed.voiceId})`);
+  }
+  saveManifest(MANIFEST_FILE, manifest);
+  console.log('\nnarrator map saved to manifest.');
+}
+
+// ── phase: text ─────────────────────────────────────────────────────────────
+async function phaseText(args, manifest) {
+  if (!process.env.ANTHROPIC_API_KEY) {
+    console.error('missing ANTHROPIC_API_KEY');
+    process.exit(1);
+  }
+  const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  fs.mkdirSync(OUT_DIR, { recursive: true });
+
+  const selected = selectSpecs(args);
+  const rows = [];
+  for (const spec of selected) {
+    const file = txtPath(spec.slug);
+    const entry = manifest.stories[spec.slug] || {};
+    const exists = fs.existsSync(file);
+    if (exists && !args.force) {
+      rows.push([spec.slug, spec.narrationMode, spec.duration, '—', '—', 'kept (file exists)']);
+      continue;
+    }
+    if (args.dryRun) {
+      rows.push([spec.slug, spec.narrationMode, spec.duration, '—', '—', 'would generate']);
+      continue;
+    }
+    if (args.force) {
+      // regenerating text invalidates any downstream TTS/upload/publish state
+      delete entry.ttsHash;
+      delete entry.chunkCount;
+      delete entry.audioChunkURLs;
+      fs.rmSync(path.join(AUDIO_DIR, spec.slug), { recursive: true, force: true });
+    }
+    process.stdout.write(`📝 ${spec.slug} (${spec.narrationMode}, ${spec.duration}, ${spec.isNighttime ? 'nsfw' : 'sfw'})… `);
+    try {
+      const { transcript, targetWords } = await generateTranscript(anthropic, spec, spec.narrationMode, spec.isNighttime);
+      fs.writeFileSync(file, transcript, 'utf8');
+      const words = transcript.split(/\s+/).length;
+      const ann = announcementCount(transcript);
+      manifest.stories[spec.slug] = {
+        ...entry,
+        status: 'text',
+        textHash: sha256(transcript),
+        words,
+        targetWords,
+        announcements: ann,
+      };
+      saveManifest(MANIFEST_FILE, manifest);
+      console.log(`${words} words (target ${targetWords}), announcements ${ann}`);
+      rows.push([spec.slug, spec.narrationMode, spec.duration, `${words}/${targetWords}`, String(ann), 'ok']);
+    } catch (err) {
+      const moderation = /CONTENT_MODERATION/.test(String(err?.message));
+      manifest.stories[spec.slug] = {
+        ...entry,
+        status: moderation ? 'failed:text-moderation' : 'failed:text-error',
+        error: String(err?.message || err).slice(0, 300),
+      };
+      saveManifest(MANIFEST_FILE, manifest);
+      console.log(moderation ? '🚫 moderation refusal' : `❌ ${err.message}`);
+      rows.push([spec.slug, spec.narrationMode, spec.duration, '—', '—', moderation ? 'MODERATION' : 'ERROR']);
+    }
+  }
+
+  console.log('\nslug                        mode        dur    words        ann  status');
+  console.log('─'.repeat(88));
+  for (const [slug, mode, dur, words, ann, status] of rows) {
+    console.log(`${slug.padEnd(28)}${mode.padEnd(12)}${dur.padEnd(7)}${String(words).padEnd(13)}${String(ann).padEnd(5)}${status}`);
+  }
+  const failed = rows.filter(([, , , , , s]) => s === 'MODERATION' || s === 'ERROR').length;
+  if (args.dryRun) {
+    console.log(`\ndry run — ${rows.length} spec(s) selected, nothing generated.`);
+  } else {
+    console.log(`\n${rows.length - failed}/${rows.length} transcripts ready in ${path.relative(process.cwd(), OUT_DIR)}/`);
+    console.log('review/edit the .txt files, then run --phase publish.');
+  }
+  if (failed) process.exitCode = 1;
+}
+
+// ── phase: publish ──────────────────────────────────────────────────────────
+async function phasePublish(args, manifest) {
+  if (!process.env.ELEVENLABS) {
+    console.error('missing ELEVENLABS key in env');
+    process.exit(1);
+  }
+  const selected = selectSpecs(args).filter((s) => manifest.stories[s.slug]?.status !== 'published');
+  if (!selected.length) {
+    console.log('nothing to publish — everything selected is already published.');
+    return;
+  }
+
+  // Load transcripts + resolve voices up front so the preflight covers everything.
+  const jobs = [];
+  for (const spec of selected) {
+    const file = txtPath(spec.slug);
+    if (!fs.existsSync(file)) {
+      console.error(`❌ ${spec.slug}: no transcript at ${path.relative(process.cwd(), file)} — run --phase text first`);
+      process.exitCode = 1;
+      continue;
+    }
+    let voiceId = spec.voiceId || null;
+    if (spec.narratorKey) {
+      voiceId = manifest.narrators[spec.narratorKey]?.voiceId || null;
+      if (!voiceId) {
+        console.error(`❌ ${spec.slug}: narrator "${spec.narratorKey}" unresolved — run --phase narrators first`);
+        process.exitCode = 1;
+        continue;
+      }
+    }
+    const transcript = fs.readFileSync(file, 'utf8').trim();
+    const chunks = enforceHardLimit(splitTextIntoChunks(transcript));
+    jobs.push({ spec, transcript, chunks, chars: transcript.length, voiceId });
+  }
+  if (!jobs.length) return;
+
+  // Cost preflight — total characters ≈ eleven_v3 credits.
+  const totalChars = jobs.reduce((s, j) => s + j.chars, 0);
+  const totalChunks = jobs.reduce((s, j) => s + j.chunks.length, 0);
+  console.log('\npublish preflight');
+  console.log('─'.repeat(64));
+  for (const j of jobs) {
+    const cached = manifest.stories[j.spec.slug]?.ttsHash === sha256(j.transcript);
+    console.log(`${j.spec.slug.padEnd(28)}${String(j.chars).padStart(6)} chars  ${String(j.chunks.length).padStart(2)} chunks${cached ? '  (tts cached)' : ''}`);
+  }
+  console.log('─'.repeat(64));
+  console.log(`total: ${jobs.length} stories · ${totalChunks} chunks · ${totalChars} chars ≈ ${totalChars.toLocaleString()} eleven_v3 credits\n`);
+  if (args.dryRun) return;
+  if (!args.yes) {
+    const answer = await ask('proceed with TTS + upload + publish? (y/N): ');
+    if (!answer.toLowerCase().startsWith('y')) {
+      console.log('aborted.');
+      return;
+    }
+  }
+
+  const { db, storage, uid } = await firebaseSignIn();
+
+  for (const { spec, transcript, chunks, voiceId } of jobs) {
+    const slug = spec.slug;
+    const entry = manifest.stories[slug] || {};
+    const hash = sha256(transcript);
+    const dir = path.join(AUDIO_DIR, slug);
+    console.log(`\n🎙  ${slug} — ${chunks.length} chunk(s), voice ${voiceId}`);
+
+    // 1. TTS (cached by transcript hash)
+    const allCached =
+      entry.ttsHash === hash &&
+      entry.chunkCount === chunks.length &&
+      chunks.every((_, i) => fs.existsSync(path.join(dir, `chunk${i}.mp3`)));
+    if (!allCached) {
+      if (entry.ttsHash && entry.ttsHash !== hash) {
+        console.log('   transcript changed since last TTS — regenerating audio');
+        delete entry.audioChunkURLs;
+      }
+      fs.rmSync(dir, { recursive: true, force: true });
+      fs.mkdirSync(dir, { recursive: true });
+      try {
+        await mapWithConcurrency(chunks, TTS_CONCURRENCY, async (text, i) => {
+          const buf = await retryable(() => ttsChunk(text, voiceId, process.env.ELEVENLABS), { label: `${slug} chunk${i}` });
+          fs.writeFileSync(path.join(dir, `chunk${i}.mp3`), buf);
+          process.stdout.write(`   🎤 chunk ${i} done (${(buf.length / 1024).toFixed(0)} KB)\n`);
+        });
+      } catch (err) {
+        const moderation = /CONTENT_MODERATION/.test(String(err?.message));
+        manifest.stories[slug] = { ...entry, status: moderation ? 'failed:tts-moderation' : 'failed:tts-error', error: String(err?.message).slice(0, 300) };
+        saveManifest(MANIFEST_FILE, manifest);
+        console.log(`   ${moderation ? '🚫 TTS moderation' : `❌ TTS failed: ${err.message}`} — continuing with next story`);
+        continue;
+      }
+      entry.ttsHash = hash;
+      entry.chunkCount = chunks.length;
+      entry.status = 'tts';
+      manifest.stories[slug] = entry;
+      saveManifest(MANIFEST_FILE, manifest);
+    } else {
+      console.log('   ♻️  TTS cache hit');
+    }
+
+    // 2. Upload (deterministic names → re-runs overwrite instead of orphaning)
+    const folder = spec.isNighttime ? 'generated-audio/nighttime' : 'generated-audio/daytime';
+    const urls = Array.isArray(entry.audioChunkURLs) ? [...entry.audioChunkURLs] : [];
+    let uploadFailed = false;
+    for (let i = 0; i < chunks.length; i++) {
+      if (urls[i]) continue; // already uploaded for this transcript hash
+      const filename = `${uid}-pub-${slug}-chunk${i}.mp3`;
+      try {
+        const buf = fs.readFileSync(path.join(dir, `chunk${i}.mp3`));
+        const storageRef = ref(storage, `${folder}/${filename}`);
+        await retryable(() => uploadBytes(storageRef, buf, { contentType: 'audio/mpeg' }), { label: `${slug} upload${i}` });
+        await new Promise((r) => setTimeout(r, 300));
+        urls[i] = await getDownloadURL(storageRef);
+        entry.audioChunkURLs = urls;
+        entry.status = 'uploading';
+        manifest.stories[slug] = entry;
+        saveManifest(MANIFEST_FILE, manifest);
+        console.log(`   📤 chunk ${i} uploaded`);
+      } catch (err) {
+        console.log(`   ❌ upload chunk ${i} failed: ${err.message} — story left resumable`);
+        manifest.stories[slug] = { ...entry, status: 'failed:upload', error: String(err?.message).slice(0, 300) };
+        saveManifest(MANIFEST_FILE, manifest);
+        uploadFailed = true;
+        break;
+      }
+    }
+    if (uploadFailed) continue;
+    entry.status = 'uploaded';
+    manifest.stories[slug] = entry;
+    saveManifest(MANIFEST_FILE, manifest);
+
+    // 3. Firestore doc
+    try {
+      const docRef = await addDoc(collection(db, 'publicStories'), {
+        title: spec.title,
+        genre: spec.genre || null,
+        isNighttime: spec.isNighttime,
+        duration: durationLabel(spec.duration),
+        audioUrl: urls[0],
+        audioChunkURLs: urls,
+        transcript,
+        narratorId: spec.narratorKey ? manifest.narrators[spec.narratorKey].docId : null,
+        narratorName: spec.narratorName || null,
+        collection: spec.collection,
+        tags: spec.tags,
+        libraryCategory: spec.isNighttime ? 'nighttime' : 'daytime',
+        coverColor: colorForSpec(spec, COLLECTION_INDEX[slug]),
+        topographyLayers: generateDepthLayers(5),
+        createdAt: Timestamp.now(),
+      });
+      manifest.stories[slug] = { ...entry, status: 'published', docId: docRef.id };
+      saveManifest(MANIFEST_FILE, manifest);
+      console.log(`   ✅ published → publicStories/${docRef.id}`);
+    } catch (err) {
+      manifest.stories[slug] = { ...entry, status: 'failed:firestore', error: String(err?.message).slice(0, 300) };
+      saveManifest(MANIFEST_FILE, manifest);
+      console.log(`   ❌ firestore write failed: ${err.message} — re-run to retry just the doc write`);
+    }
+  }
+
+  // Summary
+  console.log('\npublish summary');
+  console.log('─'.repeat(64));
+  for (const spec of selected) {
+    const st = manifest.stories[spec.slug]?.status || 'pending';
+    console.log(`${spec.slug.padEnd(28)}${st}`);
+  }
+  const bad = selected.filter((s) => (manifest.stories[s.slug]?.status || '').startsWith('failed')).length;
+  if (bad) {
+    console.log(`\n${bad} story(ies) failed — fix and re-run (state is resumable).`);
+    process.exitCode = 1;
+  }
+}
+
+// ── main ────────────────────────────────────────────────────────────────────
+async function main() {
+  const args = parseArgs(process.argv);
+  const { count } = validateSpecs();
+  console.log(`specs OK — ${count} stories\n`);
+  const manifest = loadManifest(MANIFEST_FILE);
+
+  if (args.phase === 'narrators') await phaseNarrators(args, manifest);
+  else if (args.phase === 'text') await phaseText(args, manifest);
+  else if (args.phase === 'publish') await phasePublish(args, manifest);
+
+  process.exit(process.exitCode || 0);
+}
+
+main().catch((err) => {
+  console.error(`\n❌ ${err.message}\n`);
+  process.exit(1);
+});

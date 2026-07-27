@@ -51,3 +51,6 @@ app-example
 # generated native folders
 /ios
 /android
+
+# public-story batch generator local TTS cache (transcripts + manifest ARE committed)
+scripts/public-stories/out/audio/
