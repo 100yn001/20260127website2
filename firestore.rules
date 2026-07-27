@@ -19,14 +19,17 @@ service cloud.firestore {
         request.auth.token.email in ['ellepotterhead2006@gmail.com', 'madxwoods@gmail.com'];
     }
 
-    // User documents and subcollections
+    // User documents and subcollections.
+    // Subcollections are ENUMERATED deliberately (no {document=**} wildcard):
+    // overlapping rules OR together, so a wildcard owner-write would make the
+    // server-only carve-outs below (entitlements, voice creation) impossible.
     match /users/{userId} {
       allow read:  if isOwner(userId) || isAdmin();   // admin read = /admin dashboard
       allow write: if isOwner(userId);
 
-      // Owner has full access to ALL their own subcollections (voices, queue,
-      // narrators, and anything added later) — avoids per-subcollection gaps.
-      match /{document=**} {
+      // Generation queue: the client writes 'pending' docs and retries;
+      // the Cloud Function does the rest (Admin SDK bypasses rules).
+      match /queue/{queueId} {
         allow read, write: if isOwner(userId);
       }
 
@@ -34,12 +37,30 @@ service cloud.firestore {
       match /narrators/{narratorId} {
         allow read, write: if isOwner(userId) || isAdmin();
       }
+
+      // Custom voices: created ONLY via the saveDesignedVoice callable (which
+      // enforces the 3-per-user cap). Owner may read and delete (deleting
+      // frees a slot; a trigger removes the ElevenLabs voice).
+      match /voices/{voiceId} {
+        allow read, delete: if isOwner(userId);
+        allow create, update: if false;
+      }
+
+      // Server-only docs (entitlements / billing state). Client read-only —
+      // an owner-writable entitlements doc would be a self-serve free-story
+      // reset, and owner-delete would be the same exploit.
+      match /private/{docId} {
+        allow read: if isOwner(userId);
+        allow write: if false;
+      }
     }
 
-    // Top-level user stories (owner-only; admin may read for the dashboard)
+    // Top-level user stories (owner-only; admin may read for the dashboard).
+    // Creation is server-only now — the generation Cloud Function writes
+    // stories via the Admin SDK; a client-created story would bypass billing.
     match /stories/{storyId} {
       allow read:   if (isSignedIn() && resource.data.userId == request.auth.uid) || isAdmin();
-      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow create: if false;
       allow update, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
     }
 

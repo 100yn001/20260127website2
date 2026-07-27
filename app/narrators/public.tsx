@@ -1,9 +1,9 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Audio } from 'expo-av';
-import Constants from 'expo-constants';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { collection, getDocs } from 'firebase/firestore';
+import { httpsCallable } from 'firebase/functions';
 import { Pause, Play, Plus, Search } from 'lucide-react-native';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from 'react-native';
@@ -11,7 +11,7 @@ import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from 'rea
 import { Screen, TopBar } from '@/components/screen';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { db } from '@/config/firebase';
+import { db, functions } from '@/config/firebase';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/cn';
 import { clonePublicNarratorToUser } from '@/services/public-narrator-service';
@@ -52,9 +52,8 @@ export default function PublicNarratorsScreen() {
 
   const playGreeting = async (n: PublicNarrator) => {
     const voiceId = (n.raw?.voiceId as string) || '';
-    const apiKey = (Constants.expoConfig?.extra?.ELEVENLABS as string) || '';
-    if (!voiceId || !apiKey) {
-      Alert.alert('preview unavailable', !voiceId ? 'this narrator has no voice yet' : 'voice service not configured');
+    if (!voiceId) {
+      Alert.alert('preview unavailable', 'this narrator has no voice yet');
       return;
     }
     try {
@@ -75,24 +74,14 @@ export default function PublicNarratorsScreen() {
       });
 
       // Trailing ellipsis gives ElevenLabs enough silence after the greeting
-      // that the final syllable doesn't get clipped on playback.
-      const r = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'xi-api-key': apiKey },
-        body: JSON.stringify({
-          text: `hello, ${userName}…`,
-          model_id: 'eleven_v3',
-          voice_settings: { stability: 0.6, similarity_boost: 0.6 },
-        }),
-      });
-      if (!r.ok) throw new Error(`elevenlabs ${r.status}`);
-      const blob = await r.blob();
-      const reader = new FileReader();
-      const dataUri = await new Promise<string>((resolve, reject) => {
-        reader.onloadend = () => resolve(reader.result as string);
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-      });
+      // that the final syllable doesn't get clipped on playback. TTS runs
+      // server-side (previewVoiceTts callable) — no key in the client.
+      const preview = httpsCallable<{ voiceId: string; text: string }, { audioBase64: string }>(
+        functions,
+        'previewVoiceTts',
+      );
+      const { audioBase64 } = (await preview({ voiceId, text: `hello, ${userName}…` })).data;
+      const dataUri = `data:audio/mpeg;base64,${audioBase64}`;
       const { sound } = await Audio.Sound.createAsync(
         { uri: dataUri },
         { shouldPlay: true },

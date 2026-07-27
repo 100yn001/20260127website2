@@ -19,10 +19,16 @@ import {
   ScreenFooter,
   TopBar,
 } from '@/components/screen';
+import { OPEN_PAYWALL_EVENT } from '@/components/PaywallSheet';
 import { Button } from '@/components/ui/button';
+import { functions } from '@/config/firebase';
+import { useAuth } from '@/contexts/AuthContext';
 import { useStoryQueue } from '@/contexts/StoryQueueContext';
 import { useMode } from '@/hooks/useMode';
 import { cn } from '@/lib/cn';
+import { canGenerate, getEntitlementsOnce } from '@/services/entitlements-service';
+import { httpsCallable } from 'firebase/functions';
+import { DeviceEventEmitter } from 'react-native';
 
 type MsgType = 'bot' | 'user';
 interface Message {
@@ -42,6 +48,7 @@ export default function FollowUpScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const { addToQueue } = useStoryQueue();
+  const { user } = useAuth();
   const { mode } = useMode();
 
   const [showIntro, setShowIntro] = useState(true);
@@ -109,9 +116,11 @@ export default function FollowUpScreen() {
   const loadQuestions = useCallback(async () => {
     setThinking(true);
     try {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const { generateFollowUpQuestions } = require('@/services/audio-generation');
-      const qs: string[] = await generateFollowUpQuestions(recipeData);
+      const call = httpsCallable<{ recipe: any }, { questions: string[] }>(
+        functions,
+        'generateFollowUps'
+      );
+      const qs: string[] = (await call({ recipe: recipeData })).data.questions;
       const valid = (qs ?? [])
         .filter((q) => q && q.length > 5)
         .map((q) => q.toLowerCase());
@@ -166,10 +175,28 @@ export default function FollowUpScreen() {
     }
   };
 
+  /**
+   * Pre-check the story allowance so users hit the paywall BEFORE queueing.
+   * Fails open — the server re-checks in its claim transaction either way.
+   */
+  const hasAllowance = async (): Promise<boolean> => {
+    if (!user) return true;
+    const ent = await getEntitlementsOnce(user.uid);
+    if (ent && !canGenerate(ent)) {
+      DeviceEventEmitter.emit(OPEN_PAYWALL_EVENT);
+      return false;
+    }
+    return true;
+  };
+
   const handleGenerate = async () => {
     if (submitting) return;
     setSubmitting(true);
     try {
+      if (!(await hasAllowance())) {
+        setSubmitting(false);
+        return;
+      }
       await addToQueue(recipeData, questions, answers);
       router.replace('/(tabs)/vault');
     } catch (e: any) {
@@ -202,6 +229,10 @@ export default function FollowUpScreen() {
               onPress={async () => {
                 setSubmitting(true);
                 try {
+                  if (!(await hasAllowance())) {
+                    setSubmitting(false);
+                    return;
+                  }
                   await addToQueue(recipeData, [], []);
                   router.replace('/(tabs)/vault');
                 } catch (e: any) {

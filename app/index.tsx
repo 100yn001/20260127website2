@@ -26,7 +26,11 @@ export default function IndexScreen() {
   }, [loading]);
 
   const checkRoute = async () => {
-    if (user) {
+    if (user && user.isAnonymous) {
+      // Mid-onboarding anonymous session (kill-app-and-relaunch case): send
+      // them back to onboarding, never into the app shell with no profile.
+      router.replace('/onboarding');
+    } else if (user) {
       // User is signed in, go to main app
       router.replace('/(tabs)/library');
     } else {

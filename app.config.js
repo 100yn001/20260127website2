@@ -3,9 +3,6 @@ import 'dotenv/config';
 // Debug: Check if environment variables are loaded (dev/build-time only; not in production builds)
 if (process.env.NODE_ENV !== 'production') {
   console.log('📝 Environment check:', {
-    XAI: process.env.XAI ? '✓ exists' : '✗ missing',
-    ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY ? '✓ exists' : '✗ missing',
-    REPLICATE_API_TOKEN: process.env.REPLICATE_API_TOKEN ? '✓ exists' : '✗ missing',
     FIREBASE_API_KEY: process.env.FIREBASE_API_KEY ? '✓ exists' : '✗ missing',
     FIREBASE_PROJECT_ID: process.env.FIREBASE_PROJECT_ID || 'missing',
   });
@@ -85,10 +82,9 @@ export default {
       eas: {
         projectId: "bcc4ea76-879b-45d8-bcbf-345670f374fd"
       },
-      XAI: process.env.XAI,
-      ELEVENLABS: process.env.ELEVENLABS,
-      ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
-      REPLICATE_API_TOKEN: process.env.REPLICATE_API_TOKEN,
+      // Provider keys (Anthropic/xAI/ElevenLabs/Replicate) deliberately do
+      // NOT ship in the client any more — generation runs in Cloud Functions
+      // and Replicate goes through the /api/replicate Vercel proxy.
       FIREBASE_API_KEY: process.env.FIREBASE_API_KEY,
       FIREBASE_AUTH_DOMAIN: process.env.FIREBASE_AUTH_DOMAIN,
       FIREBASE_PROJECT_ID: process.env.FIREBASE_PROJECT_ID,

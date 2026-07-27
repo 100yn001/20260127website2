@@ -39,7 +39,22 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { TINTS, useArtworkTint } from '@/hooks/useArtworkTint';
 import { cn } from '@/lib/cn';
 import { isDurableCardImageUrl, restoreSilverCardImage } from '@/services/silver-card-image';
+import {
+  DEFAULT_ENTITLEMENTS,
+  FREE_STORY_LIMIT,
+  MAX_CUSTOM_VOICES,
+  MONTHLY_PRICE_LABEL,
+  MONTHLY_STORY_LIMIT,
+  freeStoriesRemaining,
+  isSubscribed,
+  openBillingPortal,
+  startSubscriptionCheckout,
+  subscribeToEntitlements,
+  subscriptionStoriesRemaining,
+  type Entitlements,
+} from '@/services/entitlements-service';
 import { getUserProfile, updateUserProfile } from '@/services/user-service';
+import { subscribeToCustomVoices } from '@/services/voice-service';
 
 const GUTTER = 'px-5 sm:px-8 md:px-10 lg:px-14 xl:px-20';
 
@@ -63,6 +78,22 @@ export default function ProfileScreen() {
   const [deletePassword, setDeletePassword] = useState('');
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [ent, setEnt] = useState<Entitlements>(DEFAULT_ENTITLEMENTS);
+  const [voiceCount, setVoiceCount] = useState(0);
+  const [billingBusy, setBillingBusy] = useState(false);
+  const entIsSubscribed = isSubscribed(ent);
+  const freeLeft = freeStoriesRemaining(ent);
+  const subStoriesLeft = subscriptionStoriesRemaining(ent);
+
+  useEffect(() => {
+    if (!user) return;
+    const unsub = subscribeToEntitlements(user.uid, setEnt);
+    const unsubVoices = subscribeToCustomVoices((voices) => setVoiceCount(voices.length));
+    return () => {
+      unsub();
+      unsubVoices();
+    };
+  }, [user?.uid]);
 
   const downloadCardPng = () => {
     if (Platform.OS !== 'web') return;
@@ -266,6 +297,45 @@ export default function ProfileScreen() {
               </View>
             </View>
           </Pressable>
+
+          <View className="rounded-[var(--radius)] border border-border bg-card p-5">
+            <View className="flex-row items-center gap-3">
+              <View className="h-9 w-9 items-center justify-center rounded-full bg-accent">
+                <BookOpen size={16} color="hsl(var(--foreground))" />
+              </View>
+              <View className="flex-1">
+                <Text className="text-[1.05rem] font-serif-medium text-foreground">
+                  story budget
+                </Text>
+                <Text className="mt-0.5 text-sm font-serif text-muted-foreground">
+                  {entIsSubscribed
+                    ? `${subStoriesLeft} of ${MONTHLY_STORY_LIMIT} stories left this month${ent.currentPeriodEnd ? ` · renews ${ent.currentPeriodEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}` : ''}`
+                    : `${freeLeft} of ${FREE_STORY_LIMIT} free stories left`}
+                </Text>
+                <Text className="mt-0.5 text-sm font-serif text-muted-foreground">
+                  custom voices: {voiceCount}/{MAX_CUSTOM_VOICES}
+                </Text>
+              </View>
+            </View>
+            <Button
+              variant={entIsSubscribed ? 'outline' : 'default'}
+              className="mt-4 w-full"
+              loading={billingBusy}
+              onPress={async () => {
+                setBillingBusy(true);
+                try {
+                  if (entIsSubscribed) await openBillingPortal();
+                  else await startSubscriptionCheckout(user?.email ?? undefined);
+                } catch (e: any) {
+                  Alert.alert('billing error', e?.message ?? 'please try again');
+                } finally {
+                  setBillingBusy(false);
+                }
+              }}
+            >
+              {entIsSubscribed ? 'manage subscription' : `subscribe · ${MONTHLY_PRICE_LABEL} for ${MONTHLY_STORY_LIMIT} stories`}
+            </Button>
+          </View>
 
           <Pressable
             onPress={() => {

@@ -1,11 +1,12 @@
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { functions } from '@/config/firebase';
 import { fetchStaticVoices } from '@/constants/voices';
 import { useTheme } from '@/contexts/ThemeContext';
-import { deleteCustomVoice, saveCustomVoice, subscribeToCustomVoices } from '@/services/voice-service';
+import { deleteCustomVoice, subscribeToCustomVoices } from '@/services/voice-service';
 import { CustomVoice, Voice } from '@/types/voice';
 import { Audio } from 'expo-av';
-import Constants from 'expo-constants';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { httpsCallable } from 'firebase/functions';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
     ActivityIndicator,
@@ -41,7 +42,7 @@ export default function VoiceLibraryScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const { colors } = useTheme();
-  const ELEVENLABS_API_KEY = Constants.expoConfig?.extra?.ELEVENLABS || '';
+  // All ElevenLabs work happens server-side now (voice callables) — no key here.
 
   // Params from caller
   const callerGenderHint = (params.genderHint as string) || '';
@@ -141,27 +142,14 @@ export default function VoiceLibraryScreen() {
         shouldDuckAndroid: true,
       });
 
-      const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'xi-api-key': ELEVENLABS_API_KEY },
-        body: JSON.stringify({
-          text: `Hello, ${userName}`,
-          model_id: 'eleven_v3',
-          voice_settings: { stability: 0.5, similarity_boost: 0.5 },
-        }),
-      });
-
-      if (!response.ok) throw new Error('Failed to generate voice preview');
-
-      const audioBlob = await response.blob();
-      const reader = new FileReader();
-      const base64Audio = await new Promise<string>((resolve) => {
-        reader.onloadend = () => resolve(reader.result as string);
-        reader.readAsDataURL(audioBlob);
-      });
+      const preview = httpsCallable<{ voiceId: string; text: string }, { audioBase64: string }>(
+        functions,
+        'previewVoiceTts',
+      );
+      const { audioBase64 } = (await preview({ voiceId, text: `Hello, ${userName}` })).data;
 
       const { sound: newSound } = await Audio.Sound.createAsync(
-        { uri: base64Audio },
+        { uri: `data:audio/mpeg;base64,${audioBase64}` },
         { shouldPlay: true },
         (status) => { if (status.isLoaded && status.didJustFinish) setPlayingVoiceId(null); },
       );
@@ -290,27 +278,18 @@ export default function VoiceLibraryScreen() {
         voiceDescription += `; additional feedback: ${additionalNotes.trim()}`;
       }
 
-      const response = await fetch('https://api.elevenlabs.io/v1/text-to-voice/design', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'xi-api-key': ELEVENLABS_API_KEY },
-        body: JSON.stringify({
-          voice_description: voiceDescription,
+      const design = httpsCallable<
+        { voiceDescription: string; text: string },
+        { previews: VoicePreview[] }
+      >(functions, 'designVoicePreviews');
+      const { previews } = (
+        await design({
+          voiceDescription,
           // ElevenLabs /text-to-voice/design requires text of 100–1000 chars.
           // Keep the body ≥100 chars regardless of how short the name is.
           text: `Hello ${userName}. Settle in and let yourself relax — tonight's story is just for you. I'll be right here with you the whole way through, soft and close. So close your eyes, take a slow breath, and let yourself sink into it.`,
-          model_id: 'eleven_ttv_v3',
-        }),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Voice design API error:', response.status, errorText);
-        alert(`API Error ${response.status}: ${errorText}`);
-        throw new Error('Failed to generate voice previews');
-      }
-
-      const data = await response.json();
-      const previews = data.previews || [data];
+        })
+      ).data;
 
       if (previews?.length > 0 && previews[0].generated_voice_id) {
         setVoicePreviews(previews);
@@ -337,48 +316,38 @@ export default function VoiceLibraryScreen() {
     setIsSavingVoice(true);
 
     try {
-      // 1. Save the generated voice to ElevenLabs to get a permanent ID
-      const saveResponse = await fetch('https://api.elevenlabs.io/v1/text-to-voice', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'xi-api-key': ELEVENLABS_API_KEY },
-        body: JSON.stringify({
-          voice_name: voiceName.trim() || `custom voice ${Date.now()}`,
-          voice_description: buildVoiceDescription(),
-          generated_voice_id: selectedPreviewId,
-        }),
-      });
-
-      if (!saveResponse.ok) {
-        const errorText = await saveResponse.text();
-        throw new Error(`Failed to save voice: ${errorText}`);
-      }
-
-      const saveData = await saveResponse.json();
-      const permanentVoiceId = saveData.voice_id;
-
-      if (!permanentVoiceId) {
-        throw new Error('Voice was created but no ID was returned.');
-      }
-
-      // 2. Get the preview audio for caching
+      // Server-side: creates the ElevenLabs voice, enforces the 3-per-user
+      // cap, and writes the Firestore voice doc in one call.
       const selectedPreview = voicePreviews.find((p) => p.generated_voice_id === selectedPreviewId);
-
-      // 3. Save to Firestore
       const resolvedGender: 'male' | 'female' | 'neutral' =
         voiceGender === 'male' ? 'male' :
         voiceGender === 'female' ? 'female' : 'neutral';
 
-      await saveCustomVoice({
-        voiceId: permanentVoiceId,
-        name: voiceName.trim() || 'custom voice',
-        gender: resolvedGender,
-        accent: voiceAccent.trim(),
-        descriptors: voiceTags.join(', '),
-        voiceDesignDescription: buildVoiceDescription(),
-        previewAudioBase64: selectedPreview?.audio_base_64,
-      });
+      const save = httpsCallable<
+        {
+          voiceName: string;
+          voiceDescription: string;
+          generatedVoiceId: string;
+          gender: string;
+          accent: string;
+          descriptors: string[];
+          previewAudioBase64?: string;
+        },
+        { voiceId: string }
+      >(functions, 'saveDesignedVoice');
+      const { voiceId: permanentVoiceId } = (
+        await save({
+          voiceName: voiceName.trim() || `custom voice ${Date.now()}`,
+          voiceDescription: buildVoiceDescription(),
+          generatedVoiceId: selectedPreviewId,
+          gender: resolvedGender,
+          accent: voiceAccent.trim(),
+          descriptors: voiceTags,
+          previewAudioBase64: selectedPreview?.audio_base_64,
+        })
+      ).data;
 
-      // 4. Return to caller with the permanent voice ID
+      // Return to caller with the permanent voice ID
       router.back();
       setTimeout(() => {
         router.setParams({ selectedVoiceId: permanentVoiceId });

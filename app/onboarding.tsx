@@ -1,7 +1,6 @@
 import { auth, functions } from '@/config/firebase';
 import { personalityInitial, personalityReally } from '@/constants/personality-sets';
 import { useAuth } from '@/contexts/AuthContext';
-import { describeStorytellingStyle } from '@/services/claude-service';
 import { generateTarotCard } from '@/services/replicate-service';
 import { classifyArchetype } from '@/services/archetype';
 import {
@@ -17,13 +16,16 @@ import {
     FALLBACK_CARD_SVG,
     fallbackCardDataUrl,
 } from '@/constants/fallback-card';
-import {
-    generateFirstStory,
-    saveFirstStory,
-    type FirstStoryGender,
-    type FirstStoryScenario,
-    type GeneratedFirstStory,
-} from '@/services/first-story';
+// First-story generation runs server-side now (generateFirstStory callable) —
+// these mirror the callable's input/output shapes.
+type FirstStoryGender = 'male' | 'female' | 'neutral';
+type FirstStoryScenario = 'walk' | 'meditation';
+interface GeneratedFirstStory {
+  storyId: string;
+  transcript: string;
+  audioChunkURLs: string[];
+  ambientUrl: string | null;
+}
 import { uploadSilverCardImage } from '@/services/silver-card-image';
 import { saveSilverCard, saveUserProfile } from '@/services/user-service';
 import CardScene from '@/components/silver-card/CardScene';
@@ -155,7 +157,17 @@ const descriptorWords2 = [
 
 export default function OnboardingScreen() {
   const router = useRouter();
-  const { user, signUp, signIn: _signIn } = useAuth();
+  const { user, signUp, signIn: _signIn, ensureAnonymousSession } = useAuth();
+
+  // Anonymous session from the first screen: pre-signup steps (style words,
+  // tarot card, first story) call authenticated Cloud Functions, and signup
+  // later upgrades this same uid in place via linkWithCredential.
+  useEffect(() => {
+    ensureAnonymousSession().catch((e: any) =>
+      console.warn('anonymous sign-in failed (pre-signup steps may not work):', e?.message),
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [step, setStep] = useState<Step>('welcome');
   const [questionIndex, setQuestionIndex] = useState(0);
   const [initialIndex, setInitialIndex] = useState(0);
@@ -368,8 +380,16 @@ export default function OnboardingScreen() {
       //    are independent — run in parallel, but settle separately so one
       //    failing doesn't discard the other's result.
       const scenePrompt = snap.landscape!;
+      const fetchStyleWords = async (): Promise<string> => {
+        await ensureAnonymousSession();
+        const call = httpsCallable<{ answers: Record<string, unknown> }, { words: string }>(
+          functions,
+          'styleWords',
+        );
+        return (await call({ answers })).data.words;
+      };
       const [wordsRes, cardRes] = await Promise.allSettled([
-        snap.words ? Promise.resolve(snap.words) : describeStorytellingStyle(answers),
+        snap.words ? Promise.resolve(snap.words) : fetchStyleWords(),
         snap.imageUrl
           ? Promise.resolve({ dataUrl: snap.imageUrl, remoteUrl: snap.remoteUrl })
           : generateTarotCard(scenePrompt),
@@ -620,39 +640,8 @@ export default function OnboardingScreen() {
       
       if (!currentUser) throw new Error('Failed to get user');
 
-      // Provision a Stripe Checkout Session and a Customer (idempotent by
-      // firebaseUid metadata). The Cloud Function also stamps
-      // stripeCustomerId + betaTrialStartedAt on the user doc, so the
-      // local saveUserProfile call below only needs to mirror customerId.
-      // Failure is non-blocking: signup still completes and the user lands
-      // in the library — we just skip the Stripe redirect.
-      let stripeCustomerId: string | undefined;
-      let stripeCheckoutUrl: string | undefined;
-      try {
-        // Stripe requires absolute success/cancel URLs. On native there's no
-        // window.location, so fall back to the canonical production origin
-        // instead of '' (which produced relative URLs Stripe rejects).
-        const origin =
-          Platform.OS === 'web' && typeof window !== 'undefined'
-            ? window.location.origin
-            : 'https://yourname.media';
-        const createStripeCustomer = httpsCallable<
-          { email: string; name: string; successUrl: string; cancelUrl: string },
-          { customerId: string; checkoutUrl: string }
-        >(functions, 'createStripeCustomer');
-        const result = await createStripeCustomer({
-          email,
-          name: nameInput,
-          // Stripe redirects here after the user clicks "Subscribe" or "Back".
-          // Both land in the library so onboarding always terminates.
-          successUrl: `${origin}/library?checkout=success`,
-          cancelUrl: `${origin}/library?checkout=cancel`,
-        });
-        stripeCustomerId = result.data.customerId;
-        stripeCheckoutUrl = result.data.checkoutUrl;
-      } catch (err) {
-        console.warn('createStripeCustomer failed (continuing):', err);
-      }
+      // Signup no longer touches Stripe — subscriptions start from the
+      // paywall / profile ($3/mo checkout via createSubscriptionCheckout).
 
       // Save user profile with onboarding answers to Firestore
       const dob =
@@ -672,7 +661,6 @@ export default function OnboardingScreen() {
           descriptors2: selectedDescriptors2,
           dob,
         } as any,
-        stripeCustomerId ? { stripeCustomerId } : undefined,
       );
 
       // Persist the silver card alongside the user profile
@@ -708,17 +696,9 @@ export default function OnboardingScreen() {
         }).catch((err) => console.warn('saveSilverCard failed:', err));
       }
 
-      // Persist the first-story (generated pre-signup, blobs held in state).
-      // Failure here doesn't block onboarding completion — the user has
-      // already heard the story, and we'd rather land them in the app than
-      // strand them on the signup screen.
-      if (firstStory) {
-        try {
-          await saveFirstStory(currentUser.uid, firstStory);
-        } catch (err) {
-          console.warn('saveFirstStory failed:', err);
-        }
-      }
+      // First story: nothing to persist — it was generated server-side under
+      // the anonymous uid, and linkWithCredential kept that same uid, so the
+      // story doc is already in this account's library.
 
       // Also save to AsyncStorage for offline access
       await AsyncStorage.setItem('hasCompletedOnboarding', 'true');
@@ -727,15 +707,7 @@ export default function OnboardingScreen() {
 
       setIsLoading(false);
 
-      // If Stripe came back with a Checkout URL, hand the user off there;
-      // Stripe will redirect back to /library?checkout=success once they
-      // confirm. If Stripe was unreachable or we're on native, fall back
-      // to the normal in-app redirect.
-      if (stripeCheckoutUrl && Platform.OS === 'web' && typeof window !== 'undefined') {
-        window.location.assign(stripeCheckoutUrl);
-      } else {
-        router.replace('/(tabs)/library');
-      }
+      router.replace('/(tabs)/library');
 
     } catch (error: any) {
       setIsLoading(false);
@@ -803,22 +775,14 @@ export default function OnboardingScreen() {
   const birthdayCanContinue =
     birthdayValid && (birthdayAge as number) >= MIN_AGE_YEARS;
 
-  // Build object URLs for the player when blobs land. Revoke them when the
-  // step unmounts or the user generates a new story so we don't leak.
+  // The server callable returns hosted Storage URLs directly — no blobs, no
+  // object-URL lifecycle.
   useEffect(() => {
     if (!firstStory) return;
-    const nUrls = firstStory.narrationBlobs.map((b) => URL.createObjectURL(b));
-    const aUrl = firstStory.ambientBlob
-      ? URL.createObjectURL(firstStory.ambientBlob)
-      : null;
-    setNarrationUrls(nUrls);
-    setAmbientUrl(aUrl);
+    setNarrationUrls(firstStory.audioChunkURLs);
+    setAmbientUrl(firstStory.ambientUrl ?? null);
     setChunkDurations([]);
     setFirstStoryProgress(0);
-    return () => {
-      nUrls.forEach((u) => URL.revokeObjectURL(u));
-      if (aUrl) URL.revokeObjectURL(aUrl);
-    };
   }, [firstStory]);
 
   // Probe each narration chunk's duration so the progress bar can compute
@@ -868,12 +832,20 @@ export default function OnboardingScreen() {
     setFirstStoryError(null);
     setFirstStoryStage('generating');
     try {
-      const story = await generateFirstStory({
+      // Server-side generation (needs the anonymous session established at
+      // onboarding mount). The story doc is saved under this uid immediately;
+      // signup links the same uid, so it lands in the library automatically.
+      await ensureAnonymousSession();
+      const call = httpsCallable<
+        { name: string; gender: FirstStoryGender; scenario: FirstStoryScenario },
+        GeneratedFirstStory
+      >(functions, 'generateFirstStory');
+      const result = await call({
         name: nameInput.trim() || 'friend',
         gender: firstStoryGender,
         scenario: firstStoryScenario,
       });
-      setFirstStory(story);
+      setFirstStory(result.data);
       setFirstStoryStage('ready');
     } catch (err) {
       console.error('first-story generation failed:', err);

@@ -5,10 +5,12 @@ import {
     User,
     createUserWithEmailAndPassword,
     deleteUser,
+    linkWithCredential,
     reauthenticateWithCredential,
     signOut as firebaseSignOut,
     onAuthStateChanged,
     sendPasswordResetEmail,
+    signInAnonymously,
     signInWithEmailAndPassword,
 } from 'firebase/auth';
 import React, { createContext, useContext, useEffect, useState } from 'react';
@@ -21,6 +23,9 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   deleteAccount: (password?: string) => Promise<void>;
+  /** Sign in anonymously (reusing any existing session) so pre-signup
+   * onboarding steps can call authenticated Cloud Functions. */
+  ensureAnonymousSession: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -38,11 +43,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return unsubscribe;
   }, []);
 
+  const ensureAnonymousSession = async () => {
+    // Reuse whatever session exists (anonymous OR real) — never mint a fresh
+    // anon uid per onboarding visit, that would orphan first-story data.
+    if (auth.currentUser) return;
+    try {
+      await signInAnonymously(auth);
+    } catch (error: any) {
+      throw new Error(error.code ?? error.message);
+    }
+  };
+
   const signUp = async (email: string, password: string) => {
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
+      const current = auth.currentUser;
+      if (current?.isAnonymous) {
+        // Upgrade the anonymous account in place — the uid (and everything
+        // hanging off it: first story, entitlements) carries over.
+        const credential = EmailAuthProvider.credential(email, password);
+        await linkWithCredential(current, credential);
+      } else {
+        await createUserWithEmailAndPassword(auth, email, password);
+      }
     } catch (error: any) {
-      throw new Error(error.message);
+      // error.code (e.g. auth/email-already-in-use) survives for callers that
+      // string-match; fall back to message for non-Firebase errors.
+      throw new Error(error.code ?? error.message);
     }
   };
 
@@ -99,6 +125,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signOut,
     resetPassword,
     deleteAccount,
+    ensureAnonymousSession,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

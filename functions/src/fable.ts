@@ -1,46 +1,57 @@
 /**
- * Fable Story Service — ALL text-generation stages, on the Claude API
- * `claude-fable-5` model. Platform-agnostic (no Blob/file/RNBU): consumed by
- * both services/audio-generation.web.ts and services/audio-generation.ts, which
- * keep only TTS + I/O + Firebase save.
+ * Fable text pipeline — server-side port of services/fable-story.ts and
+ * services/grok-story.ts (KEEP IN SYNC when tuning prompts there; the stage
+ * builders are copied verbatim, only the transport differs: admin SDK for
+ * refusal logging, process.env keys instead of Expo extras).
  *
- * Replaces the old Grok (api.x.ai) text calls with a 3-stage immersion
- * workflow proven in fable_test.mjs:
- *   STAGE 1  scene-notes   — terse INTERNAL raw material (not a script)
- *   STAGE 2  embody        — Fable BECOMES the partner, plays the moment now
- *   STAGE 3  immersion-polish — strips announcements / story-sentences
- *
- * Prompt textures + pacing live in constants/narration-modes.ts (the source of
- * truth, mirrored by the fable_test.mjs harness).
- *
- * Follows the existing Anthropic pattern (services/claude-service.ts): key from
- * Expo extras, SDK allowed in the browser via dangerouslyAllowBrowser.
+ * All text generation runs on `claude-fable-5`, with the legacy Grok pipeline
+ * as the worst-case fallback. Refusals/errors are logged to `fableRefusals`
+ * for the /admin dashboard.
  */
 
 import Anthropic from '@anthropic-ai/sdk';
-import Constants from 'expo-constants';
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
-import { auth, db } from '@/config/firebase';
+import * as admin from 'firebase-admin';
 import {
-  DEFAULT_NARRATION_MODE,
+  LEGACY_RATIO_BY_MODE,
   immersionEngine,
   minutesFromDurationLabel,
   narrationModeFromLegacy,
   polishInstruction,
   targetWordCount,
   type NarrationMode,
-} from '@/constants/narration-modes';
-import { grokAmbientPrompt, grokFollowUpQuestions, grokTranscript } from './grok-story';
+} from './narration-modes';
 
 const FABLE_MODEL = 'claude-fable-5';
+const GROK_MODEL = 'grok-4-1-fast-reasoning';
+const GROK_TIMEOUT = 5 * 60 * 1000;
 
-let _client: Anthropic | null = null;
-function getClient(): Anthropic {
-  if (_client) return _client;
-  const apiKey = Constants.expoConfig?.extra?.ANTHROPIC_API_KEY || '';
-  if (!apiKey) console.warn('⚠️ ANTHROPIC_API_KEY not found in environment');
-  _client = new Anthropic({ apiKey, dangerouslyAllowBrowser: true });
-  return _client;
+let _anthropic: Anthropic | null = null;
+export function getAnthropic(): Anthropic {
+  if (_anthropic) return _anthropic;
+  const apiKey = process.env.ANTHROPIC_API_KEY || '';
+  if (!apiKey) console.warn('⚠️ ANTHROPIC_API_KEY not set in functions environment');
+  _anthropic = new Anthropic({ apiKey });
+  return _anthropic;
+}
+
+/** Text-relevant subset of RecipeData (mirrors services/fable-story.ts). */
+export interface FableRecipe {
+  userName?: string;
+  setting?: string;
+  location?: string;
+  character?: string;
+  genderSelf?: string;
+  genderOther?: string;
+  trope?: string;
+  features?: string[];
+  featurePreferences?: Record<string, string[]>;
+  isNighttime?: boolean;
+  duration?: string;
+  narrationMode?: NarrationMode;
+  narrativeRatio?: number;
+  prompt?: string;
+  tags?: string[];
+  narratorData?: any;
 }
 
 /** Error carrying the exact prompt that failed, for refusal logging + fallback. */
@@ -53,11 +64,6 @@ function fableErr(
   return e;
 }
 
-/**
- * Single Fable text call. Throws a tagged error (carrying the prompt + stage)
- * on a refusal, empty output, or API error so the wrapper can log it and fall
- * back to Grok.
- */
 async function fableText(args: {
   system: string;
   user: string;
@@ -66,7 +72,7 @@ async function fableText(args: {
 }): Promise<string> {
   let msg: Anthropic.Message;
   try {
-    msg = await getClient().messages.create({
+    msg = await getAnthropic().messages.create({
       model: FABLE_MODEL,
       max_tokens: args.maxTokens,
       system: args.system,
@@ -97,26 +103,6 @@ async function fableText(args: {
   return text;
 }
 
-/** Text-relevant subset of RecipeData (the platform files own the I/O fields). */
-export interface FableRecipe {
-  userName?: string;
-  setting?: string;
-  location?: string;
-  character?: string;
-  genderSelf?: string;
-  genderOther?: string;
-  trope?: string;
-  features?: string[];
-  featurePreferences?: Record<string, string[]>;
-  isNighttime?: boolean;
-  duration?: string;
-  narrationMode?: NarrationMode;
-  narrativeRatio?: number; // legacy 0–10; mapped to a mode when narrationMode absent
-  prompt?: string;
-  tags?: string[];
-  narratorData?: any;
-}
-
 function resolveMode(recipe: FableRecipe): NarrationMode {
   return recipe.narrationMode ?? narrationModeFromLegacy(recipe.narrativeRatio);
 }
@@ -125,18 +111,14 @@ function featureLineFrom(recipe: FableRecipe): string {
   return (recipe.features || [])
     .map((f) => {
       const prefs = (recipe.featurePreferences || {})[f] || [];
-      const dir = prefs.includes('receive')
-        ? 'she receives'
-        : prefs.includes('give')
-          ? 'she gives'
-          : '';
+      const dir = prefs.includes('receive') ? 'she receives' : prefs.includes('give') ? 'she gives' : '';
       return dir ? `${f} (${dir})` : f;
     })
     .filter(Boolean)
     .join(', ');
 }
 
-// ── Stage builders (kept in sync with fable_test.mjs) ───────────────────────
+// ── Stage builders (verbatim from services/fable-story.ts) ──────────────────
 
 function buildSceneNotes(
   recipe: FableRecipe,
@@ -218,14 +200,7 @@ ${opts.transcript}`;
   return { system, user };
 }
 
-/**
- * The 3-stage immersion transcript pipeline. `followUpQA` is the assembled
- * "Q: …\nA: …" block built by the caller.
- */
-async function fableTranscript(
-  recipe: FableRecipe,
-  followUpQA: string,
-): Promise<string> {
+async function fableTranscript(recipe: FableRecipe, followUpQA: string): Promise<string> {
   const isNighttime = !!recipe.isNighttime;
   const mode = resolveMode(recipe);
   const minutes = minutesFromDurationLabel(recipe.duration);
@@ -236,25 +211,22 @@ async function fableTranscript(
 
   console.log(`📝 Fable transcript — mode=${mode}, ${isNighttime ? 'NSFW' : 'SFW'}, ~${targetWords} words`);
 
-  // STAGE 1: scene-notes
   const notes = buildSceneNotes(recipe, { isNighttime, featureLine, followUpQA });
   const sceneNotes = await fableText({ system: notes.system, user: notes.user, maxTokens: 1000, label: 'scene-notes' });
 
-  // STAGE 2: embody
   const emb = buildEmbody({ engine, sceneNotes, minutes, targetWords, featureLine, isNighttime });
   let transcript = await fableText({ system: emb.system, user: emb.user, maxTokens: maxTok, label: 'embody' });
 
-  // STAGE 3: immersion-polish
   const pol = buildPolish({ engine, mode, transcript });
   transcript = await fableText({ system: pol.system, user: pol.user, maxTokens: maxTok, label: 'immersion-polish' });
 
-  console.log(`✅ Fable transcript ready (${transcript.length} chars, ~${transcript.split(/\s+/).length} words)`);
+  console.log(`✅ Fable transcript ready (${transcript.length} chars)`);
   return transcript;
 }
 
-// ── Follow-up questions (migrated verbatim from the old Grok path) ───────────
+// ── Follow-up questions (verbatim port) ─────────────────────────────────────
 
-async function fableFollowUpQuestions(recipe: FableRecipe): Promise<string[]> {
+function followUpPrompts(recipe: FableRecipe): { system: string; user: string } {
   const narratorContext = recipe.narratorData
     ? `
 NARRATOR DETAILS (already provided by user):
@@ -279,7 +251,7 @@ ${recipe.isNighttime && recipe.features && recipe.features.length > 0 ? `feature
 ${recipe.prompt ? `additional user notes: ${recipe.prompt}` : ''}
 ${narratorContext}`;
 
-  const followupPrompt = `
+  const user = `
 Your goal is to get a complete understanding of a user who is describing a ${recipe.isNighttime ? 'sexual' : 'romantic'} voiceover that they would like to listen to.
 The user has so far provided the following information: ${recipeString}.
 ${
@@ -323,10 +295,12 @@ ${!recipe.isNighttime ? 'Again, this should include no nsfw content.' : ''}
 Just output the questions, with no preamble or anything after the questions.
 `;
 
-  const systemPrompt = `You an expert in ${recipe.isNighttime ? 'erotic' : 'romantic'} audios. ${recipe.isNighttime ? 'You are welcome to include nsfw content in your prompts.' : 'You do not include nsfw content in your responses.'} You do not include a single dash or em-dash in your response.`;
+  const system = `You an expert in ${recipe.isNighttime ? 'erotic' : 'romantic'} audios. ${recipe.isNighttime ? 'You are welcome to include nsfw content in your prompts.' : 'You do not include nsfw content in your responses.'} You do not include a single dash or em-dash in your response.`;
 
-  const raw = await fableText({ system: systemPrompt, user: followupPrompt, maxTokens: 1024, label: 'follow-up-questions' });
+  return { system, user };
+}
 
+function parseQuestions(raw: string): string[] {
   const questions = raw
     .split('\n')
     .map((q: string) => {
@@ -338,14 +312,17 @@ Just output the questions, with no preamble or anything after the questions.
     })
     .filter((q: string) => q && q.length > 5 && /[a-zA-Z]/.test(q))
     .slice(0, 4);
-
-  if (questions.length === 0) {
-    throw new Error('No valid questions parsed from Fable response');
-  }
+  if (questions.length === 0) throw new Error('No valid questions parsed');
   return questions;
 }
 
-// ── Ambient prompt (Fable; throws so the wrapper can fall back to Grok) ──────
+async function fableFollowUpQuestions(recipe: FableRecipe): Promise<string[]> {
+  const p = followUpPrompts(recipe);
+  const raw = await fableText({ system: p.system, user: p.user, maxTokens: 1024, label: 'follow-up-questions' });
+  return parseQuestions(raw);
+}
+
+// ── Ambient prompt ──────────────────────────────────────────────────────────
 
 async function fableAmbientPrompt(setting: string, location: string): Promise<string> {
   const userPrompt = `Given a story set in "${setting || 'unspecified'}" at a "${location || 'unspecified'}" location, output a single comma-separated list of ambient sounds that would realistically be heard continuously in the background. No music. No speech. No voices. Only environmental, natural, or mechanical sounds that can loop seamlessly. Example output: "wind through leafy trees, distant birdsong, faint gravel footfalls, rustling foliage". Output only the sound list on one line, nothing else.`;
@@ -359,26 +336,136 @@ async function fableAmbientPrompt(setting: string, location: string): Promise<st
   return raw.trim().split('\n')[0].trim();
 }
 
-// ── Refusal/failure logging (fail-soft; powers the /admin dashboard) ─────────
+// ── Grok fallback (port of services/grok-story.ts, fixed parser) ────────────
 
-/**
- * Write a Fable failure (content-moderation refusal OR API/timeout error) to
- * the `fableRefusals` Firestore collection, including the exact prompt that
- * failed, so admins can see what made Fable refuse. Never throws — logging must
- * not break generation.
- */
+type GrokMessage = { role: 'system' | 'user'; content: string };
+
+async function callGrok(input: GrokMessage[]): Promise<string> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), GROK_TIMEOUT);
+  try {
+    const response = await fetch('https://api.x.ai/v1/responses', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${process.env.XAI_API_KEY || ''}`,
+      },
+      body: JSON.stringify({ model: GROK_MODEL, input }),
+      signal: controller.signal,
+    });
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Grok API error: ${response.status} - ${errorText.substring(0, 200)}`);
+    }
+    const data: any = await response.json();
+    // Reasoning models put the message at type==='message', never output[0].
+    const message = data.output?.find((o: any) => o?.type === 'message');
+    const text = message?.content?.[0]?.text;
+    if (!text) throw new Error('Invalid Grok response - no content returned');
+    return text as string;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+async function grokFollowUpQuestions(recipe: FableRecipe): Promise<string[]> {
+  const p = followUpPrompts(recipe);
+  return parseQuestions(await callGrok([
+    { role: 'system', content: p.system },
+    { role: 'user', content: p.user },
+  ]));
+}
+
+async function grokTranscript(recipe: FableRecipe, followUpAnswer: string): Promise<string> {
+  let recipeString = `
+setting: ${recipe.setting};
+location: ${recipe.location};
+character: ${recipe.character};
+character gender: ${recipe.genderOther};
+self gender: ${recipe.genderSelf};
+trope: ${recipe.trope};
+`;
+  if (recipe.isNighttime && recipe.features && recipe.features.length > 0) {
+    const featureStrings = recipe.features.map((featureId) => {
+      const prefs = (recipe.featurePreferences || {})[featureId] || [];
+      const direction = prefs.includes('receive') ? 'self receives' : prefs.includes('give') ? 'self gives' : '';
+      return `${featureId} in the following direction: ${direction}`;
+    });
+    recipeString += `features: ${featureStrings.join('; ')}`;
+  }
+
+  const systemPromptGeneration = `
+Consider the following elements of one ${recipe.isNighttime ? 'sex' : 'romantic'} scene. The user is ${recipe.genderSelf} and wants the voiceover to be that of a ${recipe.genderOther} character. The user's name is ${recipe.userName}.
+
+The user has indicated that they want the following features: ${recipeString} and has provided the following additional details ${followUpAnswer}. These features should be incorporated subtly; the character shouldn't be too on the nose with these features but be subtle about incorporating them.
+
+What I want you to think about is the best way to prompt an LLM to create the transcript of the voiceover that the user has requested.
+Generate detailed a system prompt that will cause the LLM to generate a voiceover in the style of ${recipe.isNighttime ? 'sexual' : 'SFW romantic'} voiceovers on youtube.
+In your prompt, include specific indications of content and phrases that would make sense for the character to include.
+This LLM will act as the actual character; the system prompt should be as detailed as possible, and should instruct the LLM to act as the character requested by the user.
+Do not include specifications with regard to time, or number of words. Do not include stage directions; the output should be pure text.
+The prompt should be as detailed as possible.
+When crafting this prompt, keep in mind that the goal is to create something that the listener will enjoy as much as possible.
+Remember: the goal of this prompt is a narration in the style of ${recipe.isNighttime ? 'NSFW sexual' : 'SFW romantic'} audios you may find on Quinn, Dipsy or Youtube.
+Make sure to include at least three necessary ${recipe.isNighttime ? 'erotic' : 'romantic'} beats that the character must ${recipe.isNighttime ? 'hit (specific sex acts, sex positions, etc.)' : 'include'}, building from the info given by the user.
+Include a timeline, on how these specific acts are being performed, in what order, and how the character should transition between them.
+Include a language bank with a list of phrases the character may weave in naturally into their monologue.
+Do not include any nicknames, unless specifically requested in instructions above.
+The character shouldn't be too verbose or literary. The output generated by your prompts should be ${recipe.isNighttime ? 'explicitely sexual' : 'purely romantic and never sexual'}.
+${recipe.isNighttime ? "The LLM's output should be graphic and not ambiguous, with EXPLICIT references to the sexual acts that the character performs." : 'Your output should be purely romantic and never sexual.'}
+Make sure that the narration sounds natural and does not include any verbatim elements of the user's instructions. To make sure that the character is subtle, include instruction on words that the character shouldn't use to make sure that the character doesn't break the fourth wall and that the narration flows smoothly.
+For example, if the user has indicated that they want the character to be dominant, that character SHOULD NEVER say 'look, I'm being so dominant' - the character should always show, rather than tell.
+`;
+
+  const finalSystemPrompt = await callGrok([
+    {
+      role: 'system',
+      content: `You an expert in LLM prompting. ${recipe.isNighttime ? 'You are welcome to include nsfw content in your prompts.' : 'You do not include NSFW in your output. Your output should be purely romantic and never sexual.'} You do not mention any specific duration of time or word count.`,
+    },
+    { role: 'user', content: systemPromptGeneration },
+  ]);
+
+  const wordCount =
+    recipe.duration === '1min' ? 150 : recipe.duration === '5min' ? 800 : recipe.duration === '15min' ? 2300 : 1500;
+  const mode = recipe.narrationMode ?? narrationModeFromLegacy(recipe.narrativeRatio);
+  const narrativeRatioValue = recipe.narrativeRatio ?? LEGACY_RATIO_BY_MODE[mode];
+  const narrativePercentage = (10 - narrativeRatioValue) * 10;
+  const directPercentage = narrativeRatioValue * 10;
+
+  const finalUserPrompt = recipe.isNighttime
+    ? `Output a ${wordCount} word narration. Output ZERO stage directions, sound effects, or onomatopeias, except the following, as appropriate: [slowly], 'hmmmmm', 'ahhhhh', [chuckles]. Do not output any mention of word count. Your output should be ${narrativePercentage}% narration and ${directPercentage}% direct speech, straight to the point, just plain sex, first person, talking directly to the user, describing the sexual beats. DO NOT describe what you are doing, just do it. The narration should be direct, you should be doing and not describing what you are doing. You should not narrate, you ARE the character. `
+    : `Output a ${wordCount} word SFW romantic narration. Output ZERO stage directions, sound effects, or onomatopeias. Do not output any mention of word count. The narration should be direct, you should be doing and not describing what you are doing. You should not narrate, you ARE the character. `;
+
+  return await callGrok([
+    { role: 'system', content: finalSystemPrompt },
+    { role: 'user', content: finalUserPrompt },
+  ]);
+}
+
+async function grokAmbientPrompt(setting: string, location: string): Promise<string> {
+  const userPrompt = `Given a story set in "${setting || 'unspecified'}" at a "${location || 'unspecified'}" location, output a single comma-separated list of ambient sounds that would realistically be heard continuously in the background. No music. No speech. No voices. Only environmental, natural, or mechanical sounds that can loop seamlessly. Example output: "wind through leafy trees, distant birdsong, faint gravel footfalls, rustling foliage". Output only the sound list on one line, nothing else.`;
+  const raw = await callGrok([
+    { role: 'system', content: 'You output only comma-separated lists of ambient environmental sounds. You never include music, speech, or voices. You never add preamble or commentary.' },
+    { role: 'user', content: userPrompt },
+  ]);
+  return raw.trim().split('\n')[0].trim();
+}
+
+// ── Refusal/failure logging (fail-soft; powers /admin) ──────────────────────
+
 async function logFableFailure(
   err: any,
+  uid: string | null,
   recipe: FableRecipe,
   call: 'transcript' | 'follow-up' | 'ambient',
 ): Promise<void> {
   try {
     const meta = err?.__fable || {};
-    await addDoc(collection(db, 'fableRefusals'), {
-      uid: auth.currentUser?.uid ?? null,
+    await admin.firestore().collection('fableRefusals').add({
+      uid,
       call,
       stage: meta.stage ?? null,
-      kind: meta.kind ?? 'error', // 'refusal' | 'error'
+      kind: meta.kind ?? 'error',
       reason: String(err?.message ?? err).slice(0, 800),
       systemPrompt: meta.system ?? null,
       userPrompt: meta.user ?? null,
@@ -392,7 +479,7 @@ async function logFableFailure(
         genderOther: recipe.genderOther ?? null,
       },
       fellBackTo: 'grok',
-      createdAt: serverTimestamp(),
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
     });
   } catch (e) {
     console.warn('⚠️ fable refusal logging failed (non-fatal):', e);
@@ -401,22 +488,29 @@ async function logFableFailure(
 
 // ── Public API: Fable primary, Grok worst-case fallback ─────────────────────
 
-export async function generateTranscript(recipe: FableRecipe, followUpQA: string): Promise<string> {
+export async function generateTranscript(
+  recipe: FableRecipe,
+  followUpQA: string,
+  uid: string | null,
+): Promise<string> {
   try {
     return await fableTranscript(recipe, followUpQA);
   } catch (err: any) {
     console.warn(`⚠️ Fable transcript failed (${err?.message}); falling back to Grok`);
-    await logFableFailure(err, recipe, 'transcript');
+    await logFableFailure(err, uid, recipe, 'transcript');
     return await grokTranscript(recipe, followUpQA);
   }
 }
 
-export async function generateFollowUpQuestions(recipe: FableRecipe): Promise<string[]> {
+export async function generateFollowUpQuestions(
+  recipe: FableRecipe,
+  uid: string | null,
+): Promise<string[]> {
   try {
     return await fableFollowUpQuestions(recipe);
   } catch (err: any) {
     console.warn(`⚠️ Fable follow-up questions failed (${err?.message}); falling back to Grok`);
-    await logFableFailure(err, recipe, 'follow-up');
+    await logFableFailure(err, uid, recipe, 'follow-up');
     return await grokFollowUpQuestions(recipe);
   }
 }
@@ -433,5 +527,3 @@ export async function generateAmbientPrompt(setting: string, location: string): 
     }
   }
 }
-
-export { DEFAULT_NARRATION_MODE };

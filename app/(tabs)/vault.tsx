@@ -299,12 +299,13 @@ function QueueRow({
   title: string;
   character?: string;
   progressPct: number;
-  status: 'pending' | 'generating' | 'complete' | 'error';
+  status: 'pending' | 'generating' | 'complete' | 'payment_required' | 'error';
   error?: string;
   onRetry: () => void;
   onDismiss: () => void;
 }) {
   const isErr = status === 'error';
+  const needsPayment = status === 'payment_required';
   return (
     <View
       className={cn(
@@ -320,6 +321,8 @@ function QueueRow({
       >
         {isErr ? (
           <AlertTriangle size={14} color="#ef4444" />
+        ) : needsPayment ? (
+          <AlertTriangle size={14} color="hsl(var(--muted-foreground))" />
         ) : (
           <ActivityIndicator size="small" color="hsl(var(--foreground))" />
         )}
@@ -328,7 +331,11 @@ function QueueRow({
         <Text className="text-[0.95rem] font-serif-medium text-foreground" numberOfLines={1}>
           {title}
         </Text>
-        {isErr ? (
+        {needsPayment ? (
+          <Text className="mt-0.5 text-xs font-serif text-muted-foreground" numberOfLines={1}>
+            subscribe to generate this story
+          </Text>
+        ) : isErr ? (
           <Text className="mt-0.5 text-xs text-red-400/90" numberOfLines={1}>
             {error ?? 'something went wrong'}
           </Text>
@@ -349,8 +356,10 @@ function QueueRow({
           </>
         )}
       </View>
-      <Pressable onPress={isErr ? onRetry : onDismiss} className="px-2 py-1">
-        <Text className="text-xs font-serif text-muted-foreground">{isErr ? 'retry' : 'dismiss'}</Text>
+      <Pressable onPress={isErr || needsPayment ? onRetry : onDismiss} className="px-2 py-1">
+        <Text className="text-xs font-serif text-muted-foreground">
+          {isErr ? 'retry' : needsPayment ? 'retry' : 'dismiss'}
+        </Text>
       </Pressable>
     </View>
   );

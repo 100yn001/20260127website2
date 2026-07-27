@@ -4,7 +4,26 @@ import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { suggestAmbientSounds, type AmbientSuggestionContext } from '@/services/claude-service';
+import { functions } from '@/config/firebase';
+import { httpsCallable } from 'firebase/functions';
+
+export interface AmbientSuggestionContext {
+  setting?: string;
+  location?: string;
+  character?: string;
+  trope?: string;
+  prompt?: string;
+}
+
+// Server-side (suggestAmbient callable) — the Anthropic key no longer ships
+// in the client.
+async function suggestAmbientSounds(ctx: AmbientSuggestionContext): Promise<string[]> {
+  const call = httpsCallable<AmbientSuggestionContext, { suggestions: string[] }>(
+    functions,
+    'suggestAmbient',
+  );
+  return (await call(ctx)).data.suggestions;
+}
 import { cn } from '@/lib/cn';
 
 const MAX_SELECTIONS = 2;

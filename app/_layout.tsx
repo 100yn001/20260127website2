@@ -11,6 +11,7 @@ import 'react-native-reanimated';
 import '@/services/track-player-init';
 
 import NowPlayingBar from '@/components/NowPlayingBar';
+import { PaywallSheet } from '@/components/PaywallSheet';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { AudioPlayerProvider } from '@/contexts/AudioPlayerContext';
 import { AuthProvider } from '@/contexts/AuthContext';
@@ -165,6 +166,7 @@ export default function RootLayout() {
                 </Stack>
                 <NowPlayingBar />
                 <FullscreenButton />
+                <PaywallSheet />
               </View>
               <StatusBar style="light" />
             </StoryQueueProvider>
