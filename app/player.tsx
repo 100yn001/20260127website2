@@ -318,6 +318,22 @@ export default function PlayerScreen() {
             ) : (
               <View className="self-center mt-2 h-3 w-28 rounded-full bg-muted" />
             )}
+            {titleReady && Array.isArray(story.tags) && story.tags.length > 0 ? (
+              <View className="mt-3 flex-row flex-wrap items-center justify-center gap-1.5">
+                {story.tags
+                  .filter((t: unknown): t is string => typeof t === 'string' && !!t.trim())
+                  .map((t: string) => (
+                    <View
+                      key={t}
+                      className="rounded-full border border-foreground/15 px-2.5 py-0.5"
+                    >
+                      <Text className="text-[11px] font-serif lowercase text-foreground/60">
+                        {t}
+                      </Text>
+                    </View>
+                  ))}
+              </View>
+            ) : null}
           </View>
 
           <View className="mt-7 w-full">

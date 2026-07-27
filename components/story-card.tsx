@@ -16,6 +16,8 @@ export type CardStory = {
   progressPct?: number;
   createdAgo?: string;
   isNew?: boolean;
+  /** Curated public-library tags, ordered vibe → hook → audience. */
+  tags?: string[];
 };
 
 /* -------------------------------------------------------------------------- */
@@ -151,9 +153,16 @@ export function ContinueCard({ story, onPress }: { story: CardStory; onPress?: (
 /* -------------------------------------------------------------------------- */
 
 export function ShelfCard({ story, onPress }: { story: CardStory; onPress?: () => void }) {
+  const vibeTag = story.tags?.[0];
   return (
     <Pressable onPress={onPress} className="w-[140px] md:w-[180px] lg:w-[200px] xl:w-[240px]">
-      <StoryArtwork cover={story.cover} nighttime={story.nighttime} />
+      <StoryArtwork cover={story.cover} nighttime={story.nighttime}>
+        {vibeTag ? (
+          <View className="absolute bottom-2 left-2 rounded-full bg-black/30 px-2 py-0.5">
+            <Text className="text-[10px] font-serif lowercase text-white/90">{vibeTag}</Text>
+          </View>
+        ) : null}
+      </StoryArtwork>
       <View className="mt-2 px-0.5">
         <Text className="text-[0.9rem] font-serif-medium text-foreground" numberOfLines={1}>
           {story.title}

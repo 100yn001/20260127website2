@@ -44,6 +44,9 @@ export default function LibraryScreen() {
           // the color is stable across sessions even without a coverColor.
           cover: coverFromColor(d.coverColor, d.id),
           nighttime: !!d.isNighttime,
+          tags: Array.isArray(d.tags)
+            ? d.tags.filter((t: unknown): t is string => typeof t === 'string' && !!t.trim())
+            : undefined,
           collection: (typeof d.collection === 'string' && d.collection.trim()) || null,
         }));
 
@@ -84,7 +87,8 @@ export default function LibraryScreen() {
         stories: row.stories.filter(
           (s) =>
             s.title.toLowerCase().includes(trimmedQuery) ||
-            (s.narrator && s.narrator.toLowerCase().includes(trimmedQuery))
+            (s.narrator && s.narrator.toLowerCase().includes(trimmedQuery)) ||
+            (s.tags && s.tags.some((t) => t.toLowerCase().includes(trimmedQuery)))
         ),
       }))
       .filter((row) => row.stories.length > 0);
@@ -137,7 +141,7 @@ export default function LibraryScreen() {
               <Input
                 value={queryText}
                 onChangeText={setQueryText}
-                placeholder="search by title or narrator"
+                placeholder="search by title, narrator, or tag"
                 autoCapitalize="none"
                 autoFocus
                 className="h-10 pl-9 rounded-full"

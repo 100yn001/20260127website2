@@ -313,6 +313,7 @@ export default function StoryDetailsScreen() {
         isNighttime: libraryCategory === 'nighttime',
         duration: duration || '10 min',
         audioUrl,
+        audioChunkURLs,
         transcript,
         narratorId: narratorId || undefined,
         libraryCategory,
