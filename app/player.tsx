@@ -33,6 +33,7 @@ import { useAudioPlayer } from '@/contexts/AudioPlayerContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useArtworkTint } from '@/hooks/useArtworkTint';
 import { cn } from '@/lib/cn';
+import { CoverRelief } from '@/components/cover-relief';
 import { coverFromColor, variedTint } from '@/lib/cover';
 import { shareStory } from '@/lib/share-story';
 import { addBookmark, getBookmarkedStoryIds, removeBookmark } from '@/services/user-service';
@@ -54,6 +55,8 @@ export default function PlayerScreen() {
     seek,
     skipForward,
     skipBackward,
+    playbackRate,
+    setPlaybackRate,
   } = useAudioPlayer();
 
   // Story + origin live in the same state object so the cover memo can never
@@ -66,6 +69,7 @@ export default function PlayerScreen() {
   const storyIsPublic = storyState.isPublic;
   const [bookmarked, setBookmarked] = useState(false);
   const [transcriptOpen, setTranscriptOpen] = useState(false);
+  const [speedOpen, setSpeedOpen] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [sharing, setSharing] = useState(false);
   const [shareToast, setShareToast] = useState<string | null>(null);
@@ -288,6 +292,7 @@ export default function PlayerScreen() {
               end={{ x: 1, y: 1 }}
               style={{ flex: 1 }}
             />
+            <CoverRelief cover={cover} seed={story?.id ?? id} />
           </View>
 
           <View className="mt-6 w-full">
@@ -381,6 +386,13 @@ export default function PlayerScreen() {
             <Chip onPress={handleShare} label="share">
               <Share2 size={14} color="hsl(var(--foreground))" />
             </Chip>
+            <Pressable
+              accessibilityLabel="playback speed"
+              onPress={() => setSpeedOpen(true)}
+              className="h-10 min-w-10 px-2.5 items-center justify-center rounded-full"
+            >
+              <Text className="text-[11px] font-sans text-foreground">{fmtRate(playbackRate)}</Text>
+            </Pressable>
           </View>
         </View>
         {shareToast && (
@@ -423,8 +435,70 @@ export default function PlayerScreen() {
           </View>
         </View>
       </Modal>
+
+      <Modal
+        visible={speedOpen}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setSpeedOpen(false)}
+      >
+        <Pressable className="flex-1 bg-black/50 justify-end" onPress={() => setSpeedOpen(false)}>
+          <Pressable
+            onPress={(e) => e.stopPropagation()}
+            className="bg-card border-t border-border rounded-t-[var(--radius)] self-stretch"
+          >
+            <View className="flex-row items-center justify-between px-5 pt-4 pb-2">
+              <Text className="text-base font-serif-medium text-foreground">speed</Text>
+              <Pressable
+                onPress={() => setSpeedOpen(false)}
+                className="h-8 w-8 items-center justify-center rounded-full"
+              >
+                <X size={16} color="hsl(var(--foreground))" />
+              </Pressable>
+            </View>
+            <View className="px-5 pb-8">
+              <View className="flex-row flex-wrap gap-2">
+                {SPEEDS.map((s) => {
+                  const active = Math.abs(playbackRate - s) < 0.001;
+                  return (
+                    <Pressable
+                      key={s}
+                      onPress={() => setPlaybackRate(s)}
+                      accessibilityLabel={`${s}x speed`}
+                      className={cn(
+                        'rounded-full border px-4 py-2',
+                        active ? 'bg-foreground border-foreground' : 'border-border active:bg-accent'
+                      )}
+                    >
+                      <Text
+                        className={cn(
+                          'text-sm font-sans',
+                          active ? 'text-background' : 'text-foreground'
+                        )}
+                      >
+                        {fmtRate(s)}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+              <Text className="mt-3 text-xs font-serif text-muted-foreground">
+                changes apply right away — pick what sounds good and close.
+              </Text>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </Screen>
   );
+}
+
+// Pitch-corrected stretch stays natural in this window; below 0.75× voices
+// start to smear, so that's the floor.
+const SPEEDS = [0.75, 0.85, 1, 1.1, 1.25, 1.5];
+
+function fmtRate(rate: number) {
+  return `${rate}×`;
 }
 
 function PlayerScrubber({

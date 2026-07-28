@@ -26,9 +26,28 @@ interface AudioPlayerContextValue {
   skipForward: (seconds?: number) => Promise<void>;
   skipBackward: (seconds?: number) => Promise<void>;
   stop: () => Promise<void>;
+  playbackRate: number;
+  setPlaybackRate: (rate: number) => Promise<void>;
   isAudioReady: boolean;
   debugInfo: string;
 }
+
+// Pitch-corrected time-stretch keeps voices natural between ~0.75× and ~1.5×;
+// outside that the artifacts get audible, so clamp anything persisted/passed.
+export const PLAYBACK_RATE_MIN = 0.75;
+export const PLAYBACK_RATE_MAX = 1.5;
+const PLAYBACK_RATE_KEY = 'yn:playbackRate';
+
+const clampRate = (rate: number) =>
+  Math.min(PLAYBACK_RATE_MAX, Math.max(PLAYBACK_RATE_MIN, rate));
+
+// Browsers preserve pitch by default, but be explicit (plus the legacy
+// Safari prefix) so slowed narration never drops in pitch.
+const applyRate = (audio: HTMLAudioElement, rate: number) => {
+  (audio as any).preservesPitch = true;
+  (audio as any).webkitPreservesPitch = true;
+  audio.playbackRate = rate;
+};
 
 /**
  * Fix Firebase Storage URLs where %2F in the object path got decoded to /
@@ -61,6 +80,35 @@ export const AudioPlayerProvider = ({ children }: { children: React.ReactNode })
   const chunkDurationsRef = useRef<number[]>([]);
   const activeChunkIndexRef = useRef(0);
   const positionIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [playbackRate, setPlaybackRateState] = useState(1);
+  const playbackRateRef = useRef(1);
+
+  // Restore persisted speed
+  useEffect(() => {
+    try {
+      const v = window.localStorage.getItem(PLAYBACK_RATE_KEY);
+      const rate = v ? parseFloat(v) : NaN;
+      if (Number.isFinite(rate)) {
+        const clamped = clampRate(rate);
+        playbackRateRef.current = clamped;
+        setPlaybackRateState(clamped);
+      }
+    } catch { /* ignore */ }
+  }, []);
+
+  const setPlaybackRate = useCallback(async (rate: number) => {
+    const clamped = clampRate(rate);
+    playbackRateRef.current = clamped;
+    setPlaybackRateState(clamped);
+    for (const audio of audioElementsRef.current) {
+      try {
+        applyRate(audio, clamped);
+      } catch { /* ignore */ }
+    }
+    try {
+      window.localStorage.setItem(PLAYBACK_RATE_KEY, String(clamped));
+    } catch { /* ignore */ }
+  }, []);
 
   // Cleanup audio elements
   const cleanupAudioElements = useCallback(() => {
@@ -175,6 +223,7 @@ export const AudioPlayerProvider = ({ children }: { children: React.ReactNode })
         const fixedUrl = fixFirebaseStorageUrl(remoteURLs[i]);
         const audio = new Audio(fixedUrl);
         audio.preload = 'auto';
+        applyRate(audio, playbackRateRef.current);
 
         // Wait until the file is ready enough to play; duration can resolve later.
         await new Promise<void>((resolve, reject) => {
@@ -424,6 +473,8 @@ export const AudioPlayerProvider = ({ children }: { children: React.ReactNode })
     skipForward,
     skipBackward,
     stop,
+    playbackRate,
+    setPlaybackRate,
     isAudioReady,
     debugInfo,
   };

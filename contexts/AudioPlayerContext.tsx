@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Audio } from 'expo-av';
 import { getBlob, ref as storageRef } from 'firebase/storage';
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
@@ -5,6 +6,7 @@ import ReactNativeBlobUtil from 'react-native-blob-util';
 import TrackPlayer, {
     Capability,
     Event,
+    PitchAlgorithm,
     State,
     usePlaybackState,
     useProgress,
@@ -38,9 +40,20 @@ interface AudioPlayerContextValue {
   skipForward: (seconds?: number) => Promise<void>;
   skipBackward: (seconds?: number) => Promise<void>;
   stop: () => Promise<void>;
+  playbackRate: number;
+  setPlaybackRate: (rate: number) => Promise<void>;
   isAudioReady: boolean;
   debugInfo: string;
 }
+
+// Pitch-corrected time-stretch keeps voices natural between ~0.75× and ~1.5×;
+// outside that the artifacts get audible, so clamp anything persisted/passed.
+export const PLAYBACK_RATE_MIN = 0.75;
+export const PLAYBACK_RATE_MAX = 1.5;
+const PLAYBACK_RATE_KEY = 'yn:playbackRate';
+
+const clampRate = (rate: number) =>
+  Math.min(PLAYBACK_RATE_MAX, Math.max(PLAYBACK_RATE_MIN, rate));
 
 const AudioPlayerContext = createContext<AudioPlayerContextValue | undefined>(undefined);
 
@@ -118,6 +131,34 @@ export const AudioPlayerProvider = ({ children }: { children: React.ReactNode })
   const localFilesRef = useRef<string[]>([]);
   const chunkDurationsRef = useRef<number[]>([]);
   const [activeChunkIndex, setActiveChunkIndex] = useState(0);
+  const [playbackRate, setPlaybackRateState] = useState(1);
+  const playbackRateRef = useRef(1);
+
+  // Restore persisted speed
+  useEffect(() => {
+    AsyncStorage.getItem(PLAYBACK_RATE_KEY)
+      .then((v) => {
+        const rate = v ? parseFloat(v) : NaN;
+        if (Number.isFinite(rate)) {
+          const clamped = clampRate(rate);
+          playbackRateRef.current = clamped;
+          setPlaybackRateState(clamped);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const setPlaybackRate = useCallback(async (rate: number) => {
+    const clamped = clampRate(rate);
+    playbackRateRef.current = clamped;
+    setPlaybackRateState(clamped);
+    try {
+      await TrackPlayer.setRate(clamped);
+    } catch (e) {
+      console.warn('Error setting playback rate:', e);
+    }
+    AsyncStorage.setItem(PLAYBACK_RATE_KEY, String(clamped)).catch(() => {});
+  }, []);
 
   const playbackState = usePlaybackState();
   const { position: trackPosSec, duration: trackDurSec } = useProgress(500);
@@ -314,6 +355,9 @@ export const AudioPlayerProvider = ({ children }: { children: React.ReactNode })
         url: localPath,
         title: track.title,
         artist: track.subtitle || 'yn',
+        // iOS: time-domain stretch tuned for speech, so slowed narration
+        // keeps its pitch instead of going underwater. No-op on Android.
+        pitchAlgorithm: PitchAlgorithm.Voice,
         ...(isMultiChunk && chunkDurationsRef.current[i]
           ? { duration: chunkDurationsRef.current[i] / 1000 }
           : {}),
@@ -322,6 +366,11 @@ export const AudioPlayerProvider = ({ children }: { children: React.ReactNode })
       await TrackPlayer.add(rnTracks);
 
       if (loadGenerationRef.current !== currentGen) return;
+
+      // reset() clears the rate, so re-apply the user's speed per load
+      if (playbackRateRef.current !== 1) {
+        await TrackPlayer.setRate(playbackRateRef.current);
+      }
 
       if (autoplay) {
         await TrackPlayer.play();
@@ -436,6 +485,8 @@ export const AudioPlayerProvider = ({ children }: { children: React.ReactNode })
     skipForward,
     skipBackward,
     stop,
+    playbackRate,
+    setPlaybackRate,
     isAudioReady,
     debugInfo,
   };
