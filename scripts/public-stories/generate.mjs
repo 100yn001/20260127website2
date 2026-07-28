@@ -120,12 +120,17 @@ function parseArgs(argv) {
   return args;
 }
 
-// One-shot stories follow manifest.voiceOverrides (per speaker gender) once
-// the audition winners are assigned; narrator-paired stories always use the
-// narrator doc's voice (change those via --set-narrator).
+// One-shot stories resolve, in priority order: per-slug override → per-gender
+// override → the spec's hardcoded voiceId. Narrator-paired stories always use
+// the narrator doc's voice (change those via --set-narrator).
 function resolveVoiceId(spec, manifest) {
   if (spec.narratorKey) return manifest.narrators[spec.narratorKey]?.voiceId || null;
-  return manifest.voiceOverrides?.[spec.genderOther] || spec.voiceId || null;
+  return (
+    manifest.voiceSlugOverrides?.[spec.slug] ||
+    manifest.voiceOverrides?.[spec.genderOther] ||
+    spec.voiceId ||
+    null
+  );
 }
 
 function selectSpecs({ only, limit }) {
@@ -561,21 +566,33 @@ async function phaseVoices(args, manifest) {
   }
 
   if (args.assign.length) {
+    manifest.voiceSlugOverrides = manifest.voiceSlugOverrides || {};
     for (const a of args.assign) {
-      const [role, key] = a.split('=');
-      if (!['male', 'female'].includes(role)) {
-        console.error(`❌ --assign ${a}: role must be male or female`);
-        process.exitCode = 1;
-        continue;
-      }
+      const [target, key] = a.split('=');
       const created = manifest.voices[key];
       if (!created) {
         console.error(`❌ --assign ${a}: voice "${key}" not created yet — use --pick first`);
         process.exitCode = 1;
         continue;
       }
-      manifest.voiceOverrides[role] = created.voiceId;
-      console.log(`✅ ${role}-voiced one-shots → ${created.name} (${created.voiceId})`);
+      if (['male', 'female'].includes(target)) {
+        manifest.voiceOverrides[target] = created.voiceId;
+        console.log(`✅ ${target}-voiced one-shots (default) → ${created.name} (${created.voiceId})`);
+        continue;
+      }
+      const spec = SPECS.find((s) => s.slug === target);
+      if (!spec) {
+        console.error(`❌ --assign ${a}: "${target}" is neither male/female nor a known slug`);
+        process.exitCode = 1;
+        continue;
+      }
+      if (spec.narratorKey) {
+        console.error(`❌ --assign ${a}: ${target} is narrator-paired (${spec.narratorKey}) — use --set-narrator ${spec.narratorKey}=${key} instead`);
+        process.exitCode = 1;
+        continue;
+      }
+      manifest.voiceSlugOverrides[target] = created.voiceId;
+      console.log(`✅ ${target} → ${created.name} (${created.voiceId})`);
     }
     saveManifest(MANIFEST_FILE, manifest);
     console.log(`\nnext: --phase rerender (updates the published stories in place), and --phase publish for the rest`);
