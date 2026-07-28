@@ -326,27 +326,51 @@ export function saveManifest(file, manifest) {
   fs.renameSync(tmp, file);
 }
 
-// ── Terminal input — hidden password prompt (from scripts/add-roman.js) ─────
+// ── Terminal input — hidden password prompt ─────────────────────────────────
+// Processes stdin per CHARACTER, not per chunk: pasted or password-manager-
+// filled passwords arrive as a single chunk (often with a trailing \r), and
+// chunk-equality checks let that \r embed itself into the password →
+// auth/invalid-credential with a perfectly correct password. Echoes '*' per
+// accepted character so typos are visible.
+export function parseHiddenInput(buffer, chunk) {
+  // strip bracketed-paste markers some terminals wrap pastes in
+  const s = chunk.replace(/\u001b\[20[01]~/g, '');
+  for (const ch of s) {
+    if (ch === '\n' || ch === '\r' || ch === '\u0004') {
+      return { buffer, done: true, interrupted: false }; // ignore anything after Enter
+    }
+    if (ch === '\u0003') return { buffer, done: false, interrupted: true };
+    if (ch === '\u007F' || ch === '\b') buffer = buffer.slice(0, -1);
+    else if (ch >= ' ') buffer += ch; // drop other control chars (incl. ESC)
+  }
+  return { buffer, done: false, interrupted: false };
+}
+
 export function askHidden(promptText) {
+  if (!process.stdin.isTTY) {
+    // piped stdin: raw mode is TTY-only, so read one plain line instead
+    return ask(promptText);
+  }
   return new Promise((resolve) => {
     process.stdout.write(promptText);
     process.stdin.setRawMode(true);
     process.stdin.resume();
     let password = '';
-    const onData = (char) => {
-      char = char.toString();
-      if (char === '\n' || char === '\r' || char === '\u0004') {
+    const onData = (data) => {
+      const res = parseHiddenInput(password, data.toString('utf8'));
+      if (res.interrupted) {
+        process.stdin.setRawMode(false);
+        process.exit(1);
+      }
+      password = res.buffer;
+      // re-render the mask to match the buffer (handles backspace + paste)
+      process.stdout.write('\r\u001b[K' + promptText + '*'.repeat(password.length));
+      if (res.done) {
         process.stdin.setRawMode(false);
         process.stdin.pause();
         process.stdin.removeListener('data', onData);
         console.log('');
         resolve(password);
-      } else if (char === '\u0003') {
-        process.exit(1);
-      } else if (char === '\u007F') {
-        password = password.slice(0, -1);
-      } else {
-        password += char;
       }
     };
     process.stdin.on('data', onData);
