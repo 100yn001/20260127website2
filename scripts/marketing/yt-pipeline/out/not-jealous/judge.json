@@ -1,0 +1,34 @@
+{
+  "scores": [
+    {
+      "variant": 1,
+      "coldOpen": 8,
+      "arc": 9,
+      "realism": 9,
+      "quotable": 7,
+      "genreFit": 9
+    },
+    {
+      "variant": 2,
+      "coldOpen": 8,
+      "arc": 8,
+      "realism": 8,
+      "quotable": 9,
+      "genreFit": 8
+    },
+    {
+      "variant": 3,
+      "coldOpen": 9,
+      "arc": 9,
+      "realism": 9,
+      "quotable": 9,
+      "genreFit": 9
+    }
+  ],
+  "winner": 3,
+  "why": "Variant 3 has the cleanest setup for the quotable — she says the word 'jealous' off-mic, he denies it twice, then the line lands as the pivot from argument to making up, exactly where it belongs, and the whole script stays tight where Variant 1 sprawls and re-spikes and Variant 2 undercuts its own vulnerability with the dad-joke bit.",
+  "fixes": [
+    "Cut one of the stacked denials before the quotable ('No. No. That's not— I'm not—' → 'No. That's not—') so the line hits with a single clean breath instead of stepping on itself.",
+    "Trim 'Genius move. Really elite work from me tonight.' to just 'Genius move.' — the double self-deprecation deflates the forehead-touch moment that follows."
+  ]
+}

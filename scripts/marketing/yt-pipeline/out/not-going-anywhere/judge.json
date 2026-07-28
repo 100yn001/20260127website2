@@ -1,0 +1,34 @@
+{
+  "scores": [
+    {
+      "variant": 1,
+      "coldOpen": 8,
+      "arc": 7,
+      "realism": 8,
+      "quotable": 9,
+      "genreFit": 8
+    },
+    {
+      "variant": 2,
+      "coldOpen": 9,
+      "arc": 8,
+      "realism": 9,
+      "quotable": 9,
+      "genreFit": 7
+    },
+    {
+      "variant": 3,
+      "coldOpen": 8,
+      "arc": 9,
+      "realism": 9,
+      "quotable": 9,
+      "genreFit": 9
+    }
+  ],
+  "winner": 3,
+  "why": "Variant 3 has the strongest emotional arc — the vulnerability confession (the ticket, the hair, 'I used to be good at leaving') earns the quotable instead of just setting it up, the possessive edge stays soft-yandere rather than drifting into banter-boyfriend like V2, and it's the only one that lands the quotable clean AND then actually descends into a sleep close without re-spiking.",
+  "fixes": [
+    "Cut 'Little paws.' in the open — it's too cutesy for the possessive undertone and cheapens the tension the cold open needs.",
+    "In the 'I know your maps' section, cut 'it'd be the third day of the month, and I'd know why' — the unexplained specificity pulls the listener out to solve a puzzle right before the quotable needs total emotional focus."
+  ]
+}

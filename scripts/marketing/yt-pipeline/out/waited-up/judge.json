@@ -1,0 +1,34 @@
+{
+  "scores": [
+    {
+      "variant": 1,
+      "coldOpen": 9,
+      "arc": 9,
+      "realism": 9,
+      "quotable": 10,
+      "genreFit": 9
+    },
+    {
+      "variant": 2,
+      "coldOpen": 8,
+      "arc": 7,
+      "realism": 7,
+      "quotable": 6,
+      "genreFit": 7
+    },
+    {
+      "variant": 3,
+      "coldOpen": 8,
+      "arc": 9,
+      "realism": 8,
+      "quotable": 8,
+      "genreFit": 9
+    }
+  ],
+  "winner": 1,
+  "why": "Variant 1 is the most performable: fragmented real-speech lines with genuine silence, the quotable delivered isolated and clean on its own beat, and a true continuous descent into sleep that never re-spikes — whereas 2 buries the quotable in banter and 3 crowds it inside a paragraph.",
+  "fixes": [
+    "Cut the 'Natural talent. [chuckles]' joke and the '…no. You didn't ruin anything' exchange mid-descent — they re-engage the listener's brain right when energy should only be falling; fold the reassurance in earlier, before the quotable.",
+    "Trim the tail after '[slowly] Goodnight, sweetheart.' to a single closing beat ('Right here.') — the current triple ending ('Right here. / Still right here.') plus the earlier 'Almost there / Ahhhhh / Shh' stack is one landing too many."
+  ]
+}

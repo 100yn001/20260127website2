@@ -1,0 +1,34 @@
+{
+  "scores": [
+    {
+      "variant": 1,
+      "coldOpen": 9,
+      "arc": 9,
+      "realism": 9,
+      "quotable": 9,
+      "genreFit": 10
+    },
+    {
+      "variant": 2,
+      "coldOpen": 8,
+      "arc": 8,
+      "realism": 8,
+      "quotable": 6,
+      "genreFit": 8
+    },
+    {
+      "variant": 3,
+      "coldOpen": 8,
+      "arc": 9,
+      "realism": 9,
+      "quotable": 8,
+      "genreFit": 9
+    }
+  ],
+  "winner": 1,
+  "why": "Variant 1 opens on pure command-and-check adrenaline, builds the six-year restraint through earned specifics (the four notes, never the fifth), lands the quotable in dead silence with no joke undercutting it, and closes with the genre's longest, cleanest breathing descent into 'I have the watch' — Variant 2 kneecaps its own quotable with 'most unprofessional sentence of my career' and Variant 3 drops a granola-bar gag mid-descent.",
+  "fixes": [
+    "Cut or replace the early 'Good girl' — that intimacy arriving before the confession leaks the twist and cheapens six years of restraint; save any endearment for after the quotable lands.",
+    "Compress the post-cry 'one more pass' sweep to three short whispered checks delivered from the couch — walking a full perimeter after she's crying re-spikes the energy right when the sleep descent should be locking in."
+  ]
+}

@@ -58,3 +58,7 @@ scripts/public-stories/out/*.log
 scripts/public-stories/out/voice-auditions/
 scripts/public-stories/out/rerender-previews/
 scripts/public-stories/out/voice-roster/*.mp3
+scripts/marketing/yt-pipeline/out/**/*.mp3
+scripts/marketing/yt-pipeline/out/**/*.mp4
+scripts/marketing/yt-pipeline/out/**/*.png
+scripts/marketing/yt-pipeline/~$*

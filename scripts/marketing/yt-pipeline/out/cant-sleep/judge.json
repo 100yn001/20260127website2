@@ -1,0 +1,34 @@
+{
+  "scores": [
+    {
+      "variant": 1,
+      "coldOpen": 8,
+      "arc": 9,
+      "realism": 8,
+      "quotable": 9,
+      "genreFit": 10
+    },
+    {
+      "variant": 2,
+      "coldOpen": 8,
+      "arc": 7,
+      "realism": 9,
+      "quotable": 8,
+      "genreFit": 7
+    },
+    {
+      "variant": 3,
+      "coldOpen": 8,
+      "arc": 8,
+      "realism": 9,
+      "quotable": 7,
+      "genreFit": 7
+    }
+  ],
+  "winner": 1,
+  "why": "Variant 1 is the only script that commits to a true one-way descent — no jokes, no 'ow' bits, no late-night monologuing to re-spike the listener — and it drops the quotable clean, isolated, tagged [slowly], at the exact pivot into the sink, then echoes it near the bottom where it lands like a lullaby refrain instead of a punchline (V2 buries it under banter, V3 spends it too early and then undercuts it with 'say it back if you want').",
+  "fixes": [
+    "Trim the terminal loop by roughly one full cycle — the 'Rain… Heart… Warm' rotation repeats once too many; end on the second 'Just rain' echo and the final 'shhh… rain' fade so the outro drifts instead of plateaus.",
+    "Soften 'Good girl. Good.' to just 'Good. That's it.' — the sudden intensity of the pet phrase mid-descent is a micro-spike right when the breathing sync is taking hold."
+  ]
+}

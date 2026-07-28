@@ -19,8 +19,8 @@ import { SPECS as APP_SPECS } from '../public-stories/specs.mjs';
 const APP_YT_BOUND = {
   'the-bodyguard': {
     videoSlug: 'the-bodyguard',
-    note: 'YouTube cut is a separate YouTube-safe render (app version is explicit); spec lives in yt-pipeline specs.mjs',
-    visualizer: { planned: true, aura: null, done: false },
+    note: 'YouTube cut is a separate YouTube-safe render (audio done, dusk voice); app version is explicit; judge fixes pending review',
+    visualizer: { planned: true, aura: 'lava', done: false },
   },
 };
 
@@ -149,10 +149,10 @@ const youtube = [
     tone: 'sfw',
     inApp: { expected: true },
     onYoutube: { expected: true, status: 'rendered', videoSlug: 'not-going-anywhere' },
-    visualizer: { planned: true, aura: 'lava', done: true },
+    visualizer: { planned: true, aura: 'lava', done: false },
     audioFile: 'not-going-anywhere/not-going-anywhere.mp3',
     tags: ['dark', 'possessive', 'm4f'],
-    notes: 'soft-yandere SFW; shared yt boyfriend continuity voice',
+    notes: 'soft-yandere SFW; re-voiced to dusk 2026-07-28 — video stale, re-render per VIDEO_SPECS',
   },
   {
     slug: 'cant-sleep',
@@ -165,10 +165,10 @@ const youtube = [
     tone: 'sfw',
     inApp: { expected: true },
     onYoutube: { expected: true, status: 'rendered', videoSlug: 'cant-sleep' },
-    visualizer: { planned: true, aura: 'pulse', done: true },
+    visualizer: { planned: true, aura: 'lava', done: false },
     audioFile: 'cant-sleep/cant-sleep.mp3',
     tags: ['sleep', 'boyfriend', 'm4f'],
-    notes: 'black-screen sleep lane',
+    notes: 'black-screen sleep lane; re-voiced to dusk 2026-07-28 — video stale, re-render per VIDEO_SPECS',
   },
   {
     slug: 'waited-up',
@@ -181,10 +181,10 @@ const youtube = [
     tone: 'sfw',
     inApp: { expected: true },
     onYoutube: { expected: true, status: 'rendered', videoSlug: 'waited-up' },
-    visualizer: { planned: true, aura: 'pulse', done: true },
+    visualizer: { planned: true, aura: 'lava', done: false },
     audioFile: 'waited-up/waited-up.mp3',
     tags: ['praise', 'girlfriend', 'f4m'],
-    notes: 'gf comfort lane',
+    notes: 'gf comfort lane; re-voiced to veil (= julia) 2026-07-28 — video stale, re-render per VIDEO_SPECS',
   },
 ];
 
