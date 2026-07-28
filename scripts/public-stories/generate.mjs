@@ -96,7 +96,7 @@ const ADMIN_EMAIL = 'ellepotterhead2006@gmail.com';
 function parseArgs(argv) {
   const args = {
     phase: null, only: [], limit: Infinity, force: false, dryRun: false, yes: false,
-    pick: [], assign: [], setNarrator: [],
+    ttsOnly: false, pick: [], assign: [], setNarrator: [],
   };
   for (let i = 2; i < argv.length; i++) {
     const a = argv[i];
@@ -106,6 +106,7 @@ function parseArgs(argv) {
     else if (a === '--force') args.force = true;
     else if (a === '--dry-run') args.dryRun = true;
     else if (a === '--yes') args.yes = true;
+    else if (a === '--tts-only') args.ttsOnly = true;
     else if (a === '--pick') args.pick.push(argv[++i]);
     else if (a === '--assign') args.assign.push(argv[++i]);
     else if (a === '--set-narrator') args.setNarrator.push(argv[++i]);
@@ -399,14 +400,20 @@ async function phasePublishLike(args, manifest, mode) {
   console.log(`total: ${jobs.length} stories · ${totalChunks} chunks · ${totalChars} chars ≈ ${totalChars.toLocaleString()} eleven_v3 credits\n`);
   if (args.dryRun) return;
   if (!args.yes) {
-    const answer = await ask(`proceed with TTS + upload + ${mode === 'rerender' ? 'doc update' : 'publish'}? (y/N): `);
+    const action = args.ttsOnly ? 'TTS to local previews only (no upload, nothing live changes)' : `TTS + upload + ${mode === 'rerender' ? 'doc update' : 'publish'}`;
+    const answer = await ask(`proceed with ${action}? (y/N): `);
     if (!answer.toLowerCase().startsWith('y')) {
       console.log('aborted.');
       return;
     }
   }
 
-  const { db, storage, uid } = await firebaseSignIn();
+  // --tts-only renders and stitches local previews without touching Firebase
+  // (no password needed): listen, then re-run without the flag — the cache
+  // skips straight to upload.
+  const PREVIEW_DIR = path.join(OUT_DIR, 'rerender-previews');
+  if (args.ttsOnly) fs.mkdirSync(PREVIEW_DIR, { recursive: true });
+  const { db, storage, uid } = args.ttsOnly ? {} : await firebaseSignIn();
 
   for (const job of jobs) {
     const { spec, transcript, chunks, voiceId, prefix, settings } = job;
@@ -448,6 +455,14 @@ async function phasePublishLike(args, manifest, mode) {
       saveManifest(MANIFEST_FILE, manifest);
     } else {
       console.log('   ♻️  TTS cache hit');
+    }
+
+    if (args.ttsOnly) {
+      const stitched = Buffer.concat(chunks.map((_, i) => fs.readFileSync(path.join(dir, `chunk${i}.mp3`))));
+      const previewFile = path.join(PREVIEW_DIR, `${slug}.mp3`);
+      fs.writeFileSync(previewFile, stitched);
+      console.log(`   🎧 preview → ${path.relative(process.cwd(), previewFile)} (${(stitched.length / 16000 / 60).toFixed(1)} min)`);
+      continue;
     }
 
     // 2. Upload (deterministic names → re-runs overwrite instead of orphaning)
