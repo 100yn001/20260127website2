@@ -483,8 +483,97 @@
           "generatedVoiceId": "Hn8RvxXSl1mg2iZl6iPu"
         }
       ]
+    },
+    "grove": {
+      "description": "Massive, low male rumble at a whisper — a soft growl living under every breath. Slow, deliberate, warm-blooded; enormous gentleness from an enormous chest. Feral edges but bashful, tender delivery; late-night fireside closeness. Deep resonant bass, unhurried pauses.",
+      "previews": [
+        {
+          "generatedVoiceId": "kEh7M80SQAexxWPKcu1G"
+        },
+        {
+          "generatedVoiceId": "SMoiNGQHggriM9PUPiR7"
+        },
+        {
+          "generatedVoiceId": "sp7AjPfAqr7D2yDYs3Fh"
+        }
+      ]
+    },
+    "crown": {
+      "description": "Refined British male voice at a hushed velvet murmur — aristocratic, precise, centuries-patient. Slow elegant rhythm, long poised pauses, quiet reverence with a shadow of danger underneath. Never hurried, never loud; a candlelit study at midnight. RP accent, ageless mid-thirties.",
+      "previews": [
+        {
+          "generatedVoiceId": "eeGih1tbLZvR18YkzGOi"
+        },
+        {
+          "generatedVoiceId": "2ffXAhRanhSpZJF7lEL0"
+        },
+        {
+          "generatedVoiceId": "Y4vEtN4mtuFXfs3SgmA3"
+        }
+      ]
+    },
+    "wire": {
+      "description": "Low male whisper with a wry edge — a smirk audible in the breath, taut and teasing. Controlled tension that keeps threatening to melt into warmth; playful sharpness gone soft, intimate needling turning tender. American accent, early thirties, slow and close.",
+      "previews": [
+        {
+          "generatedVoiceId": "26fHjH96KUolWvGmap6l"
+        },
+        {
+          "generatedVoiceId": "iboXBqWxtqehdKwZPehv"
+        },
+        {
+          "generatedVoiceId": "pmqjBCjW3wjiVEwK0f0Q"
+        }
+      ]
+    },
+    "drawl": {
+      "description": "Slow southern American male drawl at a hush — warm molasses pacing, relaxed and weathered, porch-at-dusk calm. Breathy low murmur with a faint rasp, unhurried vowels, gentle countryside steadiness; the end of a long ranch day. Deep, mid-thirties.",
+      "previews": [
+        {
+          "generatedVoiceId": "tDVW7kOWvQRupBFgOb2B"
+        },
+        {
+          "generatedVoiceId": "cTkwRZ3aKAHHX4ta3D7I"
+        },
+        {
+          "generatedVoiceId": "FALotIqvkwkb8qkV6Tky"
+        }
+      ]
+    },
+    "wren": {
+      "description": "Warm female murmur with a rustic, homey hush — cozy, rounded, a little earthy. Slow comfortable pacing, smiling softness, firelight-and-woolen-blanket intimacy; nurturing without being precious. Lived-in texture, low volume, gentle laugh lines in the voice. Around thirty.",
+      "previews": [
+        {
+          "generatedVoiceId": "qzrG3EDXKpDPaOcQESVH"
+        },
+        {
+          "generatedVoiceId": "qkM30rZEs7MTvvGmwtob"
+        },
+        {
+          "generatedVoiceId": "eSnS5rRAhRml4VCUNDge"
+        }
+      ]
     }
   },
-  "voices": {},
+  "voices": {
+    "dusk": {
+      "voiceId": "xWPPOvvQW78MpD6evTo9",
+      "name": "Dusk (whisper)",
+      "gender": "male",
+      "previewIndex": 2
+    },
+    "hearth": {
+      "voiceId": "KeqnO1y6QvG2D10EacMO",
+      "name": "Hearth (whisper)",
+      "gender": "male",
+      "previewIndex": 2
+    },
+    "veil": {
+      "voiceId": "On3mNeKJI0XxvSyM3sLT",
+      "name": "Veil (whisper)",
+      "gender": "female",
+      "previewIndex": 1
+    }
+  },
   "voiceOverrides": {}
 }

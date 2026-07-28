@@ -90,6 +90,42 @@ export const VOICE_CANDIDATES = [
     description:
       'Soft female whisper-voice — silky, breathy, unhurried, low volume with a warm hush. Slow deliberate rhythm with long pauses, gentle ASMR intimacy at the ear, soothing and slightly smoky. Never bright, never presentational. American accent, around thirty.',
   },
+  // round 2 — texture voices
+  {
+    key: 'grove',
+    gender: 'male',
+    name: 'Grove (whisper)',
+    description:
+      'Massive, low male rumble at a whisper — a soft growl living under every breath. Slow, deliberate, warm-blooded; enormous gentleness from an enormous chest. Feral edges but bashful, tender delivery; late-night fireside closeness. Deep resonant bass, unhurried pauses.',
+  },
+  {
+    key: 'crown',
+    gender: 'male',
+    name: 'Crown (whisper)',
+    description:
+      'Refined British male voice at a hushed velvet murmur — aristocratic, precise, centuries-patient. Slow elegant rhythm, long poised pauses, quiet reverence with a shadow of danger underneath. Never hurried, never loud; a candlelit study at midnight. RP accent, ageless mid-thirties.',
+  },
+  {
+    key: 'wire',
+    gender: 'male',
+    name: 'Wire (whisper)',
+    description:
+      'Low male whisper with a wry edge — a smirk audible in the breath, taut and teasing. Controlled tension that keeps threatening to melt into warmth; playful sharpness gone soft, intimate needling turning tender. American accent, early thirties, slow and close.',
+  },
+  {
+    key: 'drawl',
+    gender: 'male',
+    name: 'Drawl (whisper)',
+    description:
+      'Slow southern American male drawl at a hush — warm molasses pacing, relaxed and weathered, porch-at-dusk calm. Breathy low murmur with a faint rasp, unhurried vowels, gentle countryside steadiness; the end of a long ranch day. Deep, mid-thirties.',
+  },
+  {
+    key: 'wren',
+    gender: 'female',
+    name: 'Wren (whisper)',
+    description:
+      'Warm female murmur with a rustic, homey hush — cozy, rounded, a little earthy. Slow comfortable pacing, smiling softness, firelight-and-woolen-blanket intimacy; nurturing without being precious. Lived-in texture, low volume, gentle laugh lines in the voice. Around thirty.',
+  },
 ];
 
 // New narrator docs to seed (shape mirrors scripts/add-roman.js; Timestamp
