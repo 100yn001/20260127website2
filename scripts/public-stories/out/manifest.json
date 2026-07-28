@@ -170,20 +170,22 @@
       "docId": "tBBfkdJZ3zkQQgYPmzwH"
     },
     "kael-starlit-court": {
-      "status": "failed:tts-error",
+      "status": "text",
       "error": "ElevenLabs 404: {\"detail\":{\"type\":\"not_found\",\"code\":\"voice_not_found\",\"message\":\"A voice with voice_id 'adZJnAl6IYZw4EYI9FVd' was not found.\",\"status\":\"voice_not_found\",\"request_id\":\"8aa0787b2c47b00fc9de9f8e2ab2b85b",
-      "textHash": "e3e37256c774bb733dbc814abf17279debe4e80dc4f380a228a02d5ffef1d29c",
-      "words": 1264,
+      "textHash": "37848382c493b087f7f8368286aeffc3ee0e93e3c3f6bd88e1131208c4361cfc",
+      "words": 1206,
       "targetWords": 1400,
-      "announcements": 0
+      "announcements": 0,
+      "pauseDensity": 10
     },
     "kael-the-bargain": {
-      "status": "failed:tts-error",
+      "status": "text",
       "error": "ElevenLabs 404: {\"detail\":{\"type\":\"not_found\",\"code\":\"voice_not_found\",\"message\":\"A voice with voice_id 'adZJnAl6IYZw4EYI9FVd' was not found.\",\"status\":\"voice_not_found\",\"request_id\":\"fdead9500b6cde25c9de9f8e2ab2b360",
-      "textHash": "436afdf2224cff45f4649e55207ce5b1730cb9d084f020f2f46774523b5c7b14",
-      "words": 1103,
+      "textHash": "82cc37e3fb9a58336a5bac38a93f63c899078b36b565fe84d6f23f7b5c6fdb5f",
+      "words": 1002,
       "targetWords": 1400,
-      "announcements": 0
+      "announcements": 0,
+      "pauseDensity": 19
     },
     "julia-stay-on-the-line": {
       "status": "published",
@@ -222,26 +224,14 @@
       "docId": "JB3LVQBOFd50uIxiWEba"
     },
     "lighthouse-keeper": {
-      "status": "published",
+      "status": "text",
       "error": "Connection error.",
-      "textHash": "a10517e41f6b75906e96e25581bec7b973951741e9d29db4f4023cab4d2f64bb",
-      "words": 1524,
+      "textHash": "8668031b6195f4d92096527217996018631cae6d817492015c9e955926bc26ba",
+      "words": 1911,
       "targetWords": 2100,
-      "announcements": 0,
-      "ttsHash": "a10517e41f6b75906e96e25581bec7b973951741e9d29db4f4023cab4d2f64bb",
-      "chunkCount": 9,
-      "audioChunkURLs": [
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-lighthouse-keeper-chunk0.mp3?alt=media&token=f0a35700-c5d0-466c-af2a-9ddab4e043a1",
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-lighthouse-keeper-chunk1.mp3?alt=media&token=024d25fd-f85e-4d98-b1d3-0d760f082c46",
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-lighthouse-keeper-chunk2.mp3?alt=media&token=fd9c5cba-f535-40f4-9e1c-fc39d90030bb",
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-lighthouse-keeper-chunk3.mp3?alt=media&token=bdb9f150-7012-42f4-b27e-6146259b441e",
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-lighthouse-keeper-chunk4.mp3?alt=media&token=9428cdde-d1de-44ce-98f9-25e90e4da262",
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-lighthouse-keeper-chunk5.mp3?alt=media&token=e7f8f5c3-dd6c-48e7-bf5b-ac3f832808f1",
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-lighthouse-keeper-chunk6.mp3?alt=media&token=15b8e01e-2b9b-463a-97cf-b11387dfea1c",
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-lighthouse-keeper-chunk7.mp3?alt=media&token=5bd77015-dd76-4240-8021-945cc15bf35d",
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-lighthouse-keeper-chunk8.mp3?alt=media&token=c459d1e3-e902-4b40-8794-01f4c79910c0"
-      ],
-      "docId": "LZLHAtWSPf1Tgvo9z0mV"
+      "announcements": 1,
+      "docId": "LZLHAtWSPf1Tgvo9z0mV",
+      "pauseDensity": 9
     },
     "night-train-home": {
       "status": "published",
@@ -273,24 +263,14 @@
       "docId": "dmmdyJFcRUygotQfNMo6"
     },
     "orc-by-the-hearth": {
-      "status": "published",
+      "status": "text",
       "error": "401 {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"API key is invalid.\"},\"request_id\":null}",
-      "textHash": "b9cc11cba42616a64d1292494de099475e8cf51a5e24f28ea4eddfe91ca03a89",
-      "words": 1220,
+      "textHash": "f9aa642d1a8c990ebfb65bb653038bbbf67696c1042baf1014229e1e0ef66c75",
+      "words": 1272,
       "targetWords": 1400,
-      "announcements": 2,
-      "ttsHash": "b9cc11cba42616a64d1292494de099475e8cf51a5e24f28ea4eddfe91ca03a89",
-      "chunkCount": 7,
-      "audioChunkURLs": [
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-orc-by-the-hearth-chunk0.mp3?alt=media&token=74a90971-12eb-46b1-b3ff-bde2f0dde922",
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-orc-by-the-hearth-chunk1.mp3?alt=media&token=5e4e66d4-bddd-4c95-a6ba-9268b85701dd",
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-orc-by-the-hearth-chunk2.mp3?alt=media&token=240be10e-a312-4ff2-8f94-6c5c3369451a",
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-orc-by-the-hearth-chunk3.mp3?alt=media&token=55d691a0-230f-42b5-994e-0cd89e9d38b0",
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-orc-by-the-hearth-chunk4.mp3?alt=media&token=43d0a540-99f3-439a-9fee-a1ae81a5e3ea",
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-orc-by-the-hearth-chunk5.mp3?alt=media&token=e5b8558d-deec-42f7-a256-9ef14855358a",
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-orc-by-the-hearth-chunk6.mp3?alt=media&token=53485410-c421-432b-a729-b5989e0cb32c"
-      ],
-      "docId": "oXPHHGZX74xQeCVmdNAt"
+      "announcements": 1,
+      "docId": "oXPHHGZX74xQeCVmdNAt",
+      "pauseDensity": 11
     },
     "snowed-in-chalet": {
       "status": "published",
@@ -372,25 +352,14 @@
       "docId": "sqVrh7gmLddtd3Gy32wP"
     },
     "ember-knight": {
-      "status": "published",
+      "status": "text",
       "error": "401 {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"API key is invalid.\"},\"request_id\":null}",
-      "textHash": "4e9b9bbbc7af8bec409919ed16f5cf6bbc7963eb52a913974c548e86a52a66e8",
-      "words": 1292,
+      "textHash": "8d8201a404764b01a18619625831acd12a3f1691c9008aca7aa30980b3deeaeb",
+      "words": 1016,
       "targetWords": 1400,
-      "announcements": 1,
-      "ttsHash": "4e9b9bbbc7af8bec409919ed16f5cf6bbc7963eb52a913974c548e86a52a66e8",
-      "chunkCount": 8,
-      "audioChunkURLs": [
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-ember-knight-chunk0.mp3?alt=media&token=5d2ec8c7-d69e-4b45-9ece-04877666767c",
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-ember-knight-chunk1.mp3?alt=media&token=2d99c295-95f8-4a45-8913-734767ef285a",
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-ember-knight-chunk2.mp3?alt=media&token=d3c9ec73-95a4-445d-88c2-ed819558b0d4",
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-ember-knight-chunk3.mp3?alt=media&token=5944ec81-3d26-4dc4-8982-2931d35a4f3b",
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-ember-knight-chunk4.mp3?alt=media&token=aa3073ca-3391-404e-8fca-4c4b4819e1b5",
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-ember-knight-chunk5.mp3?alt=media&token=988efd22-1c65-4c20-934d-dc4fec4b1da2",
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-ember-knight-chunk6.mp3?alt=media&token=f545b218-e35a-493f-95d7-74ec92f04409",
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-ember-knight-chunk7.mp3?alt=media&token=a44774b7-02d6-4756-b6b6-ce7efe84390a"
-      ],
-      "docId": "AxrcqsLtDscYti7rTBQg"
+      "announcements": 0,
+      "docId": "AxrcqsLtDscYti7rTBQg",
+      "pauseDensity": 17
     },
     "midnight-encore": {
       "status": "tts",
