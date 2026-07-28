@@ -54,33 +54,51 @@ export function variedTint(
 }
 
 /**
- * Seeded geometry for the subtle relief overlay on cover artwork: a soft
- * lighter-shade highlight at one spot and a darker pool in the opposite
- * corner, each with its own ellipse shape. Same seed → same relief, so a
- * story's cover carries the same shading everywhere it appears.
- * All values are percentages of the tile.
+ * Seeded soft washes over cover artwork: a few large hue/lightness-drifted
+ * color fields anchored at or beyond the tile edges, so the gradient varies
+ * organically per story without any discrete highlight/shadow spots ever
+ * being visible. Same seed → same washes everywhere the cover appears.
+ * Positions/radii are percentages of the tile.
  */
-export type CoverRelief = {
-  hx: number; hy: number; hrx: number; hry: number;
-  sx: number; sy: number; srx: number; sry: number;
+export type CoverWash = {
+  x: number; y: number; rx: number; ry: number;
+  hueShift: number; lightShift: number;
+  opacity: number;
 };
 
-export function reliefFor(seed: string | undefined | null): CoverRelief {
-  const h = Math.abs(hashStr(seed || 'x'));
-  const pick = (shift: number, mod: number, min: number, span: number) =>
-    min + (((h >> shift) % mod) / (mod - 1)) * span;
-  const hx = pick(0, 97, 15, 55);
-  const hy = pick(3, 89, 10, 45);
-  return {
-    hx,
-    hy,
-    hrx: pick(6, 83, 55, 45),
-    hry: pick(9, 79, 55, 45),
-    sx: 100 - hx,
-    sy: 100 - hy,
-    srx: pick(12, 73, 90, 40),
-    sry: pick(15, 71, 90, 40),
+// Deterministic PRNG so every seed unfolds into its own arrangement while
+// staying stable across renders and platforms.
+function mulberry32(a: number) {
+  return () => {
+    a |= 0; a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
+}
+
+export function washesFor(seed: string | undefined | null): CoverWash[] {
+  const rand = mulberry32(Math.abs(hashStr(seed || 'x')) + 1);
+  const between = (min: number, max: number) => min + rand() * (max - min);
+
+  const washes: CoverWash[] = [];
+  const n = 2 + (rand() < 0.5 ? 1 : 0);
+  for (let i = 0; i < n; i++) {
+    // Centers live on a ring outside the visible square, radii reach well
+    // past it — only a broad directional field ever lands on the tile.
+    const theta = rand() * Math.PI * 2;
+    const dist = between(55, 80);
+    washes.push({
+      x: 50 + dist * Math.cos(theta),
+      y: 50 + dist * Math.sin(theta),
+      rx: between(70, 115),
+      ry: between(65, 105),
+      hueShift: between(-24, 24),
+      lightShift: (rand() < 0.5 ? -1 : 1) * between(0.06, 0.15),
+      opacity: between(0.25, 0.45),
+    });
+  }
+  return washes;
 }
 
 /** Lighten (positive) or darken (negative) a hex color, keeping hue/sat. */
@@ -88,7 +106,7 @@ export function shiftLightness(hex: string, dL: number): string {
   return shiftHsl(hex, 0, 0, dL);
 }
 
-function shiftHsl(hex: string, dH: number, dS: number, dL: number): string {
+export function shiftHsl(hex: string, dH: number, dS: number, dL: number): string {
   const { h, s, l } = hexToHsl(hex);
   return hslToHex((h + dH + 360) % 360, clamp01(s + dS), clamp01(l + dL));
 }
