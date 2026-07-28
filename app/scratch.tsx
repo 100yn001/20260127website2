@@ -4,7 +4,6 @@ import { ArrowRight, Check, Waves } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
-import AmbientPicker from '@/components/AmbientPicker';
 import {
   ContinueButton,
   FlowCluster,
@@ -47,7 +46,6 @@ export default function ScratchScreen() {
   const [charCustom, setCharCustom] = useState('');
   const [duration, setDuration] = useState<Duration>('10min');
   const [narrationMode, setNarrationMode] = useState<NarrationMode>(DEFAULT_NARRATION_MODE);
-  const [ambientPrompts, setAmbientPrompts] = useState<string[]>([]);
   const [nameOpt, setNameOpt] = useState<NameOpt>('my-name');
   const [customName, setCustomName] = useState('');
   const [storedName, setStoredName] = useState('User');
@@ -97,7 +95,6 @@ export default function ScratchScreen() {
         voiceId,
         prompt: idea,
         tags: JSON.stringify([]),
-        ambientPrompts: JSON.stringify(ambientPrompts),
       },
     });
   };
@@ -189,13 +186,6 @@ export default function ScratchScreen() {
                 value={narrationMode}
                 onValueChange={setNarrationMode}
                 options={NARRATION_MODES.map((m) => ({ value: m, label: NARRATION_MODE_LABELS[m] }))}
-              />
-            </Card>
-            <Card className="p-5 gap-4">
-              <AmbientPicker
-                context={{ prompt: idea }}
-                selected={ambientPrompts}
-                onChange={setAmbientPrompts}
               />
             </Card>
           </View>

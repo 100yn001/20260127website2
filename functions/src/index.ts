@@ -14,6 +14,6 @@ import './init';
 
 export { onQueueWrite, generateStoryWorker, sweepStuckQueue } from './generation';
 export { generateFirstStory } from './firstStory';
-export { generateFollowUps, suggestAmbient, styleWords } from './textCallables';
+export { generateFollowUps, styleWords } from './textCallables';
 export { designVoicePreviews, saveDesignedVoice, previewVoiceTts, onVoiceDeleted } from './voiceCallables';
 export { createSubscriptionCheckout, createBillingPortal, stripeWebhook } from './stripe';

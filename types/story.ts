@@ -33,6 +33,7 @@ export interface Story {
   createdAt: Date;
   coverColor?: string;
   topographyLayers?: DepthLayer[];
+  // legacy — ambient feature removed; old docs may still carry these
   ambientUrl?: string;
   ambientPrompt?: string;
 }

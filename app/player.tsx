@@ -13,7 +13,6 @@ import {
   Share2,
   SkipBack,
   SkipForward,
-  Waves,
   X,
 } from 'lucide-react-native';
 import React, { useEffect, useMemo, useState } from 'react';
@@ -55,9 +54,6 @@ export default function PlayerScreen() {
     seek,
     skipForward,
     skipBackward,
-    hasAmbient,
-    ambientEnabled,
-    setAmbientEnabled,
   } = useAudioPlayer();
 
   // Story + origin live in the same state object so the cover memo can never
@@ -182,7 +178,6 @@ export default function PlayerScreen() {
             transcript: data.transcript,
             coverColor: data.coverColor,
             topographyLayers: data.topographyLayers,
-            ambientUrl: data.ambientUrl,
             metadata: data,
           },
           true
@@ -373,18 +368,6 @@ export default function PlayerScreen() {
           </View>
 
           <View className="mt-8 flex-row items-center justify-center gap-3 w-full max-w-[360px] md:max-w-[420px]">
-            {hasAmbient && (
-              <Chip
-                active={ambientEnabled}
-                onPress={() => setAmbientEnabled(!ambientEnabled)}
-                label="ambient"
-              >
-                <Waves
-                  size={14}
-                  color={ambientEnabled ? 'hsl(var(--background))' : 'hsl(var(--foreground))'}
-                />
-              </Chip>
-            )}
             <Chip active={bookmarked} onPress={toggleBookmark} label="bookmark">
               <Bookmark
                 size={14}

@@ -5,7 +5,6 @@ import { ArrowRight, Sparkles } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
-import AmbientPicker from '@/components/AmbientPicker';
 import {
   ContinueButton,
   FlowCluster,
@@ -51,7 +50,6 @@ export default function NarratorStoryScreen() {
   const [prompt, setPrompt] = useState('');
   const [duration, setDuration] = useState<Duration>('10min');
   const [narrationMode, setNarrationMode] = useState<NarrationMode>(DEFAULT_NARRATION_MODE);
-  const [ambientPrompts, setAmbientPrompts] = useState<string[]>([]);
   const [storedName, setStoredName] = useState('User');
 
   useEffect(() => {
@@ -88,7 +86,6 @@ export default function NarratorStoryScreen() {
         tags: JSON.stringify([]),
         narratorId: params.narratorId as string,
         narratorData: params.narratorData as string,
-        ambientPrompts: JSON.stringify(ambientPrompts),
       },
     });
   };
@@ -175,16 +172,6 @@ export default function NarratorStoryScreen() {
                 value={narrationMode}
                 onValueChange={setNarrationMode}
                 options={NARRATION_MODES.map((m) => ({ value: m, label: NARRATION_MODE_LABELS[m] }))}
-              />
-            </Card>
-            <Card className="p-5 gap-4">
-              <AmbientPicker
-                context={{
-                  prompt,
-                  character: narrator?.name ?? '',
-                }}
-                selected={ambientPrompts}
-                onChange={setAmbientPrompts}
               />
             </Card>
           </View>

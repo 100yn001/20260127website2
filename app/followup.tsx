@@ -89,9 +89,6 @@ export default function FollowUpScreen() {
     voiceId: getStringParam('voiceId'),
     prompt: getStringParam('prompt'),
     tags: params.tags ? safeParse(params.tags as string, []) : [],
-    ambientMode: getStringParam('ambientMode', 'auto'),
-    ambientCustomPrompt: getStringParam('ambientCustomPrompt'),
-    ambientPrompts: params.ambientPrompts ? safeParse(params.ambientPrompts as string, []) : [],
   };
   if (params.narratorData) recipeData.narratorData = safeParse(params.narratorData as string, null);
   if (params.narratorId) recipeData.narratorId = params.narratorId as string;

@@ -24,7 +24,6 @@ interface GeneratedFirstStory {
   storyId: string;
   transcript: string;
   audioChunkURLs: string[];
-  ambientUrl: string | null;
 }
 import { bakeAndUploadCardTextures, uploadSilverCardImage } from '@/services/silver-card-image';
 import { saveSilverCard, saveUserProfile } from '@/services/user-service';
@@ -216,11 +215,8 @@ export default function OnboardingScreen() {
   const [firstStory, setFirstStory] = useState<GeneratedFirstStory | null>(null);
   // Object URLs for the player. Created after blobs land, revoked on unmount.
   const [narrationUrls, setNarrationUrls] = useState<string[]>([]);
-  const [ambientUrl, setAmbientUrl] = useState<string | null>(null);
   const [firstStoryPlaying, setFirstStoryPlaying] = useState(false);
-  const [firstStoryAmbientOn, setFirstStoryAmbientOn] = useState(true);
   const narrationAudioRef = useRef<HTMLAudioElement | null>(null);
-  const ambientAudioRef = useRef<HTMLAudioElement | null>(null);
   const narrationChunkIndexRef = useRef(0);
   // Per-chunk durations in seconds, populated by probing each narration URL
   // once it lands. Total story duration = sum. Progress bar uses elapsed/total.
@@ -810,7 +806,6 @@ export default function OnboardingScreen() {
   useEffect(() => {
     if (!firstStory) return;
     setNarrationUrls(firstStory.audioChunkURLs);
-    setAmbientUrl(firstStory.ambientUrl ?? null);
     setChunkDurations([]);
     setFirstStoryProgress(0);
   }, [firstStory]);
@@ -848,7 +843,6 @@ export default function OnboardingScreen() {
   useEffect(() => {
     return () => {
       narrationAudioRef.current?.pause();
-      ambientAudioRef.current?.pause();
     };
   }, []);
 
@@ -901,7 +895,6 @@ export default function OnboardingScreen() {
       setFirstStoryPlaying(false);
       narrationChunkIndexRef.current = 0;
       setFirstStoryProgress(0);
-      ambientAudioRef.current?.pause();
     }
   };
 
@@ -920,11 +913,9 @@ export default function OnboardingScreen() {
 
   const handleFirstStoryPlayPause = () => {
     const narration = narrationAudioRef.current;
-    const ambient = ambientAudioRef.current;
     if (!narration) return;
     if (firstStoryPlaying) {
       narration.pause();
-      ambient?.pause();
       setFirstStoryPlaying(false);
       return;
     }
@@ -933,35 +924,11 @@ export default function OnboardingScreen() {
     } else {
       narration.play().catch((err) => console.warn('narration resume failed:', err));
     }
-    if (firstStoryAmbientOn && ambient && ambientUrl) {
-      if (!ambient.src) ambient.src = ambientUrl;
-      ambient.loop = true;
-      ambient.volume = 0.35;
-      ambient.play().catch((err) => console.warn('ambient play failed:', err));
-    }
     setFirstStoryPlaying(true);
-  };
-
-  const handleAmbientToggle = () => {
-    const next = !firstStoryAmbientOn;
-    setFirstStoryAmbientOn(next);
-    const ambient = ambientAudioRef.current;
-    if (!ambient || !ambientUrl) return;
-    if (next) {
-      if (!ambient.src) ambient.src = ambientUrl;
-      ambient.loop = true;
-      ambient.volume = 0.35;
-      if (firstStoryPlaying) {
-        ambient.play().catch((err) => console.warn('ambient resume failed:', err));
-      }
-    } else {
-      ambient.pause();
-    }
   };
 
   const handleFirstStoryContinue = () => {
     narrationAudioRef.current?.pause();
-    ambientAudioRef.current?.pause();
     setFirstStoryPlaying(false);
     setFirstStoryProgress(0);
     advanceStepWithFade('signup');
@@ -1631,16 +1598,6 @@ export default function OnboardingScreen() {
                       {firstStoryPlaying ? '❚❚' : '▶'}
                     </Text>
                   </TouchableOpacity>
-                  {ambientUrl ? (
-                    <TouchableOpacity
-                      style={styles.firstStoryAmbientButton}
-                      onPress={handleAmbientToggle}
-                    >
-                      <Text style={styles.firstStoryAmbientText}>
-                        ambient {firstStoryAmbientOn ? 'on' : 'off'}
-                      </Text>
-                    </TouchableOpacity>
-                  ) : null}
                 </View>
                 <View style={styles.firstStoryProgressTrack}>
                   <View
@@ -1672,11 +1629,6 @@ export default function OnboardingScreen() {
                           // No-op: an explicit user pause already calls setFirstStoryPlaying(false).
                         }
                       },
-                      preload: 'auto',
-                    })}
-                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                    {React.createElement('audio' as any, {
-                      ref: ambientAudioRef,
                       preload: 'auto',
                     })}
                   </>
@@ -2169,19 +2121,6 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontFamily: 'EBGaramond-Regular',
     lineHeight: 24,
-  },
-  firstStoryAmbientButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.25)',
-  },
-  firstStoryAmbientText: {
-    fontSize: 13,
-    color: 'rgba(255, 255, 255, 0.85)',
-    fontFamily: 'EBGaramond-Regular',
-    letterSpacing: 0.5,
   },
   firstStoryProgressTrack: {
     marginTop: 16,

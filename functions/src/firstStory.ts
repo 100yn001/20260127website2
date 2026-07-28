@@ -9,7 +9,6 @@ import { HttpsError, onCall } from 'firebase-functions/v2/https';
 import { entitlementsRef, readEntitlements } from './entitlements';
 import { getAnthropic } from './fable';
 import {
-  ambientClipBuffer,
   generateDepthLayers,
   mapWithConcurrency,
   splitTextIntoChunks,
@@ -32,13 +31,6 @@ const SCENARIO_LABELS: Record<FirstStoryScenario, string> = {
   meditation: 'a meditation',
 };
 
-const AMBIENT_PROMPTS: Record<FirstStoryScenario, string> = {
-  walk:
-    'gentle birdsong, soft breeze rustling through leaves, distant warbler calls, faint footsteps on a quiet park path, peaceful springtime atmosphere',
-  meditation:
-    'calming ambient meditation music, soft synth pads, slow resonant bell tones, gentle low drone, peaceful and slow, no vocals, no rhythm',
-};
-
 const TARGET_WORD_COUNT = 280; // ~2 minutes at ~140 wpm
 
 async function firstStoryTranscript(name: string, scenario: FirstStoryScenario): Promise<string> {
@@ -48,7 +40,7 @@ async function firstStoryTranscript(name: string, scenario: FirstStoryScenario):
       : `The setting is a guided meditation. Lead the listener into stillness. Cue gentle breathing, soften body parts in sequence, invite warmth into the chest, let thoughts drift past without grabbing them. Keep the language low and unhurried.`;
 
   const system = [
-    `You write short, soothing audio narrations meant to be read aloud by a calm voice over peaceful ambient sound.`,
+    `You write short, soothing audio narrations meant to be read aloud by a calm voice.`,
     `Output PURE narration only — no titles, no headings, no stage directions, no sound-effect cues, no parentheticals, no markdown.`,
     `Second-person, present tense. Address the listener directly using their name a few times, but not so often that it sounds canned.`,
     `Aim for ${TARGET_WORD_COUNT - 20}–${TARGET_WORD_COUNT + 20} words and DO NOT exceed ${TARGET_WORD_COUNT + 20}; this is a strictly ~2-minute audio.`,
@@ -122,23 +114,13 @@ export const generateFirstStory = onCall(
       const voiceId = FIRST_STORY_VOICE_IDS[gender];
       const chunks = splitTextIntoChunks(transcript);
 
-      const ambientPromise = ambientClipBuffer(AMBIENT_PROMPTS[scenario]);
       const chunkBuffers = await mapWithConcurrency(chunks, 2, (c) => ttsChunkBuffer(c, voiceId));
-      const ambientBuf = await ambientPromise;
 
       const timestamp = Date.now();
       const folder = 'generated-audio/daytime';
       const audioChunkURLs = await mapWithConcurrency(chunkBuffers, 4, (buf, i) =>
         uploadPublicMp3(`${folder}/${uid}-${timestamp}-chunk${i}.mp3`, buf),
       );
-      let ambientUrl: string | undefined;
-      if (ambientBuf) {
-        try {
-          ambientUrl = await uploadPublicMp3(`${folder}/${uid}-${timestamp}-ambient.mp3`, ambientBuf);
-        } catch (err) {
-          console.warn('first-story ambient upload failed:', err);
-        }
-      }
 
       const characterByGender: Record<FirstStoryGender, string> = {
         male: 'narrator (he)',
@@ -167,13 +149,9 @@ export const generateFirstStory = onCall(
         topographyLayers: generateDepthLayers(5),
         createdAt: admin.firestore.Timestamp.now(),
       };
-      if (ambientUrl) {
-        storyData.ambientUrl = ambientUrl;
-        storyData.ambientPrompt = AMBIENT_PROMPTS[scenario];
-      }
       await storyRef.set(storyData);
 
-      return { storyId: storyRef.id, transcript, audioChunkURLs, ambientUrl: ambientUrl ?? null };
+      return { storyId: storyRef.id, transcript, audioChunkURLs };
     } catch (err: any) {
       // Give the slot back so the user can retry.
       await entitlementsRef(uid).set(

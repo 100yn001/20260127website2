@@ -202,59 +202,6 @@ export async function uploadAudioChunk(
 }
 
 /**
- * Upload the ambient-loop MP3 for a story to Firebase Storage.
- */
-export async function uploadAmbient(
-  userId: string,
-  filePath: string,
-  isNighttime: boolean
-): Promise<string> {
-  try {
-    const timestamp = Date.now();
-    const filename = `${userId}-${timestamp}-ambient.mp3`;
-    const storagePath = isNighttime ? 'generated-audio/nighttime' : 'generated-audio/daytime';
-    const fullPath = `${storagePath}/${filename}`;
-
-    const stat = await ReactNativeBlobUtil.fs.stat(filePath);
-    if (Number(stat.size) === 0) {
-      throw new Error('Ambient file is empty - cannot upload');
-    }
-
-    const fileUri = filePath.startsWith('file://') ? filePath : 'file://' + filePath;
-    const fileResponse = await fetch(fileUri);
-    const blob = await fileResponse.blob();
-
-    const currentUser = auth.currentUser;
-    if (!currentUser) throw new Error('No authenticated user');
-    const token = await currentUser.getIdToken();
-
-    const bucket = storage.app.options.storageBucket || '';
-    const encodedPath = encodeURIComponent(fullPath);
-    const uploadUrl = `https://firebasestorage.googleapis.com/v0/b/${bucket}/o?name=${encodedPath}`;
-
-    const uploadRes = await fetch(uploadUrl, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Firebase ${token}`,
-        'Content-Type': 'audio/mpeg',
-      },
-      body: blob,
-    });
-
-    if (!uploadRes.ok) {
-      const errorText = await uploadRes.text();
-      throw new Error(`Ambient upload failed: ${uploadRes.status} - ${errorText.substring(0, 200)}`);
-    }
-
-    const storageRef = ref(storage, fullPath);
-    return await getDownloadURL(storageRef);
-  } catch (error) {
-    console.error('❌ Error uploading ambient:', error);
-    throw error;
-  }
-}
-
-/**
  * Get all static audio stories (available to all users)
  */
 export async function getStaticStories(): Promise<PreGeneratedStory[]> {

@@ -22,7 +22,6 @@ export interface TrackInfo {
   coverColor?: string;
   topographyLayers?: any[];
   metadata?: Record<string, any>;
-  ambientUrl?: string;
 }
 
 interface AudioPlayerContextValue {
@@ -41,11 +40,6 @@ interface AudioPlayerContextValue {
   stop: () => Promise<void>;
   isAudioReady: boolean;
   debugInfo: string;
-  hasAmbient: boolean;
-  ambientEnabled: boolean;
-  ambientVolume: number;
-  setAmbientEnabled: (enabled: boolean) => void;
-  setAmbientVolume: (volume: number) => void;
 }
 
 const AudioPlayerContext = createContext<AudioPlayerContextValue | undefined>(undefined);
@@ -128,20 +122,6 @@ export const AudioPlayerProvider = ({ children }: { children: React.ReactNode })
   const playbackState = usePlaybackState();
   const { position: trackPosSec, duration: trackDurSec } = useProgress(500);
 
-  const ambientSoundRef = useRef<Audio.Sound | null>(null);
-  const [hasAmbient, setHasAmbient] = useState(false);
-  const [ambientEnabled, setAmbientEnabledState] = useState(true);
-  const [ambientVolume, setAmbientVolumeState] = useState(0.2);
-
-  const cleanupAmbient = useCallback(async () => {
-    const sound = ambientSoundRef.current;
-    if (sound) {
-      try { await sound.stopAsync(); } catch { /* ignore */ }
-      try { await sound.unloadAsync(); } catch { /* ignore */ }
-    }
-    ambientSoundRef.current = null;
-  }, []);
-
   // ─── Compute total position/duration across chunks ───
   const chunkDurations = chunkDurationsRef.current;
   const isChunked = chunkDurations.length > 1;
@@ -162,17 +142,6 @@ export const AudioPlayerProvider = ({ children }: { children: React.ReactNode })
   }
 
   const isPlaying = playbackState.state === State.Playing;
-
-  // Mirror main-track play/pause to the ambient bed
-  useEffect(() => {
-    const sound = ambientSoundRef.current;
-    if (!sound || !ambientEnabled) return;
-    if (isPlaying) {
-      sound.playAsync().catch(() => { /* ignore */ });
-    } else {
-      sound.pauseAsync().catch(() => { /* ignore */ });
-    }
-  }, [isPlaying, ambientEnabled]);
 
   // ─── Setup RNTP once ───
   useEffect(() => {
@@ -260,10 +229,6 @@ export const AudioPlayerProvider = ({ children }: { children: React.ReactNode })
         cleanupFiles(localFilesRef.current);
         localFilesRef.current = [];
       }
-
-      // Tear down any previous ambient sound
-      await cleanupAmbient();
-      setHasAmbient(false);
 
       // Reset chunk state
       chunkDurationsRef.current = [];
@@ -358,34 +323,6 @@ export const AudioPlayerProvider = ({ children }: { children: React.ReactNode })
 
       if (loadGenerationRef.current !== currentGen) return;
 
-      // ─── Ambient bed: load in parallel, never block narration ───
-      if (track.ambientUrl) {
-        (async () => {
-          try {
-            const { sound } = await Audio.Sound.createAsync(
-              { uri: track.ambientUrl! },
-              {
-                isLooping: true,
-                volume: ambientEnabled ? ambientVolume : 0,
-                shouldPlay: false,
-              }
-            );
-            if (loadGenerationRef.current !== currentGen) {
-              await sound.unloadAsync().catch(() => {});
-              return;
-            }
-            ambientSoundRef.current = sound;
-            setHasAmbient(true);
-            if (isPlaying && ambientEnabled) {
-              sound.playAsync().catch(() => {});
-            }
-          } catch (err) {
-            console.warn('Failed to load ambient sound:', err);
-            setHasAmbient(false);
-          }
-        })();
-      }
-
       if (autoplay) {
         await TrackPlayer.play();
       }
@@ -479,34 +416,11 @@ export const AudioPlayerProvider = ({ children }: { children: React.ReactNode })
       cleanupFiles(localFilesRef.current);
       localFilesRef.current = [];
     }
-    await cleanupAmbient();
-    setHasAmbient(false);
     chunkDurationsRef.current = [];
     setActiveChunkIndex(0);
     setCurrentTrack(null);
     setIsAudioReady(false);
-  }, [cleanupAmbient]);
-
-  const setAmbientEnabled = useCallback((enabled: boolean) => {
-    setAmbientEnabledState(enabled);
-    const sound = ambientSoundRef.current;
-    if (!sound) return;
-    if (enabled) {
-      sound.setVolumeAsync(ambientVolume).catch(() => {});
-      if (isPlaying) sound.playAsync().catch(() => {});
-    } else {
-      sound.pauseAsync().catch(() => {});
-    }
-  }, [ambientVolume, isPlaying]);
-
-  const setAmbientVolume = useCallback((volume: number) => {
-    const clamped = Math.max(0, Math.min(1, volume));
-    setAmbientVolumeState(clamped);
-    const sound = ambientSoundRef.current;
-    if (sound && ambientEnabled) {
-      sound.setVolumeAsync(clamped).catch(() => {});
-    }
-  }, [ambientEnabled]);
+  }, []);
 
   const value: AudioPlayerContextValue = {
     currentTrack,
@@ -524,11 +438,6 @@ export const AudioPlayerProvider = ({ children }: { children: React.ReactNode })
     stop,
     isAudioReady,
     debugInfo,
-    hasAmbient,
-    ambientEnabled,
-    ambientVolume,
-    setAmbientEnabled,
-    setAmbientVolume,
   };
 
   return <AudioPlayerContext.Provider value={value}>{children}</AudioPlayerContext.Provider>;

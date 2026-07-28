@@ -322,20 +322,6 @@ async function fableFollowUpQuestions(recipe: FableRecipe): Promise<string[]> {
   return parseQuestions(raw);
 }
 
-// ── Ambient prompt ──────────────────────────────────────────────────────────
-
-async function fableAmbientPrompt(setting: string, location: string): Promise<string> {
-  const userPrompt = `Given a story set in "${setting || 'unspecified'}" at a "${location || 'unspecified'}" location, output a single comma-separated list of ambient sounds that would realistically be heard continuously in the background. No music. No speech. No voices. Only environmental, natural, or mechanical sounds that can loop seamlessly. Example output: "wind through leafy trees, distant birdsong, faint gravel footfalls, rustling foliage". Output only the sound list on one line, nothing else.`;
-  const raw = await fableText({
-    system:
-      'You output only comma-separated lists of ambient environmental sounds. You never include music, speech, or voices. You never add preamble or commentary.',
-    user: userPrompt,
-    maxTokens: 256,
-    label: 'ambient-prompt',
-  });
-  return raw.trim().split('\n')[0].trim();
-}
-
 // ── Grok fallback (port of services/grok-story.ts, fixed parser) ────────────
 
 type GrokMessage = { role: 'system' | 'user'; content: string };
@@ -442,22 +428,13 @@ For example, if the user has indicated that they want the character to be domina
   ]);
 }
 
-async function grokAmbientPrompt(setting: string, location: string): Promise<string> {
-  const userPrompt = `Given a story set in "${setting || 'unspecified'}" at a "${location || 'unspecified'}" location, output a single comma-separated list of ambient sounds that would realistically be heard continuously in the background. No music. No speech. No voices. Only environmental, natural, or mechanical sounds that can loop seamlessly. Example output: "wind through leafy trees, distant birdsong, faint gravel footfalls, rustling foliage". Output only the sound list on one line, nothing else.`;
-  const raw = await callGrok([
-    { role: 'system', content: 'You output only comma-separated lists of ambient environmental sounds. You never include music, speech, or voices. You never add preamble or commentary.' },
-    { role: 'user', content: userPrompt },
-  ]);
-  return raw.trim().split('\n')[0].trim();
-}
-
 // ── Refusal/failure logging (fail-soft; powers /admin) ──────────────────────
 
 async function logFableFailure(
   err: any,
   uid: string | null,
   recipe: FableRecipe,
-  call: 'transcript' | 'follow-up' | 'ambient',
+  call: 'transcript' | 'follow-up',
 ): Promise<void> {
   try {
     const meta = err?.__fable || {};
@@ -512,18 +489,5 @@ export async function generateFollowUpQuestions(
     console.warn(`⚠️ Fable follow-up questions failed (${err?.message}); falling back to Grok`);
     await logFableFailure(err, uid, recipe, 'follow-up');
     return await grokFollowUpQuestions(recipe);
-  }
-}
-
-export async function generateAmbientPrompt(setting: string, location: string): Promise<string> {
-  try {
-    return await fableAmbientPrompt(setting, location);
-  } catch (err: any) {
-    console.warn(`⚠️ Fable ambient failed (${err?.message}); falling back to Grok`);
-    try {
-      return await grokAmbientPrompt(setting, location);
-    } catch {
-      return ''; // ambient is optional — never block a story over it
-    }
   }
 }

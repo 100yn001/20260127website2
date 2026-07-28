@@ -9,7 +9,7 @@
  *       checks/consumes an entitlement slot and marks the doc 'generating'
  *       (or 'payment_required'), then enqueues the heavy worker.
  *     → generateStoryWorker (task queue, 1800s): Fable text pipeline (Grok
- *       fallback) + ElevenLabs TTS/ambient + Storage upload + story doc.
+ *       fallback) + ElevenLabs TTS + Storage upload + story doc.
  *     → sweepStuckQueue (schedule): refunds + errors docs stuck 'generating'
  *       (worker killed by timeout/OOM — its catch can never see that).
  */
@@ -20,7 +20,6 @@ import { onDocumentWritten } from 'firebase-functions/v2/firestore';
 import { onTaskDispatched } from 'firebase-functions/v2/tasks';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import {
-  generateAmbientPrompt,
   generateTranscript,
   type FableRecipe,
 } from './fable';
@@ -50,9 +49,6 @@ export interface RecipeData extends FableRecipe {
   voiceId?: string;
   narratorId?: string;
   coverColor?: string;
-  ambientPrompts?: string[];
-  ambientMode?: 'auto' | 'off' | 'custom';
-  ambientCustomPrompt?: string;
 }
 
 interface QueueItem {
@@ -185,28 +181,6 @@ export async function ttsChunkBuffer(text: string, voiceId: string): Promise<Buf
     throw new Error(`ElevenLabs TTS ${res.status}: ${(await res.text()).slice(0, 200)}`);
   }
   return Buffer.from(await res.arrayBuffer());
-}
-
-/** 30s seamless ambient loop via ElevenLabs sound-generation; null on failure. */
-export async function ambientClipBuffer(prompt: string): Promise<Buffer | null> {
-  try {
-    const res = await fetch('https://api.elevenlabs.io/v1/sound-generation', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'xi-api-key': process.env.ELEVENLABS_API_KEY || '',
-      },
-      body: JSON.stringify({ text: prompt, duration_seconds: 30, loop: true, prompt_influence: 0.3 }),
-    });
-    if (!res.ok) {
-      console.warn('ElevenLabs SFX error:', res.status, (await res.text()).slice(0, 200));
-      return null;
-    }
-    return Buffer.from(await res.arrayBuffer());
-  } catch (err) {
-    console.warn('Ambient clip generation failed:', err);
-    return null;
-  }
 }
 
 export async function uploadPublicMp3(path: string, buf: Buffer): Promise<string> {
@@ -343,28 +317,13 @@ export const generateStoryWorker = onTaskDispatched(
       await updateQueue(userId, queueId, { currentStep: 'generating_transcript', progress: 30 });
       const transcript = await generateTranscript(recipe, followUpAnswer, userId);
 
-      // STEP 3: TTS chunks (bounded parallelism) + ambient in parallel
+      // STEP 3: TTS chunks (bounded parallelism)
       await updateQueue(userId, queueId, { currentStep: 'generating_audio', progress: 50 });
       const voiceId =
         recipe.voiceId || VOICE_IDS[(recipe.genderOther as string) || ''] || VOICE_IDS.male;
       const chunks = enforceHardLimit(splitTextIntoChunks(transcript));
       if (chunks.length === 0) throw new Error('Transcript produced no audio chunks');
       console.log(`📝 ${chunks.length} chunk(s) for TTS, voice ${voiceId}`);
-
-      const ambientPromise = (async (): Promise<{ prompt: string; buf: Buffer | null }> => {
-        const picked = (recipe.ambientPrompts || []).map((p) => (p || '').trim()).filter(Boolean).slice(0, 2);
-        const mode = recipe.ambientMode || 'auto';
-        if (picked.length > 0) {
-          const prompt = picked.join(' and ');
-          return { prompt, buf: await ambientClipBuffer(prompt) };
-        }
-        if (mode === 'off') return { prompt: '', buf: null };
-        let prompt = mode === 'custom' && (recipe.ambientCustomPrompt || '').trim()
-          ? (recipe.ambientCustomPrompt || '').trim()
-          : await generateAmbientPrompt(recipe.setting || '', recipe.location || '');
-        if (!prompt) return { prompt: '', buf: null };
-        return { prompt, buf: await ambientClipBuffer(prompt) };
-      })();
 
       const chunkBuffers = await mapWithConcurrency(chunks, TTS_CONCURRENCY, (chunk, i) => {
         console.log(`🎤 chunk ${i + 1}/${chunks.length} (${chunk.length} chars)`);
@@ -379,18 +338,6 @@ export const generateStoryWorker = onTaskDispatched(
         uploadPublicMp3(`${folder}/${userId}-${timestamp}-chunk${i}.mp3`, buf),
       );
       const audioUrl = audioChunkURLs[0];
-
-      let ambientUrl: string | undefined;
-      let ambientPrompt: string | undefined;
-      try {
-        const { prompt, buf } = await ambientPromise;
-        if (buf && prompt) {
-          ambientUrl = await uploadPublicMp3(`${folder}/${userId}-${timestamp}-ambient.mp3`, buf);
-          ambientPrompt = prompt;
-        }
-      } catch (err) {
-        console.warn('Ambient failed, continuing narration-only:', err);
-      }
 
       // STEP 5: story doc (client shape — see services/audio-generation*.ts)
       const createdAt = admin.firestore.Timestamp.now();
@@ -429,10 +376,6 @@ export const generateStoryWorker = onTaskDispatched(
       if (recipe.narrationMode) storyData.narrationMode = recipe.narrationMode;
       if (recipe.narratorId) storyData.narratorId = recipe.narratorId;
       if (recipe.narratorData?.name) storyData.narratorName = recipe.narratorData.name;
-      if (ambientUrl) {
-        storyData.ambientUrl = ambientUrl;
-        storyData.ambientPrompt = ambientPrompt;
-      }
       await storyRef.set(storyData);
 
       // STEP 6: complete

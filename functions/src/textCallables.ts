@@ -31,46 +31,6 @@ export const generateFollowUps = onCall({ timeoutSeconds: 300 }, async (request)
   return { questions };
 });
 
-/** Three discrete background-sound ideas (port of suggestAmbientSounds). */
-export const suggestAmbient = onCall({ timeoutSeconds: 60 }, async (request) => {
-  requireAuth(request);
-  const ctx = request.data || {};
-  const seed = [ctx.setting, ctx.location, ctx.character, ctx.trope, ctx.prompt]
-    .filter((s: unknown) => typeof s === 'string' && (s as string).trim())
-    .join(' · ')
-    .trim();
-  if (!seed) return { suggestions: [] };
-
-  const response = await getAnthropic().messages.create({
-    model: HAIKU,
-    max_tokens: 120,
-    temperature: 0.85,
-    system:
-      "Given a story scene, return THREE distinct background-sound ideas as a JSON array of strings. " +
-      "Each item must be ONE discrete sound source (not a layered scene). " +
-      "Examples for 'coffee shop date': [\"soft voices in background\", \"espresso machine hissing\", \"pages of a book turning\"]. " +
-      "Lowercase. 2 to 6 words. No punctuation inside items. No explanation, output ONLY the JSON array.",
-    messages: [{ role: 'user', content: seed.slice(0, 500) }],
-  });
-
-  const raw = extractText(response);
-  const match = raw.match(/\[[\s\S]*\]/);
-  if (!match) return { suggestions: [] };
-  try {
-    const parsed = JSON.parse(match[0]);
-    if (!Array.isArray(parsed)) return { suggestions: [] };
-    return {
-      suggestions: parsed
-        .filter((s: unknown) => typeof s === 'string')
-        .map((s: string) => s.trim().toLowerCase())
-        .filter(Boolean)
-        .slice(0, 3),
-    };
-  } catch {
-    return { suggestions: [] };
-  }
-});
-
 /** Three storytelling-style words for the silver card (port of describeStorytellingStyle). */
 export const styleWords = onCall({ timeoutSeconds: 60 }, async (request) => {
   requireAuth(request);

@@ -1,4 +1,3 @@
-import AmbientPicker from '@/components/AmbientPicker';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { db } from '@/config/firebase';
 import { useStoryQueue } from '@/contexts/StoryQueueContext';
@@ -58,7 +57,6 @@ export default function RegenerateScreen() {
   // Narration details
   const [duration, setDuration] = useState<'5min' | '10min' | '15min'>('10min');
   const [narrationMode, setNarrationMode] = useState<NarrationMode>(DEFAULT_NARRATION_MODE);
-  const [ambientPrompts, setAmbientPrompts] = useState<string[]>([]);
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [storedUserName, setStoredUserName] = useState('You');
@@ -97,7 +95,6 @@ export default function RegenerateScreen() {
         );
         if (typeof data.userName === 'string') setNewName(data.userName);
         if (typeof data.voiceId === 'string') setNewVoiceId(data.voiceId);
-        if (Array.isArray(data.ambientPrompts)) setAmbientPrompts(data.ambientPrompts);
       } catch (e) {
         console.warn('[regenerate] could not load source story', e);
       }
@@ -196,7 +193,6 @@ export default function RegenerateScreen() {
         prompt: additionalPrompt,
         tags: Array.isArray(originalRecipe.tags) ? originalRecipe.tags : [],
         coverColor: originalRecipe.coverColor || '',
-        ambientPrompts,
       };
       if (originalRecipe.narratorId) recipe.narratorId = originalRecipe.narratorId;
       if (originalRecipe.narratorData) recipe.narratorData = originalRecipe.narratorData;
@@ -443,19 +439,6 @@ export default function RegenerateScreen() {
           </View>
         </View>
 
-        <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
-          <AmbientPicker
-            context={{
-              setting: (params.setting as string) || '',
-              location: (params.location as string) || '',
-              character: (params.character as string) || '',
-              trope: (params.trope as string) || '',
-              prompt: (params.prompt as string) || '',
-            }}
-            selected={ambientPrompts}
-            onChange={setAmbientPrompts}
-          />
-        </View>
       </ScrollView>
 
       <View style={[styles.footer, { backgroundColor: colors.background, borderTopColor: colors.border }]}>

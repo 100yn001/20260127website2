@@ -13,7 +13,6 @@ import {
 import React, { useEffect, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
-import AmbientPicker from '@/components/AmbientPicker';
 import {
   ContinueButton,
   FlowCluster,
@@ -98,7 +97,6 @@ export default function RecipeScreen() {
 
   const [duration, setDuration] = useState<Duration>('10min');
   const [narrationMode, setNarrationMode] = useState<NarrationMode>(DEFAULT_NARRATION_MODE);
-  const [ambientPrompts, setAmbientPrompts] = useState<string[]>([]);
 
   const [nameOpt, setNameOpt] = useState<NameOpt>('my-name');
   const [customName, setCustomName] = useState('');
@@ -167,7 +165,6 @@ export default function RecipeScreen() {
         voiceId: voiceId ?? '',
         prompt: '',
         tags: JSON.stringify(chips),
-        ambientPrompts: JSON.stringify(ambientPrompts),
       },
     });
   };
@@ -330,18 +327,6 @@ export default function RecipeScreen() {
                 value={narrationMode}
                 onValueChange={setNarrationMode}
                 options={NARRATION_MODES.map((m) => ({ value: m, label: NARRATION_MODE_LABELS[m] }))}
-              />
-            </Card>
-            <Card className="p-5 gap-4">
-              <AmbientPicker
-                context={{
-                  setting: settingSel ?? '',
-                  location: locationSel ?? '',
-                  character: characterSel ?? '',
-                  trope: tropeSel ?? '',
-                }}
-                selected={ambientPrompts}
-                onChange={setAmbientPrompts}
               />
             </Card>
           </View>
