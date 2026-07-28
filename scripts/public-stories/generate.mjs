@@ -297,6 +297,11 @@ async function phaseText(args, manifest) {
       fs.writeFileSync(file, transcript, 'utf8');
       const words = transcript.split(/\s+/).length;
       const ann = announcementCount(transcript);
+      // house-sound guardrail: airy/slow/intimate needs breathing room in the
+      // TEXT too — pauses ('…', line breaks) per 100 words; < 8 reads
+      // declarative and should be reviewed before TTS.
+      const pauses = (transcript.match(/…|\.\.\.|\n\n/g) || []).length;
+      const pauseDensity = Math.round((pauses / Math.max(1, words)) * 100);
       manifest.stories[spec.slug] = {
         ...entry,
         status: 'text',
@@ -304,10 +309,12 @@ async function phaseText(args, manifest) {
         words,
         targetWords,
         announcements: ann,
+        pauseDensity,
       };
       saveManifest(MANIFEST_FILE, manifest);
-      console.log(`${words} words (target ${targetWords}), announcements ${ann}`);
-      rows.push([spec.slug, spec.narrationMode, spec.duration, `${words}/${targetWords}`, String(ann), 'ok']);
+      const airFlag = pauseDensity < 8 ? ' ⚠️ reads declarative — review' : '';
+      console.log(`${words} words (target ${targetWords}), announcements ${ann}, pauses/100w ${pauseDensity}${airFlag}`);
+      rows.push([spec.slug, spec.narrationMode, spec.duration, `${words}/${targetWords}`, `${ann}·${pauseDensity}`, `ok${airFlag ? ' ⚠️' : ''}`]);
     } catch (err) {
       const moderation = /CONTENT_MODERATION/.test(String(err?.message));
       manifest.stories[spec.slug] = {

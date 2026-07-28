@@ -166,6 +166,12 @@ bottom-right), so these are the only colors to maintain.
 
 ## 6c. Voice & delivery
 
+**The house sound (quality bar for every audio, every batch):** airy and breath-forward, slow,
+intimate, sensual — never declarative, never announcer-energy. If a render sounds like someone
+*reading*, it fails; it should sound like someone a breath away who forgot anyone could be
+listening. Guardrails: the delivery prefix below, per-voice tuning (`RENDER_TUNING`), the
+prompt-engine murmur rules, and the text-phase pause-density stat (⚠️ under 8 pauses/100 words).
+
 House delivery is **whisper-slow**: every TTS chunk is prefixed `[whispers][slowly] `
 (`DELIVERY_PREFIX` in lib.mjs — each chunk is its own eleven_v3 call, so the cue re-asserts per
 chunk; a spec can opt out with `delivery: 'plain'`). The prompt engine also writes for murmured
