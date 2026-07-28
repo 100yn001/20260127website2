@@ -416,6 +416,13 @@
       "words": 594,
       "targetWords": 850,
       "announcements": 0
+    },
+    "adam-after-the-opening": {
+      "status": "text",
+      "textHash": "84dfbdc929ba5647371c5ab64acdfcc26c40911e486ee6173ea79433c4e37719",
+      "words": 574,
+      "targetWords": 850,
+      "announcements": 1
     }
   },
   "voiceCandidates": {
