@@ -48,8 +48,10 @@ export default function SignUpScreen() {
   };
 
   return (
-    <Screen>
-      <TopBar onBack={() => router.back()} />
+    <Screen desktopBack={() => router.back()}>
+      <View className="md:hidden">
+        <TopBar onBack={() => router.back()} />
+      </View>
       <FlowCluster>
         <ScreenHeader title="welcome to yn" subtitle="sign up to get started" />
 

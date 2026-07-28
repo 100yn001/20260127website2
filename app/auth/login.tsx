@@ -67,8 +67,10 @@ export default function LoginScreen() {
   };
 
   return (
-    <Screen>
-      <TopBar onBack={() => router.back()} />
+    <Screen desktopBack={() => router.back()}>
+      <View className="md:hidden">
+        <TopBar onBack={() => router.back()} />
+      </View>
       <FlowCluster>
         <ScreenHeader title="welcome back" subtitle="sign in to continue" />
 

@@ -22,16 +22,29 @@ export function Screen({
   mode,
   auraIntensity = 'subtle',
   wide = false,
+  desktopBack,
 }: {
   children: React.ReactNode;
   className?: string;
   mode?: Mode;
   auraIntensity?: 'full' | 'subtle';
   wide?: boolean;
+  /** On md+ screens, pins a back arrow to the viewport's top-left corner
+   *  (outside the centered column). Pair with a `md:hidden` TopBar. */
+  desktopBack?: () => void;
 }) {
   return (
     <View className="flex-1 bg-background relative">
       {mode && <ModeAura mode={mode} intensity={auraIntensity} />}
+      {desktopBack && (
+        <Pressable
+          onPress={desktopBack}
+          className="absolute left-4 top-4 z-10 hidden h-10 w-10 items-center justify-center rounded-full active:bg-accent md:flex"
+          accessibilityLabel="back"
+        >
+          <ArrowLeft size={18} color="hsl(var(--foreground))" />
+        </Pressable>
+      )}
       <SafeAreaView
         edges={['top']}
         className={cn(
