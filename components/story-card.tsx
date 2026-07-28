@@ -2,6 +2,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Moon, Sun } from 'lucide-react-native';
 import * as React from 'react';
 import { Pressable, Text, View } from 'react-native';
+import { CoverRelief } from '@/components/cover-relief';
 import { cn } from '@/lib/cn';
 
 export type StoryCover = { a: string; b: string };
@@ -26,6 +27,7 @@ export function StoryArtwork({
   cover,
   nighttime,
   size,
+  seed,
   showBadge = true,
   children,
   className,
@@ -33,6 +35,8 @@ export function StoryArtwork({
   cover: StoryCover;
   nighttime: boolean;
   size?: number;
+  /** Stable id (story id) keying the relief overlay's seeded shape. */
+  seed?: string | null;
   showBadge?: boolean;
   children?: React.ReactNode;
   className?: string;
@@ -48,6 +52,7 @@ export function StoryArtwork({
         end={{ x: 1, y: 1 }}
         style={{ flex: 1 }}
       />
+      <CoverRelief cover={cover} seed={seed} />
       {showBadge && (
         <View className="absolute top-2 left-2 h-6 w-6 items-center justify-center rounded-full bg-black/30">
           {nighttime ? (
@@ -84,7 +89,7 @@ export function StoryCard({
       )}
     >
       <View className="relative">
-        <StoryArtwork cover={story.cover} nighttime={story.nighttime} />
+        <StoryArtwork cover={story.cover} nighttime={story.nighttime} seed={story.id} />
         {selectMode && (
           <View
             className={cn(
@@ -126,7 +131,7 @@ export function ContinueCard({ story, onPress }: { story: CardStory; onPress?: (
   return (
     <Pressable onPress={onPress} className="w-[160px] md:w-[210px] lg:w-[230px] xl:w-[280px]">
       <View className="relative">
-        <StoryArtwork cover={story.cover} nighttime={story.nighttime} />
+        <StoryArtwork cover={story.cover} nighttime={story.nighttime} seed={story.id} />
         <View className="absolute left-2 right-2 bottom-2">
           <View className="h-1 overflow-hidden rounded-full bg-white/20">
             <View className="h-full bg-white/90" style={{ width: `${pct}%` }} />
@@ -159,7 +164,7 @@ export function ShelfCard({ story, onPress }: { story: CardStory; onPress?: () =
   const povTag = story.tags?.find((t) => POV_TAG_RE.test(t));
   return (
     <Pressable onPress={onPress} className="w-[140px] md:w-[180px] lg:w-[200px] xl:w-[240px]">
-      <StoryArtwork cover={story.cover} nighttime={story.nighttime}>
+      <StoryArtwork cover={story.cover} nighttime={story.nighttime} seed={story.id}>
         {vibeTag ? (
           <View className="absolute bottom-2 left-2 rounded-full bg-black/30 px-2 py-0.5">
             <Text className="text-[10px] font-serif lowercase text-white/90">{vibeTag}</Text>

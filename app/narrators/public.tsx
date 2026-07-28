@@ -8,6 +8,7 @@ import { Pause, Play, Plus, Search } from 'lucide-react-native';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from 'react-native';
 
+import { CoverRelief } from '@/components/cover-relief';
 import { Screen, TopBar } from '@/components/screen';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -216,6 +217,7 @@ export default function PublicNarratorsScreen() {
                           end={{ x: 1, y: 1 }}
                           style={{ flex: 1 }}
                         />
+                        <CoverRelief cover={cover} seed={n.id} />
                         <View className="absolute inset-0 items-center justify-center bg-black/25">
                           {playingId === n.id ? (
                             <Pause size={18} color="#fff" fill="#fff" />

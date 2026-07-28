@@ -8,7 +8,7 @@ const PALETTES: [string, string][] = [
   ['#c4a8d8', '#593c77'],
 ];
 
-function hashStr(s: string) {
+export function hashStr(s: string) {
   let h = 0;
   for (let i = 0; i < s.length; i++) h = (h << 5) - h + s.charCodeAt(i);
   return h;
@@ -51,6 +51,41 @@ export function variedTint(
     a: shiftHsl(base.a, hueOffset, 0, lOffset),
     b: shiftHsl(base.b, hueOffset, 0, lOffset * 0.6),
   };
+}
+
+/**
+ * Seeded geometry for the subtle relief overlay on cover artwork: a soft
+ * lighter-shade highlight at one spot and a darker pool in the opposite
+ * corner, each with its own ellipse shape. Same seed → same relief, so a
+ * story's cover carries the same shading everywhere it appears.
+ * All values are percentages of the tile.
+ */
+export type CoverRelief = {
+  hx: number; hy: number; hrx: number; hry: number;
+  sx: number; sy: number; srx: number; sry: number;
+};
+
+export function reliefFor(seed: string | undefined | null): CoverRelief {
+  const h = Math.abs(hashStr(seed || 'x'));
+  const pick = (shift: number, mod: number, min: number, span: number) =>
+    min + (((h >> shift) % mod) / (mod - 1)) * span;
+  const hx = pick(0, 97, 15, 55);
+  const hy = pick(3, 89, 10, 45);
+  return {
+    hx,
+    hy,
+    hrx: pick(6, 83, 55, 45),
+    hry: pick(9, 79, 55, 45),
+    sx: 100 - hx,
+    sy: 100 - hy,
+    srx: pick(12, 73, 90, 40),
+    sry: pick(15, 71, 90, 40),
+  };
+}
+
+/** Lighten (positive) or darken (negative) a hex color, keeping hue/sat. */
+export function shiftLightness(hex: string, dL: number): string {
+  return shiftHsl(hex, 0, 0, dL);
 }
 
 function shiftHsl(hex: string, dH: number, dS: number, dL: number): string {

@@ -1,3 +1,4 @@
+import { CoverRelief } from '@/components/cover-relief';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAudioPlayer } from '@/contexts/AudioPlayerContext';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -6,7 +7,7 @@ import { coverFromColor, variedTint } from '@/lib/cover';
 import { createShadow } from '@/utils/shadow';
 import { LinearGradient } from 'expo-linear-gradient';
 import { usePathname, useRouter } from 'expo-router';
-import { ChevronDown } from 'lucide-react-native';
+import { X } from 'lucide-react-native';
 import { useEffect, useMemo, useState } from 'react';
 import {
     ActivityIndicator,
@@ -142,7 +143,7 @@ export const NowPlayingBar = () => {
       accessibilityLabel="close player"
       style={styles.closeButton}
     >
-      <ChevronDown size={16} color="rgba(255,255,255,0.85)" />
+      <X size={16} color="rgba(255,255,255,0.85)" />
     </Pressable>
   );
 
@@ -162,6 +163,7 @@ export const NowPlayingBar = () => {
                 end={{ x: 1, y: 1 }}
                 style={StyleSheet.absoluteFill}
               />
+              <CoverRelief cover={cover} seed={currentTrack.id || currentTrack.title} />
             </View>
             <View style={styles.desktopCloseSlot}>{CloseButton}</View>
             <View style={styles.desktopFooter}>
@@ -207,6 +209,7 @@ export const NowPlayingBar = () => {
                   end={{ x: 1, y: 1 }}
                   style={StyleSheet.absoluteFill}
                 />
+                <CoverRelief cover={cover} seed={currentTrack.id || currentTrack.title} />
               </View>
               <View style={styles.mobileTextContainer}>
                 <Text style={[styles.mobileTitle, { color: colors.text }]} numberOfLines={1}>
