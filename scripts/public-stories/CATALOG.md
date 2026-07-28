@@ -135,53 +135,70 @@ every nighttime story as a "warm landing" final beat)
 
 ## 6. Tag system
 
-Flat `tags: string[]` on each public story, **2–3 tags, ordered vibe → hook → audience-exception**.
-Card UI shows `tags[0]` as a pill on the artwork; the player shows the full row; search matches
-tags. Vocabulary is enforced by `validateSpecs()`:
+Flat `tags: string[]` on each public story, **2–3 tags, ordered vibe → hook → POV code**.
+Card UI shows the vibe tag as a pill (bottom-left of the artwork) and the POV code as a second
+pill (bottom-right); the player shows the full row; search matches tags. Vocabulary is enforced
+by `validateSpecs()`:
 
 - **vibe:** `sleep` `cozy` `sweet` `slow burn` `spicy` `dark` `praise` `soft dom` `dom` `possessive`
 - **archetype:** `boyfriend` `girlfriend` `cowboy` `ceo` `bodyguard` `fae` `vampire` `werewolf` `orc` `knight`
 - **trope:** `enemies to lovers` `one bed` `forced proximity` `fated mates` `second chance` `strangers to lovers`
-- **audience (only when non-default):** `for him` `m/m` `f/f`
+- **pov (always last, exactly one):** `m4f` `f4m` `m4m` `f4f` — the community-standard
+  [speaker]4[listener] code, derived from genderOther/genderSelf and validator-enforced.
 
-Rules: tag the exception, not the default (no "for her" tags); one vibe tag always first; never
-more than 3.
+Rules: one vibe tag always first; the POV code always last; never more than 3.
+
+## 6b. Cover color scheme
+
+One hue per shelf, all in the same dark tonal band (S ≈ 30–36%, L ≈ 27–28%), hues spaced ~40°
+apart so shelves read as distinct sets that still belong to one library. Two close tones per
+shelf alternate across cards (`COLLECTION_COLORS` in specs.mjs):
+
+| shelf | tones | hue |
+|---|---|---|
+| bedtime | `#313E5E` / `#2A3652` | indigo |
+| after dark | `#5D325D` / `#4F2A4F` | magenta-plum |
+| dark romance | `#5E2C39` / `#4F2430` | oxblood |
+| romantasy | `#3E315E` / `#362A52` | violet |
+
+The card gradient derives from the single hex (`coverFromColor`: lighter top-left → base
+bottom-right), so these are the only colors to maintain.
 
 ---
 
 ## 7. Batch 1 slate (24 stories)
 
-Shelves (= the `collection` field): **bedtime** 6 · **comfort** 3 · **after dark** 5 ·
-**dark romance** 5 · **romantasy** 5. Split: 11 daytime / 13 nighttime.
-Six narrator pairs (Grayson, Roman, Beau, Mara, Kael, Julia) + 12 one-shots.
-Narrator-paired stories resolve their voice from the live `publicNarrators` doc.
+Shelves (= the `collection` field): **bedtime** 9 · **after dark** 5 · **dark romance** 5 ·
+**romantasy** 5. (The former `comfort` shelf is consolidated into `bedtime`.)
+Split: 11 daytime / 13 nighttime. Six narrator pairs (Grayson, Roman, Beau, Mara, Kael, Julia)
++ 12 one-shots. Narrator-paired stories resolve their voice from the live `publicNarrators` doc.
 
 | # | title | slug | shelf | D/N | narrator / voice | mode | min | tags |
 |---|-------|------|-------|-----|------------------|------|-----|------|
-| 1 | asleep on your chest | grayson-rain-wind-down | bedtime | D | Grayson | immersive | 15 | sleep, boyfriend |
-| 2 | lazy sunday | grayson-lazy-sunday | after dark | N | Grayson | immersive | 10 | praise, boyfriend |
-| 3 | he handles it | roman-he-handles-it | comfort | D | Roman | immersive | 10 | cozy, ceo |
-| 4 | the silk tie | roman-silk-tie | dark romance | N | Roman | immersive | 10 | dom, ceo |
-| 5 | porch light | beau-porch-storm | bedtime | D | Beau | immersive | 10 | sleep, cowboy |
-| 6 | heat lightning | beau-barn-heat | after dark | N | Beau | immersive | 10 | slow burn, cowboy |
-| 7 | last call | mara-last-call | bedtime | D | Mara | immersive | 10 | sleep, cozy |
-| 8 | after she locks the door | mara-locks-the-door | after dark | N | Mara | immersive | 10 | spicy, f/f |
-| 9 | the starlit court | kael-starlit-court | romantasy | D | Kael (new) | cinematic | 10 | cozy, fae |
-| 10 | the bargain | kael-the-bargain | romantasy | N | Kael (new) | cinematic | 10 | spicy, fae |
-| 11 | stay on the line | julia-stay-on-the-line | bedtime | D | Julia | immersive | 15 | sleep, girlfriend, for him |
-| 12 | good boy | julia-good-boy | after dark | N | Julia | immersive | 10 | soft dom, praise, for him |
-| 13 | the night watch | lighthouse-keeper | bedtime | D | `HZTk…` | cinematic | 15 | sleep |
-| 14 | last train home | night-train-home | bedtime | D | `iIg0…` | immersive | 10 | sweet, strangers to lovers |
-| 15 | rain on the skylight | rain-on-the-skylight | comfort | D | `mgpc…` | immersive | 15 | sleep, cozy |
-| 16 | by the hearth | orc-by-the-hearth | romantasy | D | `B5jE…` | cinematic | 10 | cozy, orc |
-| 17 | snowed in | snowed-in-chalet | comfort | D | `Qe9W…` | immersive | 10 | sweet, forced proximity |
-| 18 | one bed | rivals-one-bed | dark romance | N | `qAZH…` | immersive | 10 | enemies to lovers, spicy |
-| 19 | close protection | the-bodyguard | dark romance | N | `2gPF…` | immersive | 10 | possessive, bodyguard |
-| 20 | crimson hours | crimson-hours | dark romance | N | `Qe9W…` | immersive | 10 | dark, vampire |
-| 21 | the solstice fire | wolf-and-mate | romantasy | N | `HZTk…` | immersive | 10 | fated mates, werewolf |
-| 22 | devoted | the-obsession | dark romance | N | `qAZH…` | immersive | 10 | dark, possessive |
-| 23 | sworn to him | ember-knight | romantasy | N | `2gPF…` | cinematic | 10 | slow burn, knight, m/m |
-| 24 | midnight encore | midnight-encore | after dark | N | `Qe9W…` | immersive | 10 | second chance, spicy |
+| 1 | asleep on your chest | grayson-rain-wind-down | bedtime | D | Grayson | immersive | 15 | sleep, boyfriend, m4f |
+| 2 | lazy sunday | grayson-lazy-sunday | after dark | N | Grayson | immersive | 10 | praise, boyfriend, m4f |
+| 3 | he handles it | roman-he-handles-it | bedtime | D | Roman | immersive | 10 | cozy, ceo, m4f |
+| 4 | the silk tie | roman-silk-tie | dark romance | N | Roman | immersive | 10 | dom, ceo, m4f |
+| 5 | porch light | beau-porch-storm | bedtime | D | Beau | immersive | 10 | sleep, cowboy, m4f |
+| 6 | heat lightning | beau-barn-heat | after dark | N | Beau | immersive | 10 | slow burn, cowboy, m4f |
+| 7 | last call | mara-last-call | bedtime | D | Mara | immersive | 10 | sleep, cozy, f4f |
+| 8 | after she locks the door | mara-locks-the-door | after dark | N | Mara | immersive | 10 | spicy, f4f |
+| 9 | the starlit court | kael-starlit-court | romantasy | D | Kael (new) | cinematic | 10 | cozy, fae, m4f |
+| 10 | the bargain | kael-the-bargain | romantasy | N | Kael (new) | cinematic | 10 | spicy, fae, m4f |
+| 11 | stay on the line | julia-stay-on-the-line | bedtime | D | Julia | immersive | 15 | sleep, girlfriend, f4m |
+| 12 | good boy | julia-good-boy | after dark | N | Julia | immersive | 10 | soft dom, praise, f4m |
+| 13 | the night watch | lighthouse-keeper | bedtime | D | `HZTk…` | cinematic | 15 | sleep, m4f |
+| 14 | last train home | night-train-home | bedtime | D | `iIg0…` | immersive | 10 | sweet, strangers to lovers, m4f |
+| 15 | rain on the skylight | rain-on-the-skylight | bedtime | D | `mgpc…` | immersive | 15 | sleep, cozy, f4f |
+| 16 | by the hearth | orc-by-the-hearth | romantasy | D | `B5jE…` | cinematic | 10 | cozy, orc, m4f |
+| 17 | snowed in | snowed-in-chalet | bedtime | D | `Qe9W…` | immersive | 10 | sweet, forced proximity, m4f |
+| 18 | one bed | rivals-one-bed | dark romance | N | `qAZH…` | immersive | 10 | enemies to lovers, spicy, m4f |
+| 19 | close protection | the-bodyguard | dark romance | N | `2gPF…` | immersive | 10 | possessive, bodyguard, m4f |
+| 20 | crimson hours | crimson-hours | dark romance | N | `Qe9W…` | immersive | 10 | dark, vampire, m4f |
+| 21 | the solstice fire | wolf-and-mate | romantasy | N | `HZTk…` | immersive | 10 | fated mates, werewolf, m4f |
+| 22 | devoted | the-obsession | dark romance | N | `qAZH…` | immersive | 10 | dark, possessive, m4f |
+| 23 | sworn to him | ember-knight | romantasy | N | `2gPF…` | cinematic | 10 | slow burn, knight, m4m |
+| 24 | midnight encore | midnight-encore | after dark | N | `Qe9W…` | immersive | 10 | second chance, spicy, m4f |
 
 New narrator this batch: **Kael** (fae prince, voice `adZJnAl6IYZw4EYI9FVd`, username `kael`).
 Voice-split rationale: male voices carry the for-her majority genres (the market's core), female

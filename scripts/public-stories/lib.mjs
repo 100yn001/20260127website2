@@ -205,7 +205,9 @@ export function announcementCount(t) {
 // ── ElevenLabs TTS — copied from fable_test.mjs ─────────────────────────────
 export const MAX_CHUNK_SIZE = 1000;
 export const HARD_TTS_LIMIT = 4500;
-export const TTS_CONCURRENCY = 3;
+// 2, not 3: the ElevenLabs plan allows 5 concurrent requests and a 3-wide
+// pool plus in-flight retries tripped concurrent_limit_exceeded in practice.
+export const TTS_CONCURRENCY = 2;
 
 export function splitTextIntoChunks(text) {
   if (text.length <= MAX_CHUNK_SIZE) return [text];

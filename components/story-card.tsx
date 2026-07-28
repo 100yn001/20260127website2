@@ -152,14 +152,22 @@ export function ContinueCard({ story, onPress }: { story: CardStory; onPress?: (
 
 /* -------------------------------------------------------------------------- */
 
+const POV_TAG_RE = /^[mf]4[mf]$/;
+
 export function ShelfCard({ story, onPress }: { story: CardStory; onPress?: () => void }) {
-  const vibeTag = story.tags?.[0];
+  const vibeTag = story.tags?.find((t) => !POV_TAG_RE.test(t));
+  const povTag = story.tags?.find((t) => POV_TAG_RE.test(t));
   return (
     <Pressable onPress={onPress} className="w-[140px] md:w-[180px] lg:w-[200px] xl:w-[240px]">
       <StoryArtwork cover={story.cover} nighttime={story.nighttime}>
         {vibeTag ? (
           <View className="absolute bottom-2 left-2 rounded-full bg-black/30 px-2 py-0.5">
             <Text className="text-[10px] font-serif lowercase text-white/90">{vibeTag}</Text>
+          </View>
+        ) : null}
+        {povTag ? (
+          <View className="absolute bottom-2 right-2 rounded-full bg-black/30 px-2 py-0.5">
+            <Text className="text-[10px] font-sans lowercase text-white/90">{povTag}</Text>
           </View>
         ) : null}
       </StoryArtwork>

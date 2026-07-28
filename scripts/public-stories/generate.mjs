@@ -21,6 +21,12 @@
  *       chars ≈ eleven_v3 credits) and asks for confirmation before any TTS.
  *       Needs ELEVENLABS + Firebase env + admin password.
  *
+ *   node scripts/public-stories/generate.mjs --phase retrofit [--dry-run]
+ *       Sync ALREADY-PUBLISHED docs to the current specs: collection (shelf),
+ *       tags, coverColor, genre, and re-measured duration when the local
+ *       audio cache exists. Use after editing specs.mjs metadata so live
+ *       stories match new stories. Needs Firebase env + admin password.
+ *
  * Common flags: --only <slug> (repeatable) · --limit N · --force · --yes
  *
  * Un-publishing a story: delete its publicStories doc in the Firebase console
@@ -37,10 +43,12 @@ import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 import {
   addDoc,
   collection,
+  doc,
   getDocs,
   getFirestore,
   query,
   Timestamp,
+  updateDoc,
   where,
 } from 'firebase/firestore';
 import { getDownloadURL, getStorage, ref, uploadBytes } from 'firebase/storage';
@@ -88,8 +96,8 @@ function parseArgs(argv) {
       process.exit(1);
     }
   }
-  if (!['narrators', 'text', 'publish'].includes(args.phase)) {
-    console.error('usage: node scripts/public-stories/generate.mjs --phase narrators|text|publish [--only <slug>] [--limit N] [--force] [--dry-run] [--yes]');
+  if (!['narrators', 'text', 'publish', 'retrofit'].includes(args.phase)) {
+    console.error('usage: node scripts/public-stories/generate.mjs --phase narrators|text|publish|retrofit [--only <slug>] [--limit N] [--force] [--dry-run] [--yes]');
     process.exit(1);
   }
   return args;
@@ -358,7 +366,7 @@ async function phasePublish(args, manifest) {
       fs.mkdirSync(dir, { recursive: true });
       try {
         await mapWithConcurrency(chunks, TTS_CONCURRENCY, async (text, i) => {
-          const buf = await retryable(() => ttsChunk(text, voiceId, process.env.ELEVENLABS), { label: `${slug} chunk${i}` });
+          const buf = await retryable(() => ttsChunk(text, voiceId, process.env.ELEVENLABS), { label: `${slug} chunk${i}`, retries: 5, baseMs: 4000 });
           fs.writeFileSync(path.join(dir, `chunk${i}.mp3`), buf);
           process.stdout.write(`   🎤 chunk ${i} done (${(buf.length / 1024).toFixed(0)} KB)\n`);
         });
@@ -452,6 +460,59 @@ async function phasePublish(args, manifest) {
   }
 }
 
+// ── phase: retrofit ─────────────────────────────────────────────────────────
+// Push current spec metadata onto already-published docs so live stories stay
+// consistent after spec edits (shelf renames, palette changes, tag reworks).
+async function phaseRetrofit(args, manifest) {
+  const published = selectSpecs(args).filter((s) => manifest.stories[s.slug]?.status === 'published' && manifest.stories[s.slug]?.docId);
+  if (!published.length) {
+    console.log('no published stories in the manifest — nothing to retrofit.');
+    return;
+  }
+
+  console.log('retrofit plan');
+  console.log('─'.repeat(72));
+  const updates = [];
+  for (const spec of published) {
+    const entry = manifest.stories[spec.slug];
+    const dir = path.join(AUDIO_DIR, spec.slug);
+    const patch = {
+      collection: spec.collection,
+      tags: spec.tags,
+      coverColor: colorForSpec(spec, COLLECTION_INDEX[spec.slug]),
+      genre: spec.genre || null,
+      narratorName: spec.narratorName || null,
+      libraryCategory: spec.isNighttime ? 'nighttime' : 'daytime',
+      duration: measuredDurationLabel(spec, dir, entry.chunkCount || 0),
+    };
+    updates.push({ spec, docId: entry.docId, patch });
+    console.log(`${spec.slug.padEnd(26)} → ${patch.collection.padEnd(14)} ${patch.coverColor}  ${patch.duration.padEnd(7)} [${patch.tags.join(', ')}]`);
+  }
+  console.log('─'.repeat(72));
+  if (args.dryRun) {
+    console.log(`dry run — ${updates.length} doc(s) would be updated.`);
+    return;
+  }
+  if (!args.yes) {
+    const answer = await ask(`update ${updates.length} live publicStories doc(s)? (y/N): `);
+    if (!answer.toLowerCase().startsWith('y')) {
+      console.log('aborted.');
+      return;
+    }
+  }
+
+  const { db } = await firebaseSignIn();
+  for (const { spec, docId, patch } of updates) {
+    try {
+      await retryable(() => updateDoc(doc(db, 'publicStories', docId), patch), { label: `retrofit ${spec.slug}` });
+      console.log(`✅ ${spec.slug} → publicStories/${docId}`);
+    } catch (err) {
+      console.log(`❌ ${spec.slug}: ${err.message}`);
+      process.exitCode = 1;
+    }
+  }
+}
+
 // ── main ────────────────────────────────────────────────────────────────────
 async function main() {
   const args = parseArgs(process.argv);
@@ -462,6 +523,7 @@ async function main() {
   if (args.phase === 'narrators') await phaseNarrators(args, manifest);
   else if (args.phase === 'text') await phaseText(args, manifest);
   else if (args.phase === 'publish') await phasePublish(args, manifest);
+  else if (args.phase === 'retrofit') await phaseRetrofit(args, manifest);
 
   process.exit(process.exitCode || 0);
 }

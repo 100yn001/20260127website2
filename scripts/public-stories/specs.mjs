@@ -19,6 +19,11 @@
 //   features/featurePreferences               nighttime escalation hints
 //   tags            2-3 curated tags, ordered vibe → hook → audience-exception
 
+// POV tags are the community-standard [speaker]4[listener] codes. Every story
+// carries exactly one, in last position; validateSpecs derives the expected
+// code from genderOther/genderSelf.
+export const POV_TAGS = new Set(['m4f', 'f4m', 'm4m', 'f4f']);
+
 export const TAG_VOCAB = new Set([
   // vibe
   'sleep', 'cozy', 'sweet', 'slow burn', 'spicy', 'dark', 'praise', 'soft dom', 'dom', 'possessive',
@@ -26,16 +31,18 @@ export const TAG_VOCAB = new Set([
   'boyfriend', 'girlfriend', 'cowboy', 'ceo', 'bodyguard', 'fae', 'vampire', 'werewolf', 'orc', 'knight',
   // trope
   'enemies to lovers', 'one bed', 'forced proximity', 'fated mates', 'second chance', 'strangers to lovers',
-  // audience (only when non-default)
-  'for him', 'm/m', 'f/f',
+  // pov (always last)
+  ...POV_TAGS,
 ]);
 
+// One hue per shelf, all in the same dark tonal band (~S 30-36%, L 27-28%),
+// hues spaced ~40° so shelves are distinct but cohesive. Two close tones per
+// shelf alternate across cards so a shelf reads as a set without being flat.
 export const COLLECTION_COLORS = {
-  bedtime: ['#2E3A59', '#3B4A6B', '#28324E', '#46527A', '#232D45', '#3A466B'],
-  comfort: ['#8A6552', '#7A5C48', '#96705B'],
-  'after dark': ['#5C3A56', '#6E4560', '#4E3050', '#7A4E6A', '#563350'],
-  'dark romance': ['#7F1D1D', '#5C1A1A', '#6B2430', '#4A1520', '#701F2E'],
-  romantasy: ['#2F5D50', '#4C5578', '#3E2F5D', '#2C4A43', '#503A6B'],
+  bedtime: ['#313E5E', '#2A3652'],        // indigo
+  'after dark': ['#5D325D', '#4F2A4F'],   // magenta-plum
+  'dark romance': ['#5E2C39', '#4F2430'], // oxblood
+  romantasy: ['#3E315E', '#362A52'],      // violet
 };
 
 export function colorForSpec(spec, indexInCollection) {
@@ -87,7 +94,7 @@ export const SPECS = [
       'he keeps his voice low and drowsy, talks her down from a long day in pieces — nothing important, everything soft; his breath slows as hers does; ends nearly whispering into her hair as the rain settles in',
     features: [],
     featurePreferences: {},
-    tags: ['sleep', 'boyfriend'],
+    tags: ['sleep', 'boyfriend', 'm4f'],
   },
   {
     slug: 'grayson-lazy-sunday',
@@ -109,13 +116,13 @@ export const SPECS = [
     featurePreferences: { 'slow morning sex': ['receive'], praise: ['receive'] },
     prompt:
       'gentle and praise-heavy the whole way through — laughing-soft, zero rush, explicit but tender; warm landing: pulled back against his chest, blanket up, "five more minutes" that both know means an hour',
-    tags: ['praise', 'boyfriend'],
+    tags: ['praise', 'boyfriend', 'm4f'],
   },
   {
     slug: 'roman-he-handles-it',
     title: 'he handles it',
-    collection: 'comfort',
-    genre: 'comfort',
+    collection: 'bedtime',
+    genre: 'sleep',
     isNighttime: false,
     duration: '10min',
     narrationMode: 'immersive',
@@ -131,7 +138,7 @@ export const SPECS = [
       'controlled, low, certain; he handles every logistic so she can finally fall apart safely; nothing sexual — decompression and gentle command ("sit. eat. breathe."); ends with her wrapped in his suit jacket, half asleep, his hand steady on her back',
     features: [],
     featurePreferences: {},
-    tags: ['cozy', 'ceo'],
+    tags: ['cozy', 'ceo', 'm4f'],
   },
   {
     slug: 'roman-silk-tie',
@@ -157,7 +164,7 @@ export const SPECS = [
     },
     prompt:
       'he asks first and she says yes, delighted — consent explicit and wanted on both sides; commanding but reverent, praise woven through the control; warm landing: he unties her wrists, kisses them both, tucks her against his chest',
-    tags: ['dom', 'ceo'],
+    tags: ['dom', 'ceo', 'm4f'],
   },
   {
     slug: 'beau-porch-storm',
@@ -179,7 +186,7 @@ export const SPECS = [
       'his drawl gets slower as the storm gets closer; front-porch small talk — the horses, the fence line, nothing at all — melting into sleepiness; ends with the first rain on the roof and her nearly asleep on his shoulder',
     features: [],
     featurePreferences: {},
-    tags: ['sleep', 'cowboy'],
+    tags: ['sleep', 'cowboy', 'm4f'],
   },
   {
     slug: 'beau-barn-heat',
@@ -201,7 +208,7 @@ export const SPECS = [
     featurePreferences: { 'slow undressing': ['receive'], sex: ['receive'] },
     prompt:
       'unhurried, drawling, certain; the tension of a whole season finally said out loud and acted on; explicit but tender; warm landing: his flannel around her shoulders, the two of them listening to the rain pass',
-    tags: ['slow burn', 'cowboy'],
+    tags: ['slow burn', 'cowboy', 'm4f'],
   },
   {
     slug: 'mara-last-call',
@@ -223,7 +230,7 @@ export const SPECS = [
       'she polishes the last glasses and talks low — the town, the road, the weather coming over the passes; keeps refilling your cup without being asked; ends banking the fire and draping her shawl over you where you have dozed off in the chair',
     features: [],
     featurePreferences: {},
-    tags: ['sleep', 'cozy'],
+    tags: ['sleep', 'cozy', 'f4f'],
   },
   {
     slug: 'mara-locks-the-door',
@@ -245,7 +252,7 @@ export const SPECS = [
     featurePreferences: { confession: ['receive'], 'slow kissing': ['receive'], fingering: ['receive'] },
     prompt:
       'soft, warm, a little teasing; the confession lands first and everything after is eager and explicitly wanted; explicit; warm landing: wrapped together in front of the fire under her shawl, her laugh low against your hair',
-    tags: ['spicy', 'f/f'],
+    tags: ['spicy', 'f4f'],
   },
   {
     slug: 'kael-starlit-court',
@@ -267,7 +274,7 @@ export const SPECS = [
       'rich and lyrical but always speaking TO her, never narrating at her; he names constellations wrong on purpose to make her argue, trades one small true thing for another, keeps her wrapped in his cloak; ends with his promise to stand watch over her sleep — "nothing crosses this garden but the dawn"',
     features: [],
     featurePreferences: {},
-    tags: ['cozy', 'fae'],
+    tags: ['cozy', 'fae', 'm4f'],
   },
   {
     slug: 'kael-the-bargain',
@@ -289,7 +296,7 @@ export const SPECS = [
     featurePreferences: { 'body worship': ['receive'], oral: ['receive'], sex: ['receive'] },
     prompt:
       'he states the terms out loud and she agrees with delight — enthusiastic consent woven into the ritual of it; opulent, reverent, explicit; fae speech patterns (exact words, kept promises); warm landing: wrapped in furs, his heartbeat slow under her ear, "the bargain is kept"',
-    tags: ['spicy', 'fae'],
+    tags: ['spicy', 'fae', 'm4f'],
   },
   {
     slug: 'julia-stay-on-the-line',
@@ -311,7 +318,7 @@ export const SPECS = [
       'phone-call intimacy — she narrates small nothings, yawns mid-sentence, talks him down from the day; her voice gets heavier and warmer as it goes; ends with "stay on the line, i\'m right here" spoken into near-sleep',
     features: [],
     featurePreferences: {},
-    tags: ['sleep', 'girlfriend', 'for him'],
+    tags: ['sleep', 'girlfriend', 'f4m'],
   },
   {
     slug: 'julia-good-boy',
@@ -333,7 +340,7 @@ export const SPECS = [
     featurePreferences: { praise: ['receive'], teasing: ['receive'], riding: ['give'] },
     prompt:
       'affectionate dominance — never mean, all praise; "good boy" as pure devotion; playful control, explicit; warm landing: she pulls him onto her chest, fingers in his hair, "you did so well"',
-    tags: ['soft dom', 'praise', 'for him'],
+    tags: ['soft dom', 'praise', 'f4m'],
   },
 
   // ── one-shots ─────────────────────────────────────────────────────────────
@@ -357,7 +364,7 @@ export const SPECS = [
       'he narrates the night watch — the beam turning, the ships out there in the dark, tea poured and pressed into your hands; rhythmic and unhurried, warm without hurry; ends with the storm easing and her asleep in the watch chair under his coat',
     features: [],
     featurePreferences: {},
-    tags: ['sleep'],
+    tags: ['sleep', 'm4f'],
   },
   {
     slug: 'night-train-home',
@@ -379,13 +386,13 @@ export const SPECS = [
       'shy-warm conversation that gets quieter as the carriage empties; a shoulder gradually leaned on, permission asked with a look; ends with "this is my stop… but i\'ll wait for yours"',
     features: [],
     featurePreferences: {},
-    tags: ['sweet', 'strangers to lovers'],
+    tags: ['sweet', 'strangers to lovers', 'm4f'],
   },
   {
     slug: 'rain-on-the-skylight',
     title: 'rain on the skylight',
-    collection: 'comfort',
-    genre: 'comfort',
+    collection: 'bedtime',
+    genre: 'sleep',
     isNighttime: false,
     duration: '15min',
     narrationMode: 'immersive',
@@ -401,7 +408,7 @@ export const SPECS = [
       'unhurried personal attention — hair brushed back, the weight of the blanket named, breath paced out loud ("in… and out"); her voice fades toward a whisper as the rain keeps on; ends in near-silence',
     features: [],
     featurePreferences: {},
-    tags: ['sleep', 'cozy'],
+    tags: ['sleep', 'cozy', 'f4f'],
   },
   {
     slug: 'orc-by-the-hearth',
@@ -423,13 +430,13 @@ export const SPECS = [
       'rumbling, deliberate, shy-sweet; he mends your traveling cloak with enormous careful hands and apologizes for the size of everything — the cups, the chairs, himself; ends with the best stew of your life and a bed made up warm by the fire',
     features: [],
     featurePreferences: {},
-    tags: ['cozy', 'orc'],
+    tags: ['cozy', 'orc', 'm4f'],
   },
   {
     slug: 'snowed-in-chalet',
     title: 'snowed in',
-    collection: 'comfort',
-    genre: 'comfort',
+    collection: 'bedtime',
+    genre: 'sleep',
     isNighttime: false,
     duration: '10min',
     narrationMode: 'immersive',
@@ -445,7 +452,7 @@ export const SPECS = [
       'one blanket, two mugs, honesty arriving slowly; hands close, then closer; stays fully SFW — the confession lands soft and the storm hums on; ends foreheads together, warm, snowfall silent outside',
     features: [],
     featurePreferences: {},
-    tags: ['sweet', 'forced proximity'],
+    tags: ['sweet', 'forced proximity', 'm4f'],
   },
   {
     slug: 'rivals-one-bed',
@@ -471,7 +478,7 @@ export const SPECS = [
     },
     prompt:
       'the bickering keeps its edge but turns molten; consent loud, mutual, and a little laughing; explicit and hungry; warm landing: a truce declared into her hair at 2am — "this changes everything. good."',
-    tags: ['enemies to lovers', 'spicy'],
+    tags: ['enemies to lovers', 'spicy', 'm4f'],
   },
   {
     slug: 'the-bodyguard',
@@ -497,7 +504,7 @@ export const SPECS = [
     },
     prompt:
       'protocol-voice cracking into want; he asks permission with his forehead against hers and waits for the yes; possessive but reverent, explicit; warm landing: perimeter checked one last time, her tucked under his arm — "sleep. i have the watch."',
-    tags: ['possessive', 'bodyguard'],
+    tags: ['possessive', 'bodyguard', 'm4f'],
   },
   {
     slug: 'crimson-hours',
@@ -523,7 +530,7 @@ export const SPECS = [
     },
     prompt:
       'he asks three times before the bite — consent as ritual, her yes savored each time; slow, reverent, explicit; the hunger is for HER, the blood is incidental; warm landing: her heartbeat counted out loud, dawn held at the door, her wrapped in his coat',
-    tags: ['dark', 'vampire'],
+    tags: ['dark', 'vampire', 'm4f'],
   },
   {
     slug: 'wolf-and-mate',
@@ -549,7 +556,7 @@ export const SPECS = [
     },
     prompt:
       'the bond is instant but he asks in words — "say it back, or i walk away" — and she says it; possessive-tender, explicit; warm landing: wrapped in his fur-lined cloak, his heartbeat slow like a drum under her ear',
-    tags: ['fated mates', 'werewolf'],
+    tags: ['fated mates', 'werewolf', 'm4f'],
   },
   {
     slug: 'the-obsession',
@@ -575,7 +582,7 @@ export const SPECS = [
     },
     prompt:
       'intense but never coercive — he offers everything and then waits, and she chooses him clearly and out loud; devotion vocabulary ("i remember everything you have ever told me"); explicit; warm landing: her name repeated like a vow, the blanket drawn up over them both',
-    tags: ['dark', 'possessive'],
+    tags: ['dark', 'possessive', 'm4f'],
   },
   {
     slug: 'ember-knight',
@@ -601,7 +608,7 @@ export const SPECS = [
     },
     prompt:
       'oath-language turned intimate — "my prince" becoming just his name; explicit, tender, with the gravity of a first time long imagined; warm landing: his cloak over them both, the watch kept until sleep',
-    tags: ['slow burn', 'knight', 'm/m'],
+    tags: ['slow burn', 'knight', 'm4m'],
   },
   {
     slug: 'midnight-encore',
@@ -627,7 +634,7 @@ export const SPECS = [
     },
     prompt:
       'familiar-hands intimacy — knowing exactly how, and asking anyway; explicit, aching, warm; landing: "stay this time" answered by him staying, keys set down on the counter like a promise',
-    tags: ['second chance', 'spicy'],
+    tags: ['second chance', 'spicy', 'm4f'],
   },
 ];
 
@@ -664,10 +671,14 @@ export function validateSpecs() {
       const prefs = (spec.featurePreferences || {})[f];
       if (!Array.isArray(prefs) || prefs.length === 0) at(`feature "${f}" missing featurePreferences`);
     }
-    if (!Array.isArray(spec.tags) || spec.tags.length < 1 || spec.tags.length > 3) {
-      at('tags must have 1-3 entries');
+    if (!Array.isArray(spec.tags) || spec.tags.length < 2 || spec.tags.length > 3) {
+      at('tags must have 2-3 entries (vibe first, pov code last)');
     } else {
       for (const t of spec.tags) if (!TAG_VOCAB.has(t)) at(`tag "${t}" not in TAG_VOCAB`);
+      const expectedPov = `${(spec.genderOther || 'x')[0]}4${(spec.genderSelf || 'x')[0]}`;
+      const last = spec.tags[spec.tags.length - 1];
+      if (last !== expectedPov) at(`last tag must be pov code "${expectedPov}", got "${last}"`);
+      for (const t of spec.tags.slice(0, -1)) if (POV_TAGS.has(t)) at(`pov tag "${t}" only allowed in last position`);
     }
   }
   const narratorKeys = new Set(SPECS.filter((s) => s.narratorKey).map((s) => s.narratorKey));
