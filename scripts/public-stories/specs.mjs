@@ -51,6 +51,47 @@ export function colorForSpec(spec, indexInCollection) {
   return palette[indexInCollection % palette.length];
 }
 
+// ── Voice redesign: whispery candidates for audition ────────────────────────
+// Every preview speaks AUDITION_TEXT so candidates compare apples-to-apples.
+// Flow: `--phase voices` designs previews → listen to out/voice-auditions/ →
+// `--phase voices --pick <key>:<previewIndex>` creates the permanent voice →
+// `--phase voices --assign male=<key> --assign female=<key>` routes all
+// one-shot stories to the winners (narrator voices change only via
+// `--set-narrator <narratorKey>=<candidateKey>`).
+export const AUDITION_TEXT = `[whispers][slowly] Hey… no, don't get up. Stay right there.
+
+Hear the rain? It can have the window. I have you…
+
+Breathe with me. In… [softly] and out. That's it. That whole day — let it go. One breath at a time…
+
+hmmmmm… there you are. Right here. Nowhere to be. Nothing left to do…
+
+Closer. Good. [slowly] Sleep now… I've got you. Always got you.`;
+
+export const VOICE_CANDIDATES = [
+  {
+    key: 'dusk',
+    gender: 'male',
+    name: 'Dusk (whisper)',
+    description:
+      'Low, deep male voice at a true whisper — breathy and warm, right against the ear. Extremely slow, unhurried pacing with long gentle pauses. Late-night bedside intimacy, soft gravel under the breath, tender and grounded. Never performative, never announcer-like. American accent, mid-thirties.',
+  },
+  {
+    key: 'hearth',
+    gender: 'male',
+    name: 'Hearth (whisper)',
+    description:
+      'Younger male murmur with half-asleep softness — hushed, low volume, slow drawling calm. A smile audible in the breath, faint rasp, cozy and completely relaxed. Speaks like he is inches away and trying not to wake anyone. Neutral accent, late twenties.',
+  },
+  {
+    key: 'veil',
+    gender: 'female',
+    name: 'Veil (whisper)',
+    description:
+      'Soft female whisper-voice — silky, breathy, unhurried, low volume with a warm hush. Slow deliberate rhythm with long pauses, gentle ASMR intimacy at the ear, soothing and slightly smoky. Never bright, never presentational. American accent, around thirty.',
+  },
+];
+
 // New narrator docs to seed (shape mirrors scripts/add-roman.js; Timestamp
 // fields are added at write time). Existing narrators (grayson, beau, roman,
 // mara, julia) are resolved from the live publicNarrators collection.

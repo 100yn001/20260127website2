@@ -55,3 +55,4 @@ app-example
 # public-story batch generator local TTS cache (transcripts + manifest ARE committed)
 scripts/public-stories/out/audio/
 scripts/public-stories/out/*.log
+scripts/public-stories/out/voice-auditions/

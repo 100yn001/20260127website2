@@ -54,7 +54,8 @@ ABSOLUTE RULES:
 - DO things; never announce them. Never say "let me," "I'm going to," "now I'll," "I want to" + an action. If you'd touch ${p.obj}, it's already done — show it through what you feel and how ${p.subj} reacts.
 - It is a DUET. React to ${p.obj} constantly — ${p.poss} breath, the sound ${p.subj} just made, how ${p.subj} moved, how ${p.subj} feels against you. Make ${p.poss} half of it felt, but never speak ${p.poss} lines for ${p.obj}.
 - Real speech, not prose. Short. Broken. Trailing off. Commands and half-thoughts. Never literary, never a paragraph of description.
-- Sparingly, you may use these audio cues and nothing else: [slowly], [chuckles], and the breath sounds 'hmmmmm', 'ahhhhh'.
+- Everything is murmured close to ${p.poss} ear — slow, hushed, barely above a breath. Never declarative, never announcer-energy. Let lines trail off with '…' and leave real pauses between them.
+- Sparingly, you may use these audio cues and nothing else: [whispers], [softly], [slowly], [chuckles], and the breath sounds 'hmmmmm', 'ahhhhh'.
 - Never break the moment. No meta, no narrator voice, no summarizing, no mention of time or length.`;
 }
 
@@ -148,7 +149,7 @@ You are the SAME person, re-living the SAME moment — not an editor at a desk. 
   const user = `Re-live and tighten this. ${polishInstruction(mode)}
 Also:
 - Delete every announcement — "let me", "I'm going to", "now I'll", "I want to" + an action. Replace it with the thing already done, or with her reaction to it.
-- Keep it present, second person, real-time, broken speech. Keep [slowly]/[chuckles]/'hmmmmm'/'ahhhhh' sparse.
+- Keep it present, second person, real-time, broken speech — murmured and unhurried, trailing lines with '…'. Keep [whispers]/[softly]/[slowly]/[chuckles]/'hmmmmm'/'ahhhhh' sparse.
 
 Output ONLY the rewritten monologue, nothing else:
 
@@ -235,6 +236,15 @@ export function enforceHardLimit(chunks) {
   return out;
 }
 
+// Prepended to every TTS chunk (each chunk is its own eleven_v3 call, so the
+// delivery cue must re-assert itself per chunk or later chunks drift back to
+// a declarative read). Specs can opt out with delivery: 'plain'.
+export const DELIVERY_PREFIX = '[whispers][slowly] ';
+
+export function chunkTtsText(chunkText, delivery) {
+  return delivery === 'plain' ? chunkText : DELIVERY_PREFIX + chunkText;
+}
+
 export async function ttsChunk(text, voiceId, apiKey) {
   const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}?output_format=mp3_44100_128`, {
     method: 'POST',
@@ -251,6 +261,44 @@ export async function ttsChunk(text, voiceId, apiKey) {
     throw err;
   }
   return Buffer.from(await res.arrayBuffer());
+}
+
+// ── ElevenLabs voice design (shapes match functions/src/voiceCallables.ts) ──
+export async function designVoicePreviews(voiceDescription, text, apiKey) {
+  const res = await fetch('https://api.elevenlabs.io/v1/text-to-voice/design', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'xi-api-key': apiKey },
+    body: JSON.stringify({ voice_description: voiceDescription, text, model_id: 'eleven_ttv_v3' }),
+  });
+  if (!res.ok) {
+    const body = await res.text();
+    const err = new Error(`voice design ${res.status}: ${body.slice(0, 200)}`);
+    err.status = res.status;
+    throw err;
+  }
+  const data = await res.json();
+  return data.previews || [];
+}
+
+export async function createVoiceFromPreview(voiceName, voiceDescription, generatedVoiceId, apiKey) {
+  const res = await fetch('https://api.elevenlabs.io/v1/text-to-voice', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'xi-api-key': apiKey },
+    body: JSON.stringify({
+      voice_name: voiceName,
+      voice_description: voiceDescription,
+      generated_voice_id: generatedVoiceId,
+    }),
+  });
+  if (!res.ok) {
+    const body = await res.text();
+    const err = new Error(`voice create ${res.status}: ${body.slice(0, 200)}`);
+    err.status = res.status;
+    throw err;
+  }
+  const data = await res.json();
+  if (!data.voice_id) throw new Error('ElevenLabs returned no voice_id');
+  return data.voice_id;
 }
 
 // ── Cover art helpers — copied from scripts/add-story.mjs ───────────────────

@@ -440,5 +440,51 @@
       ],
       "docId": "BYfLfog9U0f5LKongIAa"
     }
-  }
+  },
+  "voiceCandidates": {
+    "dusk": {
+      "description": "Low, deep male voice at a true whisper — breathy and warm, right against the ear. Extremely slow, unhurried pacing with long gentle pauses. Late-night bedside intimacy, soft gravel under the breath, tender and grounded. Never performative, never announcer-like. American accent, mid-thirties.",
+      "previews": [
+        {
+          "generatedVoiceId": "gST9gFxqOrxXqrFunTgy"
+        },
+        {
+          "generatedVoiceId": "wfOWcDk24mR54qu1QAV7"
+        },
+        {
+          "generatedVoiceId": "xWPPOvvQW78MpD6evTo9"
+        }
+      ]
+    },
+    "hearth": {
+      "description": "Younger male murmur with half-asleep softness — hushed, low volume, slow drawling calm. A smile audible in the breath, faint rasp, cozy and completely relaxed. Speaks like he is inches away and trying not to wake anyone. Neutral accent, late twenties.",
+      "previews": [
+        {
+          "generatedVoiceId": "XqOcLMOKRIK63BFXOfJj"
+        },
+        {
+          "generatedVoiceId": "cxtD3PmwfT2UJuGze53l"
+        },
+        {
+          "generatedVoiceId": "KeqnO1y6QvG2D10EacMO"
+        }
+      ]
+    },
+    "veil": {
+      "description": "Soft female whisper-voice — silky, breathy, unhurried, low volume with a warm hush. Slow deliberate rhythm with long pauses, gentle ASMR intimacy at the ear, soothing and slightly smoky. Never bright, never presentational. American accent, around thirty.",
+      "previews": [
+        {
+          "generatedVoiceId": "kl5oFA4eeGRwexVAUIyA"
+        },
+        {
+          "generatedVoiceId": "On3mNeKJI0XxvSyM3sLT"
+        },
+        {
+          "generatedVoiceId": "Hn8RvxXSl1mg2iZl6iPu"
+        }
+      ]
+    }
+  },
+  "voices": {},
+  "voiceOverrides": {}
 }

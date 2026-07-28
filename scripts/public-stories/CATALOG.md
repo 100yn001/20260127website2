@@ -164,6 +164,21 @@ shelf alternate across cards (`COLLECTION_COLORS` in specs.mjs):
 The card gradient derives from the single hex (`coverFromColor`: lighter top-left → base
 bottom-right), so these are the only colors to maintain.
 
+## 6c. Voice & delivery
+
+House delivery is **whisper-slow**: every TTS chunk is prefixed `[whispers][slowly] `
+(`DELIVERY_PREFIX` in lib.mjs — each chunk is its own eleven_v3 call, so the cue re-asserts per
+chunk; a spec can opt out with `delivery: 'plain'`). The prompt engine also writes for murmured
+delivery: trailing `…`, real pauses, `[whispers]`/`[softly]` cues allowed, "never declarative,
+never announcer-energy."
+
+Voices: one-shot stories route through `manifest.voiceOverrides` per speaker gender, set via the
+audition workflow (`--phase voices`: design candidates → listen to `out/voice-auditions/` →
+`--pick key:N` → `--assign male=key female=key`). Narrator-paired stories always use the
+narrator doc's voice (`--set-narrator narrator=key` changes it app-wide). The TTS cache is keyed
+by transcript + voice + delivery, so re-voicing auto-invalidates; `--phase rerender` re-audios
+published stories in place.
+
 ---
 
 ## 7. Batch 1 slate (24 stories)

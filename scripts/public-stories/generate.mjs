@@ -57,6 +57,10 @@ import {
   announcementCount,
   ask,
   askHidden,
+  chunkTtsText,
+  createVoiceFromPreview,
+  DELIVERY_PREFIX,
+  designVoicePreviews,
   enforceHardLimit,
   generateDepthLayers,
   generateTranscript,
@@ -69,7 +73,14 @@ import {
   ttsChunk,
   TTS_CONCURRENCY,
 } from './lib.mjs';
-import { colorForSpec, NEW_NARRATORS, SPECS, validateSpecs } from './specs.mjs';
+import {
+  AUDITION_TEXT,
+  colorForSpec,
+  NEW_NARRATORS,
+  SPECS,
+  validateSpecs,
+  VOICE_CANDIDATES,
+} from './specs.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config();
@@ -82,7 +93,10 @@ const ADMIN_EMAIL = 'ellepotterhead2006@gmail.com';
 
 // ── args ────────────────────────────────────────────────────────────────────
 function parseArgs(argv) {
-  const args = { phase: null, only: [], limit: Infinity, force: false, dryRun: false, yes: false };
+  const args = {
+    phase: null, only: [], limit: Infinity, force: false, dryRun: false, yes: false,
+    pick: [], assign: [], setNarrator: [],
+  };
   for (let i = 2; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--phase') args.phase = argv[++i];
@@ -91,16 +105,27 @@ function parseArgs(argv) {
     else if (a === '--force') args.force = true;
     else if (a === '--dry-run') args.dryRun = true;
     else if (a === '--yes') args.yes = true;
+    else if (a === '--pick') args.pick.push(argv[++i]);
+    else if (a === '--assign') args.assign.push(argv[++i]);
+    else if (a === '--set-narrator') args.setNarrator.push(argv[++i]);
     else {
       console.error(`unknown arg: ${a}`);
       process.exit(1);
     }
   }
-  if (!['narrators', 'text', 'publish', 'retrofit'].includes(args.phase)) {
-    console.error('usage: node scripts/public-stories/generate.mjs --phase narrators|text|publish|retrofit [--only <slug>] [--limit N] [--force] [--dry-run] [--yes]');
+  if (!['narrators', 'text', 'publish', 'retrofit', 'voices', 'rerender'].includes(args.phase)) {
+    console.error('usage: node scripts/public-stories/generate.mjs --phase narrators|text|publish|retrofit|voices|rerender [--only <slug>] [--limit N] [--force] [--dry-run] [--yes] [--pick key:idx] [--assign male|female=key] [--set-narrator narrator=key]');
     process.exit(1);
   }
   return args;
+}
+
+// One-shot stories follow manifest.voiceOverrides (per speaker gender) once
+// the audition winners are assigned; narrator-paired stories always use the
+// narrator doc's voice (change those via --set-narrator).
+function resolveVoiceId(spec, manifest) {
+  if (spec.narratorKey) return manifest.narrators[spec.narratorKey]?.voiceId || null;
+  return manifest.voiceOverrides?.[spec.genderOther] || spec.voiceId || null;
 }
 
 function selectSpecs({ only, limit }) {
@@ -296,15 +321,24 @@ async function phaseText(args, manifest) {
   if (failed) process.exitCode = 1;
 }
 
-// ── phase: publish ──────────────────────────────────────────────────────────
-async function phasePublish(args, manifest) {
+// ── phase: publish / rerender ───────────────────────────────────────────────
+// mode 'publish': stories not yet published → TTS → upload → addDoc.
+// mode 'rerender': stories ALREADY published → re-TTS (the cache is keyed by
+// transcript+voice+delivery, so a voice change regenerates automatically) →
+// re-upload → updateDoc audio fields in place. Use after re-voicing.
+async function phasePublishLike(args, manifest, mode) {
   if (!process.env.ELEVENLABS) {
     console.error('missing ELEVENLABS key in env');
     process.exit(1);
   }
-  const selected = selectSpecs(args).filter((s) => manifest.stories[s.slug]?.status !== 'published');
+  const selected = selectSpecs(args).filter((s) => {
+    const st = manifest.stories[s.slug]?.status;
+    return mode === 'rerender' ? st === 'published' && manifest.stories[s.slug]?.docId : st !== 'published';
+  });
   if (!selected.length) {
-    console.log('nothing to publish — everything selected is already published.');
+    console.log(mode === 'rerender'
+      ? 'nothing to rerender — no published stories in the selection.'
+      : 'nothing to publish — everything selected is already published.');
     return;
   }
 
@@ -317,35 +351,34 @@ async function phasePublish(args, manifest) {
       process.exitCode = 1;
       continue;
     }
-    let voiceId = spec.voiceId || null;
-    if (spec.narratorKey) {
-      voiceId = manifest.narrators[spec.narratorKey]?.voiceId || null;
-      if (!voiceId) {
-        console.error(`❌ ${spec.slug}: narrator "${spec.narratorKey}" unresolved — run --phase narrators first`);
-        process.exitCode = 1;
-        continue;
-      }
+    const voiceId = resolveVoiceId(spec, manifest);
+    if (!voiceId) {
+      console.error(`❌ ${spec.slug}: no voice resolved — run --phase narrators (paired) or check specs/voiceOverrides`);
+      process.exitCode = 1;
+      continue;
     }
     const transcript = fs.readFileSync(file, 'utf8').trim();
     const chunks = enforceHardLimit(splitTextIntoChunks(transcript));
-    jobs.push({ spec, transcript, chunks, chars: transcript.length, voiceId });
+    const chars = chunks.reduce((s, c) => s + chunkTtsText(c, spec.delivery).length, 0);
+    jobs.push({ spec, transcript, chunks, chars, voiceId });
   }
   if (!jobs.length) return;
 
   // Cost preflight — total characters ≈ eleven_v3 credits.
+  const cacheKeyFor = (j) => sha256([j.transcript, j.voiceId, j.spec.delivery === 'plain' ? '' : DELIVERY_PREFIX].join('::'));
   const totalChars = jobs.reduce((s, j) => s + j.chars, 0);
   const totalChunks = jobs.reduce((s, j) => s + j.chunks.length, 0);
-  console.log('\npublish preflight');
+  console.log(`\n${mode} preflight`);
   console.log('─'.repeat(64));
   for (const j of jobs) {
-    const cached = manifest.stories[j.spec.slug]?.ttsHash === sha256(j.transcript);
-    console.log(`${j.spec.slug.padEnd(28)}${String(j.chars).padStart(6)} chars  ${String(j.chunks.length).padStart(2)} chunks${cached ? '  (tts cached)' : ''}`);
+    const cached = manifest.stories[j.spec.slug]?.ttsHash === cacheKeyFor(j);
+    console.log(`${j.spec.slug.padEnd(28)}${String(j.chars).padStart(6)} chars  ${String(j.chunks.length).padStart(2)} chunks  ${j.voiceId.slice(0, 8)}…${cached ? '  (tts cached)' : ''}`);
   }
   console.log('─'.repeat(64));
   console.log(`total: ${jobs.length} stories · ${totalChunks} chunks · ${totalChars} chars ≈ ${totalChars.toLocaleString()} eleven_v3 credits\n`);
   if (args.dryRun) return;
   if (!args.yes) {
-    const answer = await ask('proceed with TTS + upload + publish? (y/N): ');
+    const answer = await ask(`proceed with TTS + upload + ${mode === 'rerender' ? 'doc update' : 'publish'}? (y/N): `);
     if (!answer.toLowerCase().startsWith('y')) {
       console.log('aborted.');
       return;
@@ -354,28 +387,29 @@ async function phasePublish(args, manifest) {
 
   const { db, storage, uid } = await firebaseSignIn();
 
-  for (const { spec, transcript, chunks, voiceId } of jobs) {
+  for (const job of jobs) {
+    const { spec, transcript, chunks, voiceId } = job;
     const slug = spec.slug;
     const entry = manifest.stories[slug] || {};
-    const hash = sha256(transcript);
+    const hash = cacheKeyFor(job);
     const dir = path.join(AUDIO_DIR, slug);
     console.log(`\n🎙  ${slug} — ${chunks.length} chunk(s), voice ${voiceId}`);
 
-    // 1. TTS (cached by transcript hash)
+    // 1. TTS (cache keyed by transcript + voice + delivery prefix)
     const allCached =
       entry.ttsHash === hash &&
       entry.chunkCount === chunks.length &&
       chunks.every((_, i) => fs.existsSync(path.join(dir, `chunk${i}.mp3`)));
     if (!allCached) {
       if (entry.ttsHash && entry.ttsHash !== hash) {
-        console.log('   transcript changed since last TTS — regenerating audio');
+        console.log('   audio inputs changed (text, voice, or delivery) — regenerating audio');
         delete entry.audioChunkURLs;
       }
       fs.rmSync(dir, { recursive: true, force: true });
       fs.mkdirSync(dir, { recursive: true });
       try {
         await mapWithConcurrency(chunks, TTS_CONCURRENCY, async (text, i) => {
-          const buf = await retryable(() => ttsChunk(text, voiceId, process.env.ELEVENLABS), { label: `${slug} chunk${i}`, retries: 5, baseMs: 4000 });
+          const buf = await retryable(() => ttsChunk(chunkTtsText(text, spec.delivery), voiceId, process.env.ELEVENLABS), { label: `${slug} chunk${i}`, retries: 5, baseMs: 4000 });
           fs.writeFileSync(path.join(dir, `chunk${i}.mp3`), buf);
           process.stdout.write(`   🎤 chunk ${i} done (${(buf.length / 1024).toFixed(0)} KB)\n`);
         });
@@ -428,35 +462,48 @@ async function phasePublish(args, manifest) {
 
     // 3. Firestore doc
     try {
-      const docRef = await addDoc(collection(db, 'publicStories'), {
-        title: spec.title,
-        genre: spec.genre || null,
-        isNighttime: spec.isNighttime,
-        duration: measuredDurationLabel(spec, dir, chunks.length),
-        audioUrl: urls[0],
-        audioChunkURLs: urls,
-        transcript,
-        narratorId: spec.narratorKey ? manifest.narrators[spec.narratorKey].docId : null,
-        narratorName: spec.narratorName || null,
-        collection: spec.collection,
-        tags: spec.tags,
-        libraryCategory: spec.isNighttime ? 'nighttime' : 'daytime',
-        coverColor: colorForSpec(spec, COLLECTION_INDEX[slug]),
-        topographyLayers: generateDepthLayers(5),
-        createdAt: Timestamp.now(),
-      });
-      manifest.stories[slug] = { ...entry, status: 'published', docId: docRef.id };
-      saveManifest(MANIFEST_FILE, manifest);
-      console.log(`   ✅ published → publicStories/${docRef.id}`);
+      if (mode === 'rerender') {
+        await updateDoc(doc(db, 'publicStories', entry.docId), {
+          audioUrl: urls[0],
+          audioChunkURLs: urls,
+          transcript,
+          duration: measuredDurationLabel(spec, dir, chunks.length),
+        });
+        manifest.stories[slug] = { ...entry, status: 'published' };
+        saveManifest(MANIFEST_FILE, manifest);
+        console.log(`   ✅ re-rendered → publicStories/${entry.docId}`);
+      } else {
+        const docRef = await addDoc(collection(db, 'publicStories'), {
+          title: spec.title,
+          genre: spec.genre || null,
+          isNighttime: spec.isNighttime,
+          duration: measuredDurationLabel(spec, dir, chunks.length),
+          audioUrl: urls[0],
+          audioChunkURLs: urls,
+          transcript,
+          narratorId: spec.narratorKey ? manifest.narrators[spec.narratorKey].docId : null,
+          narratorName: spec.narratorName || null,
+          collection: spec.collection,
+          tags: spec.tags,
+          libraryCategory: spec.isNighttime ? 'nighttime' : 'daytime',
+          coverColor: colorForSpec(spec, COLLECTION_INDEX[slug]),
+          topographyLayers: generateDepthLayers(5),
+          createdAt: Timestamp.now(),
+        });
+        manifest.stories[slug] = { ...entry, status: 'published', docId: docRef.id };
+        saveManifest(MANIFEST_FILE, manifest);
+        console.log(`   ✅ published → publicStories/${docRef.id}`);
+      }
     } catch (err) {
-      manifest.stories[slug] = { ...entry, status: 'failed:firestore', error: String(err?.message).slice(0, 300) };
+      manifest.stories[slug] = { ...entry, status: mode === 'rerender' ? 'published' : 'failed:firestore', error: String(err?.message).slice(0, 300) };
       saveManifest(MANIFEST_FILE, manifest);
       console.log(`   ❌ firestore write failed: ${err.message} — re-run to retry just the doc write`);
+      if (mode === 'rerender') process.exitCode = 1;
     }
   }
 
   // Summary
-  console.log('\npublish summary');
+  console.log(`\n${mode} summary`);
   console.log('─'.repeat(64));
   for (const spec of selected) {
     const st = manifest.stories[spec.slug]?.status || 'pending';
@@ -466,6 +513,116 @@ async function phasePublish(args, manifest) {
   if (bad) {
     console.log(`\n${bad} story(ies) failed — fix and re-run (state is resumable).`);
     process.exitCode = 1;
+  }
+}
+
+// ── phase: voices ───────────────────────────────────────────────────────────
+// Audition workflow for the whisper voice redesign:
+//   1. `--phase voices`                       design previews for every candidate
+//      → listen to scripts/public-stories/out/voice-auditions/*.mp3
+//   2. `--phase voices --pick dusk:1`         create the permanent voice from a preview
+//   3. `--phase voices --assign male=dusk --assign female=veil`
+//                                             route one-shot stories to the winners
+//   4. `--phase voices --set-narrator grayson=dusk`  (optional, app-wide)
+//                                             point a narrator doc at a new voice
+const AUDITION_DIR = path.join(OUT_DIR, 'voice-auditions');
+
+async function phaseVoices(args, manifest) {
+  manifest.voiceCandidates = manifest.voiceCandidates || {};
+  manifest.voices = manifest.voices || {};
+  manifest.voiceOverrides = manifest.voiceOverrides || {};
+
+  if (args.pick.length) {
+    if (!process.env.ELEVENLABS) { console.error('missing ELEVENLABS key'); process.exit(1); }
+    for (const p of args.pick) {
+      const [key, idxStr] = p.split(':');
+      const idx = parseInt(idxStr ?? '0', 10);
+      const cand = VOICE_CANDIDATES.find((c) => c.key === key);
+      const designed = manifest.voiceCandidates[key];
+      if (!cand || !designed?.previews?.[idx]) {
+        console.error(`❌ --pick ${p}: no designed preview — run --phase voices first (keys: ${VOICE_CANDIDATES.map((c) => c.key).join(', ')})`);
+        process.exitCode = 1;
+        continue;
+      }
+      if (manifest.voices[key]) {
+        console.log(`♻️  ${key} already created → ${manifest.voices[key].voiceId} (delete from manifest.voices to redo)`);
+        continue;
+      }
+      const voiceId = await retryable(
+        () => createVoiceFromPreview(cand.name, cand.description, designed.previews[idx].generatedVoiceId, process.env.ELEVENLABS),
+        { label: `create ${key}` },
+      );
+      manifest.voices[key] = { voiceId, name: cand.name, gender: cand.gender, previewIndex: idx };
+      saveManifest(MANIFEST_FILE, manifest);
+      console.log(`✨ created ${cand.name} from preview ${idx} → ${voiceId}`);
+    }
+    console.log(`\nnext: --phase voices --assign male=<key> --assign female=<key>, then --phase rerender`);
+    return;
+  }
+
+  if (args.assign.length) {
+    for (const a of args.assign) {
+      const [role, key] = a.split('=');
+      if (!['male', 'female'].includes(role)) {
+        console.error(`❌ --assign ${a}: role must be male or female`);
+        process.exitCode = 1;
+        continue;
+      }
+      const created = manifest.voices[key];
+      if (!created) {
+        console.error(`❌ --assign ${a}: voice "${key}" not created yet — use --pick first`);
+        process.exitCode = 1;
+        continue;
+      }
+      manifest.voiceOverrides[role] = created.voiceId;
+      console.log(`✅ ${role}-voiced one-shots → ${created.name} (${created.voiceId})`);
+    }
+    saveManifest(MANIFEST_FILE, manifest);
+    console.log(`\nnext: --phase rerender (updates the published stories in place), and --phase publish for the rest`);
+    return;
+  }
+
+  if (args.setNarrator.length) {
+    const { db } = await firebaseSignIn();
+    for (const s of args.setNarrator) {
+      const [nKey, cKey] = s.split('=');
+      const narr = manifest.narrators[nKey];
+      const created = manifest.voices[cKey];
+      if (!narr?.docId) { console.error(`❌ --set-narrator ${s}: narrator "${nKey}" unresolved — run --phase narrators`); process.exitCode = 1; continue; }
+      if (!created) { console.error(`❌ --set-narrator ${s}: voice "${cKey}" not created — use --pick first`); process.exitCode = 1; continue; }
+      await retryable(() => updateDoc(doc(db, 'publicNarrators', narr.docId), { voiceId: created.voiceId, updatedAt: Timestamp.now() }), { label: `narrator ${nKey}` });
+      manifest.narrators[nKey] = { ...narr, voiceId: created.voiceId };
+      saveManifest(MANIFEST_FILE, manifest);
+      console.log(`✅ narrator ${nKey} now speaks with ${created.name} — note this changes ${nKey} app-wide (user-generated stories too)`);
+    }
+    console.log(`\nnext: --phase rerender to re-voice that narrator's published stories`);
+    return;
+  }
+
+  // Design mode: generate audition previews for every candidate.
+  if (!process.env.ELEVENLABS) { console.error('missing ELEVENLABS key'); process.exit(1); }
+  fs.mkdirSync(AUDITION_DIR, { recursive: true });
+  for (const cand of VOICE_CANDIDATES) {
+    if (manifest.voiceCandidates[cand.key] && !args.force) {
+      console.log(`♻️  ${cand.key}: previews already designed (use --force to redo)`);
+      continue;
+    }
+    if (args.dryRun) { console.log(`would design: ${cand.key} (${cand.gender}) — ${cand.description.slice(0, 60)}…`); continue; }
+    process.stdout.write(`🎨 designing ${cand.key} (${cand.gender})… `);
+    const previews = await retryable(() => designVoicePreviews(cand.description, AUDITION_TEXT, process.env.ELEVENLABS), { label: `design ${cand.key}` });
+    const stored = [];
+    previews.forEach((pv, i) => {
+      const audio = pv.audio_base_64 || pv.audioBase64;
+      if (audio) fs.writeFileSync(path.join(AUDITION_DIR, `${cand.key}-preview${i}.mp3`), Buffer.from(audio, 'base64'));
+      stored.push({ generatedVoiceId: pv.generated_voice_id });
+    });
+    manifest.voiceCandidates[cand.key] = { description: cand.description, previews: stored };
+    saveManifest(MANIFEST_FILE, manifest);
+    console.log(`${stored.length} previews saved`);
+  }
+  if (!args.dryRun) {
+    console.log(`\n🎧 listen: ${path.relative(process.cwd(), AUDITION_DIR)}/<key>-preview<N>.mp3 — all speak the same passage.`);
+    console.log('then: --phase voices --pick <key>:<N> for each winner, --assign male=<key> --assign female=<key>, --phase rerender.');
   }
 }
 
@@ -531,7 +688,9 @@ async function main() {
 
   if (args.phase === 'narrators') await phaseNarrators(args, manifest);
   else if (args.phase === 'text') await phaseText(args, manifest);
-  else if (args.phase === 'publish') await phasePublish(args, manifest);
+  else if (args.phase === 'publish') await phasePublishLike(args, manifest, 'publish');
+  else if (args.phase === 'rerender') await phasePublishLike(args, manifest, 'rerender');
+  else if (args.phase === 'voices') await phaseVoices(args, manifest);
   else if (args.phase === 'retrofit') await phaseRetrofit(args, manifest);
 
   process.exit(process.exitCode || 0);
