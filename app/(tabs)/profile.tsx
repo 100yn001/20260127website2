@@ -29,7 +29,6 @@ import {
 
 import { Screen, TopBar } from '@/components/screen';
 import CardScene from '@/components/silver-card/CardScene';
-import { ThemeToggle } from '@/components/theme-toggle';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -243,7 +242,7 @@ export default function ProfileScreen() {
 
   return (
     <Screen wide>
-      <TopBar right={<ThemeToggle />} />
+      <TopBar />
       <ScrollView
         className="flex-1"
         contentContainerStyle={{ paddingBottom: 110 }}
