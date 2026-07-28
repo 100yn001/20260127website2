@@ -10,8 +10,11 @@
 //
 // Consumed by generate.mjs. Pure data.
 
-export const VOICE_ID = 'GNLSu9X5LqN19dRA4iva'; // male, sensual/deep — shared by the 3 male-voiced videos (narrator continuity)
-export const GF_VOICE_ID = 'mgpcWiEXIWuENJCy8ADX'; // female, American, gentle/warm (app catalog voice)
+// Roster voices (match the app's house sound — see public-stories RENDER_TUNING):
+// dusk = the YouTube "boyfriend" continuity voice (also the-bodyguard's app voice);
+// veil = the YouTube girlfriend — same voice as the app narrator julia.
+export const VOICE_ID = 'xWPPOvvQW78MpD6evTo9'; // dusk (whisper)
+export const GF_VOICE_ID = 'On3mNeKJI0XxvSyM3sLT'; // veil (whisper)
 
 // Per-genre craft profiles — beats/pacing/performance differ by genre.
 export const GENRE_PROFILES = {
