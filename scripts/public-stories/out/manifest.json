@@ -1,0 +1,197 @@
+{
+  "narrators": {},
+  "stories": {
+    "grayson-rain-wind-down": {
+      "status": "text",
+      "error": "401 {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"API key is invalid.\"},\"request_id\":null}",
+      "textHash": "67c96c51ab9b1fa99cdf87354d75515864dd56f104dbf9e09e8129bd2d898774",
+      "words": 889,
+      "targetWords": 1275,
+      "announcements": 0
+    },
+    "grayson-lazy-sunday": {
+      "status": "text",
+      "error": "401 {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"API key is invalid.\"},\"request_id\":null}",
+      "textHash": "985ddb6ac923aa7ece3e15f13626d1873e14b46511f948ec6eebdc0b0364e2dd",
+      "words": 658,
+      "targetWords": 850,
+      "announcements": 0
+    },
+    "roman-he-handles-it": {
+      "status": "text",
+      "error": "401 {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"API key is invalid.\"},\"request_id\":null}",
+      "textHash": "1a488b5774534216be7e7520d06ef3a14fbf43dd6e6eafec73d0b2e43d7859cc",
+      "words": 623,
+      "targetWords": 850,
+      "announcements": 0
+    },
+    "roman-silk-tie": {
+      "status": "text",
+      "error": "401 {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"API key is invalid.\"},\"request_id\":null}",
+      "textHash": "d0f1515a82e58f9078b95aa93558b8bf6b18d8c59e583fb3002fb30fc8099152",
+      "words": 598,
+      "targetWords": 850,
+      "announcements": 0
+    },
+    "beau-porch-storm": {
+      "status": "text",
+      "error": "401 {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"API key is invalid.\"},\"request_id\":null}",
+      "textHash": "6ef960bdf36602b07d3e85fdfa00cd4223fc6ff427a2efbce734db710a806e85",
+      "words": 661,
+      "targetWords": 850,
+      "announcements": 0
+    },
+    "beau-barn-heat": {
+      "status": "text",
+      "error": "401 {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"API key is invalid.\"},\"request_id\":null}",
+      "textHash": "3de2becfc9e9902fc548e52d6453b0f57c9a7ec1be1d509502d9fab88f3cb5c4",
+      "words": 491,
+      "targetWords": 850,
+      "announcements": 1
+    },
+    "mara-last-call": {
+      "status": "text",
+      "error": "401 {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"API key is invalid.\"},\"request_id\":null}",
+      "textHash": "1e5bc8ab05d9fbbd281d66661d1dc34bbbd06c240861af6a3e0797ab64cc5bd0",
+      "words": 710,
+      "targetWords": 850,
+      "announcements": 1
+    },
+    "mara-locks-the-door": {
+      "status": "text",
+      "error": "401 {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"API key is invalid.\"},\"request_id\":null}",
+      "textHash": "4c1c4ae66261db4c6c9c9d154542e8fd49a64594b0981345a227a911328c6be1",
+      "words": 636,
+      "targetWords": 850,
+      "announcements": 0
+    },
+    "kael-starlit-court": {
+      "status": "text",
+      "error": "401 {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"API key is invalid.\"},\"request_id\":null}",
+      "textHash": "e3e37256c774bb733dbc814abf17279debe4e80dc4f380a228a02d5ffef1d29c",
+      "words": 1264,
+      "targetWords": 1400,
+      "announcements": 0
+    },
+    "kael-the-bargain": {
+      "status": "text",
+      "error": "Connection error.",
+      "textHash": "436afdf2224cff45f4649e55207ce5b1730cb9d084f020f2f46774523b5c7b14",
+      "words": 1103,
+      "targetWords": 1400,
+      "announcements": 0
+    },
+    "julia-stay-on-the-line": {
+      "status": "text",
+      "error": "Connection error.",
+      "textHash": "b72027d7f0d741be3c61f133080a0a40c7bad5ccf14ef5e9a9d5267d35bb82ce",
+      "words": 1047,
+      "targetWords": 1275,
+      "announcements": 1
+    },
+    "julia-good-boy": {
+      "status": "text",
+      "error": "Connection error.",
+      "textHash": "d67fac6d78e3bff4d7b83733ba40d2c59ff7557cdd385859106057a1a37aa877",
+      "words": 644,
+      "targetWords": 850,
+      "announcements": 0
+    },
+    "lighthouse-keeper": {
+      "status": "text",
+      "error": "Connection error.",
+      "textHash": "a10517e41f6b75906e96e25581bec7b973951741e9d29db4f4023cab4d2f64bb",
+      "words": 1524,
+      "targetWords": 2100,
+      "announcements": 0
+    },
+    "night-train-home": {
+      "status": "text",
+      "error": "Connection error.",
+      "textHash": "3986e4282e4fdbb4e0ffc410d996b3046685292262d8ba707980b9a7c63efb39",
+      "words": 710,
+      "targetWords": 850,
+      "announcements": 0
+    },
+    "rain-on-the-skylight": {
+      "status": "text",
+      "error": "Connection error.",
+      "textHash": "254982912007cdfa58a55cd79fe9ca0be79c479582fd2cc826a54d5dbe098ef9",
+      "words": 884,
+      "targetWords": 1275,
+      "announcements": 0
+    },
+    "orc-by-the-hearth": {
+      "status": "text",
+      "error": "401 {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"API key is invalid.\"},\"request_id\":null}",
+      "textHash": "b9cc11cba42616a64d1292494de099475e8cf51a5e24f28ea4eddfe91ca03a89",
+      "words": 1220,
+      "targetWords": 1400,
+      "announcements": 2
+    },
+    "snowed-in-chalet": {
+      "status": "text",
+      "error": "401 {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"API key is invalid.\"},\"request_id\":null}",
+      "textHash": "aa4e8196c844384b7a49238307efd78a98b27dbd3438111d8b044de700cdbdf0",
+      "words": 722,
+      "targetWords": 850,
+      "announcements": 0
+    },
+    "rivals-one-bed": {
+      "status": "text",
+      "error": "401 {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"API key is invalid.\"},\"request_id\":null}",
+      "textHash": "2967bb0e6b12a8a6a82f78bf1216985d15e233993b605472082726301e68005f",
+      "words": 561,
+      "targetWords": 850,
+      "announcements": 0
+    },
+    "the-bodyguard": {
+      "status": "text",
+      "error": "401 {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"API key is invalid.\"},\"request_id\":null}",
+      "textHash": "079245834fd059ab67a1a6afac4978eb84fd4b483d7360a6bb9cf519fb569270",
+      "words": 662,
+      "targetWords": 850,
+      "announcements": 1
+    },
+    "crimson-hours": {
+      "status": "text",
+      "error": "401 {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"API key is invalid.\"},\"request_id\":null}",
+      "textHash": "ebb3d9bd2bcc427890ca14127c457cb35f0b6d993a4f4e31f8f0e63370337ee9",
+      "words": 678,
+      "targetWords": 850,
+      "announcements": 0
+    },
+    "wolf-and-mate": {
+      "status": "text",
+      "error": "401 {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"API key is invalid.\"},\"request_id\":null}",
+      "textHash": "7d88bec0eddcea2a22565c9af14a5f8c21b967d371cf0618d6a93c5a84435f1d",
+      "words": 592,
+      "targetWords": 850,
+      "announcements": 0
+    },
+    "the-obsession": {
+      "status": "text",
+      "error": "401 {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"API key is invalid.\"},\"request_id\":null}",
+      "textHash": "4748cc4c6f8d3d632a5e845b6ec1a99c00674088934bcf9e6b8a4282b50126c5",
+      "words": 579,
+      "targetWords": 850,
+      "announcements": 0
+    },
+    "ember-knight": {
+      "status": "text",
+      "error": "401 {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"API key is invalid.\"},\"request_id\":null}",
+      "textHash": "4e9b9bbbc7af8bec409919ed16f5cf6bbc7963eb52a913974c548e86a52a66e8",
+      "words": 1292,
+      "targetWords": 1400,
+      "announcements": 1
+    },
+    "midnight-encore": {
+      "status": "text",
+      "error": "401 {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"API key is invalid.\"},\"request_id\":null}",
+      "textHash": "e334da7ea9b47bf4133ec1a88865a6515db2aa5416604e5c0e2c854247bdc080",
+      "words": 451,
+      "targetWords": 850,
+      "announcements": 0
+    }
+  }
+}

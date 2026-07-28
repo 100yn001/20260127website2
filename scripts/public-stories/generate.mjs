@@ -123,6 +123,20 @@ const COLLECTION_INDEX = (() => {
 const txtPath = (slug) => path.join(OUT_DIR, `${slug}.txt`);
 const durationLabel = (d) => d.replace(/^(\d+)min$/, '$1 min'); // '10min' → '10 min' (existing doc convention)
 
+// Fable (especially immersive mode) often lands under the word target, so the
+// published duration reflects the actual rendered audio: mp3_44100_128 is
+// 128 kbps ≈ 16 KB/s. Falls back to the spec bucket if files are unreadable.
+function measuredDurationLabel(spec, dir, chunkCount) {
+  try {
+    let bytes = 0;
+    for (let i = 0; i < chunkCount; i++) bytes += fs.statSync(path.join(dir, `chunk${i}.mp3`)).size;
+    const minutes = Math.max(1, Math.round(bytes / 16000 / 60));
+    return `${minutes} min`;
+  } catch {
+    return durationLabel(spec.duration);
+  }
+}
+
 // ── firebase ────────────────────────────────────────────────────────────────
 let fb = null;
 async function firebaseSignIn() {
@@ -401,7 +415,7 @@ async function phasePublish(args, manifest) {
         title: spec.title,
         genre: spec.genre || null,
         isNighttime: spec.isNighttime,
-        duration: durationLabel(spec.duration),
+        duration: measuredDurationLabel(spec, dir, chunks.length),
         audioUrl: urls[0],
         audioChunkURLs: urls,
         transcript,
