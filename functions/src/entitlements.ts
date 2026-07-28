@@ -6,7 +6,7 @@
  *
  * Model (owner decisions, 2026-07-27):
  *   - 2 lifetime free in-app stories per user
- *   - $3/month subscription → 15 stories per billing period, flat
+ *   - $3/month subscription → 10 stories per billing period, flat
  *   - onboarding first story is separate (firstStoryUsed)
  *   - max 3 saved custom voices per user
  */
@@ -14,7 +14,7 @@
 import * as admin from 'firebase-admin';
 
 export const FREE_STORY_LIMIT = 2;
-export const MONTHLY_STORY_LIMIT = 15;
+export const MONTHLY_STORY_LIMIT = 10;
 export const MAX_CUSTOM_VOICES = 3;
 
 export type StorySlot = 'free' | 'subscription';

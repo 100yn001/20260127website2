@@ -11,7 +11,7 @@ import { httpsCallable } from 'firebase/functions';
 import { Platform } from 'react-native';
 
 export const FREE_STORY_LIMIT = 2;
-export const MONTHLY_STORY_LIMIT = 15;
+export const MONTHLY_STORY_LIMIT = 10;
 export const MAX_CUSTOM_VOICES = 3;
 export const MONTHLY_PRICE_LABEL = '$3/month';
 

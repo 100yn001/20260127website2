@@ -19,7 +19,7 @@ import { ToggleGroup } from '@/components/ui/toggle-group';
 import { db } from '@/config/firebase';
 import { useAuth } from '@/contexts/AuthContext';
 import { useStoryQueue } from '@/contexts/StoryQueueContext';
-import { isSubscribed } from '@/services/entitlements-service';
+import { isSubscribed, MONTHLY_STORY_LIMIT } from '@/services/entitlements-service';
 import { useArtworkTint } from '@/hooks/useArtworkTint';
 import { cn } from '@/lib/cn';
 import { variedTint } from '@/lib/cover';
@@ -208,7 +208,7 @@ export default function VaultScreen() {
               <Text className="flex-1 text-sm font-serif text-foreground">
                 {billingBanner === 'activating'
                   ? 'payment received — activating your subscription…'
-                  : "you're subscribed — 15 stories a month unlocked."}
+                  : `you're subscribed — ${MONTHLY_STORY_LIMIT} stories a month unlocked.`}
               </Text>
             </View>
           </View>

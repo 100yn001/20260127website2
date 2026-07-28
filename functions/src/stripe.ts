@@ -1,5 +1,5 @@
 /**
- * Stripe subscription plumbing — $3/month "yn monthly" → 15 stories/month.
+ * Stripe subscription plumbing — $3/month "yn monthly" → 10 stories/month.
  *
  * Replaces the old $0 "yn beta" checkout (createStripeCustomer.ts, retired).
  *
@@ -26,7 +26,7 @@ const STRIPE_WEBHOOK_SECRET = defineSecret('STRIPE_WEBHOOK_SECRET');
 
 export const MONTHLY_PRICE_LOOKUP_KEY = 'yn_monthly_3';
 const PRODUCT_NAME = 'yn monthly';
-const PRODUCT_DESCRIPTION = 'yn subscription — 15 stories a month plus the public story library';
+const PRODUCT_DESCRIPTION = 'yn subscription — 10 stories a month plus the public story library';
 const PRICE_CENTS = 300;
 
 let _stripe: Stripe | null = null;
