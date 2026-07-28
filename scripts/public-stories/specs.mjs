@@ -126,6 +126,14 @@ export const VOICE_CANDIDATES = [
     description:
       'Warm female murmur with a rustic, homey hush — cozy, rounded, a little earthy. Slow comfortable pacing, smiling softness, firelight-and-woolen-blanket intimacy; nurturing without being precious. Lived-in texture, low volume, gentle laugh lines in the voice. Around thirty.',
   },
+  // round 3 — Adam (artsy French narrator)
+  {
+    key: 'sable',
+    gender: 'male',
+    name: 'Sable (whisper)',
+    description:
+      'Low male whisper with a clear French accent — warm smoke, unhurried, artistic reverie. Slow deliberate murmur like late night in a paint-spattered studio; sensual but tender, a faint smile, wine-dark softness. Never theatrical, never fast. Parisian, mid-thirties.',
+  },
 ];
 
 // Per-candidate render tuning applied at TTS time (keyed by candidate key;
@@ -156,6 +164,21 @@ export const NEW_NARRATORS = [
     usernameLowercase: 'kael',
     isPublished: true,
     color: '#4C5578',
+  },
+  {
+    name: 'Adam',
+    gender: 'male',
+    description: 'paint-stained hands, dark curls pushed back, linen sleeves rolled past the elbow',
+    relationship: 'your artist',
+    additionalDetails:
+      `french, and entirely unbothered about how obvious it is. his studio smells of turpentine, coffee, and rain; there is exactly one couch and it is covered in drop cloths and you. he calls finished paintings "almost" and calls you "mon cœur," and only one of those ever gets revised. he works late, talks low, and has never once hurried anything he cares about.`,
+    userNameWithNarrator: 'mon cœur',
+    userGenderWithNarrator: 'other',
+    voiceId: 'nG70y8QwtA8cL5iSuU7f', // French, deep/musical (live catalog voice; upgrade path: --set-narrator adam=sable after audition)
+    username: 'adam',
+    usernameLowercase: 'adam',
+    isPublished: true,
+    color: '#4A3B52',
   },
 ];
 
@@ -724,6 +747,93 @@ export const SPECS = [
     tags: ['second chance', 'spicy', 'm4f'],
   },
 ];
+
+// ── Batch 1.5: Adam (artsy French narrator) ─────────────────────────────────
+SPECS.push(
+  {
+    slug: 'adam-the-atelier',
+    title: 'the atelier',
+    collection: 'bedtime',
+    genre: 'sleep',
+    isNighttime: false,
+    duration: '10min',
+    narrationMode: 'immersive',
+    narratorKey: 'adam',
+    narratorName: 'adam',
+    genderSelf: 'female',
+    genderOther: 'male',
+    character: 'Adam — your artist; french, paint-stained hands, dark curls, a voice like late-night radio',
+    setting: 'rain on the studio skylight; he sketches you while you doze on the drop-cloth couch',
+    location: 'his paris atelier — turpentine and coffee, one lamp, canvases against every wall',
+    trope: 'being someone\'s muse; unhurried devotion',
+    prompt:
+      'murmured and half-distracted in the loveliest way — he narrates small things about the drawing and about her, mixes in soft french ("doucement… mon cœur") sparingly; the pencil sound, the rain, his voice getting lower; ends with the sketchbook set down and a blanket pulled over her',
+    features: [],
+    featurePreferences: {},
+    tags: ['sleep', 'cozy', 'm4f'],
+  },
+  {
+    slug: 'adam-still-life',
+    title: 'still life',
+    collection: 'after dark',
+    genre: 'romance',
+    isNighttime: true,
+    duration: '10min',
+    narrationMode: 'immersive',
+    narratorKey: 'adam',
+    narratorName: 'adam',
+    genderSelf: 'female',
+    genderOther: 'male',
+    character: 'Adam — your artist; french, deliberate hands, the patience of a man who paints light',
+    setting: 'he has painted you all evening; now the brush is down and he crosses the studio',
+    location: 'the atelier at midnight, easel lamp still on, paint water going still',
+    trope: 'artist and muse; reverent worship',
+    features: ['body worship', 'praise', 'sex'],
+    featurePreferences: { 'body worship': ['receive'], praise: ['receive'], sex: ['receive'] },
+    prompt:
+      'reverent, explicit, unhurried — he touches her the way he mixes color, naming what he adores in english threaded with soft french ("là… juste là"); consent warm and spoken; warm landing: her wrapped in his paint shirt, his thumb tracing where he will paint her next',
+    tags: ['spicy', 'praise', 'm4f'],
+  },
+  {
+    slug: 'adam-after-the-opening',
+    title: 'after the opening',
+    collection: 'after dark',
+    genre: 'romance',
+    isNighttime: true,
+    duration: '10min',
+    narrationMode: 'immersive',
+    narratorKey: 'adam',
+    narratorName: 'adam',
+    genderSelf: 'female',
+    genderOther: 'male',
+    character: 'Adam — your artist; jacket off, collar open, gallery-wine warm and looking only at you',
+    setting: 'the gallery opening is over; back in the empty studio he pulls you into a slow dance with no music',
+    trope: 'slow burn breaking after a public night of almost',
+    location: 'the darkened atelier, city lights through tall windows, her heels somewhere by the door',
+    features: ['slow dancing that becomes undressing', 'fingering', 'sex'],
+    featurePreferences: {
+      'slow dancing that becomes undressing': ['receive'],
+      fingering: ['receive'],
+      sex: ['receive'],
+    },
+    prompt:
+      'wine-warm and smiling, the whole night\'s restraint finally let go; slow dance turning into slow everything, explicit and tender, french endearments low against her ear; warm landing: swaying again after, barefoot, his jacket around her shoulders',
+    tags: ['slow burn', 'spicy', 'm4f'],
+  },
+);
+
+// Planned narrator → designed-voice mapping (applied via --set-narrator; the
+// roster sampler reads this to show what each voice will cover). Adam ships
+// on live catalog voice nG70… until sable is auditioned and picked.
+export const NARRATOR_VOICE_PLAN = {
+  grayson: 'hearth',
+  roman: 'dusk',
+  kael: 'crown',
+  beau: 'drawl',
+  mara: 'wren',
+  julia: 'veil',
+  adam: 'sable (pending pick; current default nG70…)',
+};
 
 const VALID_DURATIONS = new Set(['5min', '10min', '15min']);
 const VALID_MODES = new Set(['immersive', 'intermediate', 'cinematic']);

@@ -110,6 +110,7 @@ function parseArgs(argv) {
     else if (a === '--pick') args.pick.push(argv[++i]);
     else if (a === '--assign') args.assign.push(argv[++i]);
     else if (a === '--set-narrator') args.setNarrator.push(argv[++i]);
+    else if (a === '--samples') args.samples = true;
     else {
       console.error(`unknown arg: ${a}`);
       process.exit(1);
@@ -644,6 +645,52 @@ async function phaseVoices(args, manifest) {
       console.log(`✅ narrator ${nKey} now speaks with ${created.name} — note this changes ${nKey} app-wide (user-generated stories too)`);
     }
     console.log(`\nnext: --phase rerender to re-voice that narrator's published stories`);
+    return;
+  }
+
+  // Roster mode: render the SAME passage through every voice actually in use,
+  // with production delivery (prefix + per-voice tuning) — the definitive
+  // pre-generation listening check. Writes out/voice-roster/.
+  if (args.samples) {
+    if (!process.env.ELEVENLABS) { console.error('missing ELEVENLABS key'); process.exit(1); }
+    const ROSTER_DIR = path.join(OUT_DIR, 'voice-roster');
+    fs.mkdirSync(ROSTER_DIR, { recursive: true });
+    const sampleBody = AUDITION_TEXT.replace(/^(\[[a-z ]+\])+\s*/i, '');
+
+    // voice → what it covers (one-shots via live resolution, narrators via plan)
+    const coverage = {};
+    const addCover = (key, what) => ((coverage[key] = coverage[key] || []), coverage[key].push(what));
+    for (const spec of SPECS.filter((s) => !s.narratorKey)) {
+      const vid = resolveVoiceId(spec, manifest);
+      const entry = Object.entries(manifest.voices || {}).find(([, v]) => v.voiceId === vid);
+      addCover(entry ? entry[0] : vid || 'unassigned', spec.slug);
+    }
+    const { NARRATOR_VOICE_PLAN } = await import('./specs.mjs');
+    for (const [narr, planned] of Object.entries(NARRATOR_VOICE_PLAN)) {
+      const key = String(planned).split(' ')[0];
+      addCover(key, `narrator ${narr} (+ their stories)`);
+    }
+
+    const targets = Object.entries(manifest.voices || {}).map(([key, v]) => ({ key, voiceId: v.voiceId }));
+    targets.push({ key: 'adam-default-nG70', voiceId: 'nG70y8QwtA8cL5iSuU7f' });
+    const lines = ['# Voice roster — production-delivery samples', '', 'Same passage through every voice, rendered exactly as stories render (prefix + tuning).', ''];
+    for (const t of targets) {
+      const tuning = RENDER_TUNING[t.key] || {};
+      const prefix = tuning.prefix ?? DELIVERY_PREFIX;
+      const settings = tuning.speed ? { speed: tuning.speed } : {};
+      const file = path.join(ROSTER_DIR, `${t.key}.mp3`);
+      if (!fs.existsSync(file) || args.force) {
+        process.stdout.write(`🎙  ${t.key}… `);
+        const buf = await retryable(() => ttsChunk(prefix + sampleBody, t.voiceId, process.env.ELEVENLABS, settings), { label: `roster ${t.key}` });
+        fs.writeFileSync(file, buf);
+        console.log(`${(buf.length / 1024).toFixed(0)} KB`);
+      }
+      const covers = coverage[t.key] || [];
+      lines.push(`- **${t.key}.mp3**${tuning.speed ? ` (speed ${tuning.speed})` : ''}${tuning.prefix ? ' (breathy prefix)' : ''} — covers: ${covers.length ? covers.join(', ') : '(nothing assigned yet)'}`);
+    }
+    lines.push('', 'sable is not yet created — its 3 design previews are in ../voice-auditions/sable-preview*.mp3 (pick with --pick sable:N, then --set-narrator adam=sable).');
+    fs.writeFileSync(path.join(ROSTER_DIR, 'README.md'), lines.join('\n'), 'utf8');
+    console.log(`\n🎧 roster: ${path.relative(process.cwd(), ROSTER_DIR)}/ (see README.md for voice → story coverage)`);
     return;
   }
 

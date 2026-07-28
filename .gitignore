@@ -57,3 +57,4 @@ scripts/public-stories/out/audio/
 scripts/public-stories/out/*.log
 scripts/public-stories/out/voice-auditions/
 scripts/public-stories/out/rerender-previews/
+scripts/public-stories/out/voice-roster/*.mp3

@@ -262,22 +262,14 @@
       "docId": "2XZmHgJKyZRn1rlBR45f"
     },
     "rain-on-the-skylight": {
-      "status": "published",
+      "status": "tts",
       "error": "Connection error.",
       "textHash": "254982912007cdfa58a55cd79fe9ca0be79c479582fd2cc826a54d5dbe098ef9",
       "words": 884,
       "targetWords": 1275,
       "announcements": 0,
-      "ttsHash": "254982912007cdfa58a55cd79fe9ca0be79c479582fd2cc826a54d5dbe098ef9",
+      "ttsHash": "f19b6e390deebc70a514b5d092a8bd7a624c89291cec451b4f214b1cd93b3834",
       "chunkCount": 6,
-      "audioChunkURLs": [
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-rain-on-the-skylight-chunk0.mp3?alt=media&token=54fed99a-3e91-43ce-8e53-c2126380121b",
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-rain-on-the-skylight-chunk1.mp3?alt=media&token=0a01c4a0-ada0-4b08-85ad-6b6613941327",
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-rain-on-the-skylight-chunk2.mp3?alt=media&token=9d49cc81-220a-4301-a5fa-a9a66539a84b",
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-rain-on-the-skylight-chunk3.mp3?alt=media&token=46d2edcb-1cc7-4284-ab8a-bd0cd3b87705",
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-rain-on-the-skylight-chunk4.mp3?alt=media&token=93631065-dd6c-470f-aba3-70facd2b4a40",
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-rain-on-the-skylight-chunk5.mp3?alt=media&token=0f9f6fb5-0943-4830-919d-ff9af16824c4"
-      ],
       "docId": "dmmdyJFcRUygotQfNMo6"
     },
     "orc-by-the-hearth": {
@@ -336,71 +328,47 @@
       "docId": "tEeuQn1IKrwOuFM2o9ZB"
     },
     "the-bodyguard": {
-      "status": "published",
+      "status": "tts",
       "error": "ElevenLabs 429: {\"detail\":{\"type\":\"rate_limit_error\",\"code\":\"concurrent_limit_exceeded\",\"message\":\"Too many concurrent requests. Your current subscription is associated with a maximum of 5 concurrent requests (runnin",
       "textHash": "079245834fd059ab67a1a6afac4978eb84fd4b483d7360a6bb9cf519fb569270",
       "words": 662,
       "targetWords": 850,
       "announcements": 1,
-      "ttsHash": "079245834fd059ab67a1a6afac4978eb84fd4b483d7360a6bb9cf519fb569270",
+      "ttsHash": "ba169e138b6a5eae619a659c8902c59fe15f348b44036bfe9b940fd73c8de103",
       "chunkCount": 4,
-      "audioChunkURLs": [
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-the-bodyguard-chunk0.mp3?alt=media&token=4e1c9e3f-03f9-4010-b366-54560d689610",
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-the-bodyguard-chunk1.mp3?alt=media&token=882cbe81-d2c5-4051-826a-c90aac4d4dd4",
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-the-bodyguard-chunk2.mp3?alt=media&token=b3553112-07ae-4d69-ae2d-7c4f15722a0a",
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-the-bodyguard-chunk3.mp3?alt=media&token=a08dec28-0c15-4d00-a203-e5a0859d7081"
-      ],
       "docId": "qqIL324iMnX0YZNGs1gZ"
     },
     "crimson-hours": {
-      "status": "published",
+      "status": "tts",
       "error": "ElevenLabs 429: {\"detail\":{\"type\":\"rate_limit_error\",\"code\":\"concurrent_limit_exceeded\",\"message\":\"Too many concurrent requests. Your current subscription is associated with a maximum of 5 concurrent requests (runnin",
       "textHash": "ebb3d9bd2bcc427890ca14127c457cb35f0b6d993a4f4e31f8f0e63370337ee9",
       "words": 678,
       "targetWords": 850,
       "announcements": 0,
-      "ttsHash": "ebb3d9bd2bcc427890ca14127c457cb35f0b6d993a4f4e31f8f0e63370337ee9",
+      "ttsHash": "e12ac32f59a810a91442214bebd6be7c85689b7f3ee4b6b0d22b6e71a7e91c87",
       "chunkCount": 4,
-      "audioChunkURLs": [
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-crimson-hours-chunk0.mp3?alt=media&token=34a6c3a1-56de-4109-9753-36d98e04940e",
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-crimson-hours-chunk1.mp3?alt=media&token=2f6d57c9-3f2f-46ae-9de1-4a9eac2000e0",
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-crimson-hours-chunk2.mp3?alt=media&token=993d431b-824c-4f1d-89c4-b9c2d59ffd00",
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-crimson-hours-chunk3.mp3?alt=media&token=eeecc8aa-e939-49c0-9a18-663c3766119b"
-      ],
       "docId": "98EQssVqOGTc7bzYZ0ys"
     },
     "wolf-and-mate": {
-      "status": "published",
+      "status": "tts",
       "error": "401 {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"API key is invalid.\"},\"request_id\":null}",
       "textHash": "7d88bec0eddcea2a22565c9af14a5f8c21b967d371cf0618d6a93c5a84435f1d",
       "words": 592,
       "targetWords": 850,
       "announcements": 0,
-      "ttsHash": "7d88bec0eddcea2a22565c9af14a5f8c21b967d371cf0618d6a93c5a84435f1d",
+      "ttsHash": "dbafa1ac75bd032fd6cacfde4124e594233054db3cbadb6a308bf6ee94601415",
       "chunkCount": 4,
-      "audioChunkURLs": [
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-wolf-and-mate-chunk0.mp3?alt=media&token=b012eaba-d90f-4899-b31c-ccfcece1d5af",
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-wolf-and-mate-chunk1.mp3?alt=media&token=79a80c58-ea67-420b-af28-34530a9e2660",
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-wolf-and-mate-chunk2.mp3?alt=media&token=2bacba3a-9c9c-43f1-b042-c20bf7a2773b",
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-wolf-and-mate-chunk3.mp3?alt=media&token=b5fef8d9-3a4a-41cc-b624-e814546ebae2"
-      ],
       "docId": "AVzufvFx7Jwu9IzRBBYX"
     },
     "the-obsession": {
-      "status": "published",
+      "status": "tts",
       "error": "401 {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"API key is invalid.\"},\"request_id\":null}",
       "textHash": "4748cc4c6f8d3d632a5e845b6ec1a99c00674088934bcf9e6b8a4282b50126c5",
       "words": 579,
       "targetWords": 850,
       "announcements": 0,
-      "ttsHash": "4748cc4c6f8d3d632a5e845b6ec1a99c00674088934bcf9e6b8a4282b50126c5",
+      "ttsHash": "586141789d41cf721ae00eaef837f0350e2d28b70d65d8685f7d436851dde450",
       "chunkCount": 4,
-      "audioChunkURLs": [
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-the-obsession-chunk0.mp3?alt=media&token=a5927190-8f41-4c85-84db-cbdc292a2983",
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-the-obsession-chunk1.mp3?alt=media&token=0ceca814-cc1b-4b6e-94ad-73185e9956ec",
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-the-obsession-chunk2.mp3?alt=media&token=911a01f2-15e5-4065-b501-fd589859d3e4",
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-the-obsession-chunk3.mp3?alt=media&token=ab9e656c-1c3d-43e7-848c-d620fcb5bb88"
-      ],
       "docId": "sqVrh7gmLddtd3Gy32wP"
     },
     "ember-knight": {
@@ -425,20 +393,29 @@
       "docId": "AxrcqsLtDscYti7rTBQg"
     },
     "midnight-encore": {
-      "status": "published",
+      "status": "tts",
       "error": "401 {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"API key is invalid.\"},\"request_id\":null}",
       "textHash": "e334da7ea9b47bf4133ec1a88865a6515db2aa5416604e5c0e2c854247bdc080",
       "words": 451,
       "targetWords": 850,
       "announcements": 0,
-      "ttsHash": "e334da7ea9b47bf4133ec1a88865a6515db2aa5416604e5c0e2c854247bdc080",
+      "ttsHash": "1afe34a3a4ef01e951b595dc0016e3c04d9b5d5207960f540e45f471c397087e",
       "chunkCount": 3,
-      "audioChunkURLs": [
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-midnight-encore-chunk0.mp3?alt=media&token=ce34ea96-2e80-46c8-8f29-8f90821fb520",
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-midnight-encore-chunk1.mp3?alt=media&token=0706fe79-079a-41f0-8665-66fd470d6d96",
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-midnight-encore-chunk2.mp3?alt=media&token=8f698059-8379-41e4-882e-08a49e539f76"
-      ],
       "docId": "BYfLfog9U0f5LKongIAa"
+    },
+    "adam-the-atelier": {
+      "status": "text",
+      "textHash": "5a185ab231ce7ce120a9652c742e6cbc5ca9f8de7ce4da2646e859e2ee0df37b",
+      "words": 720,
+      "targetWords": 850,
+      "announcements": 2
+    },
+    "adam-still-life": {
+      "status": "text",
+      "textHash": "31203089cd48a5b77eaca2084da48c4b6268b9de79f94b38d94f2be85a391d4e",
+      "words": 594,
+      "targetWords": 850,
+      "announcements": 0
     }
   },
   "voiceCandidates": {
@@ -551,6 +528,20 @@
         },
         {
           "generatedVoiceId": "eSnS5rRAhRml4VCUNDge"
+        }
+      ]
+    },
+    "sable": {
+      "description": "Low male whisper with a clear French accent — warm smoke, unhurried, artistic reverie. Slow deliberate murmur like late night in a paint-spattered studio; sensual but tender, a faint smile, wine-dark softness. Never theatrical, never fast. Parisian, mid-thirties.",
+      "previews": [
+        {
+          "generatedVoiceId": "gK5ndZNsvtLDKvBiJedd"
+        },
+        {
+          "generatedVoiceId": "SHYPdkrH1971rd5j2lTz"
+        },
+        {
+          "generatedVoiceId": "uomgJD7RCQEVi28GnSaX"
         }
       ]
     }
