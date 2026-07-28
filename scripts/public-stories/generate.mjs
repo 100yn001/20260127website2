@@ -183,10 +183,19 @@ async function phaseNarrators(args, manifest) {
   }
   const { db } = await firebaseSignIn();
 
+  // Narrator keys are friendly names; usernames often differ (grayscleats,
+  // beaucrowder, julialovespomegranate), so fall back to matching the doc's
+  // name field when the username query misses. The collection is tiny.
+  let allNarrators = null;
+  const findByName = async (key) => {
+    if (!allNarrators) allNarrators = (await getDocs(collection(db, 'publicNarrators'))).docs;
+    return allNarrators.find((d) => (d.data().name || '').toLowerCase() === key) || null;
+  };
+
   for (const key of referenced) {
     const snap = await getDocs(query(collection(db, 'publicNarrators'), where('usernameLowercase', '==', key)));
-    if (!snap.empty) {
-      const d = snap.docs[0];
+    const d = !snap.empty ? snap.docs[0] : await findByName(key);
+    if (d) {
       const data = d.data();
       manifest.narrators[key] = { docId: d.id, voiceId: data.voiceId || null, name: data.name || key };
       console.log(`✅ found ${key} → ${d.id} (voice ${data.voiceId || 'none'})`);
