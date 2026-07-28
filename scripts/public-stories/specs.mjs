@@ -832,7 +832,7 @@ export const NARRATOR_VOICE_PLAN = {
   beau: 'drawl',
   mara: 'wren',
   julia: 'veil',
-  adam: 'sable (pending pick; current default nG70…)',
+  adam: 'nG70 (confirmed — user-approved from voice roster; sable candidate unused)',
 };
 
 const VALID_DURATIONS = new Set(['5min', '10min', '15min']);
