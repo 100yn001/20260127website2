@@ -77,6 +77,7 @@ import {
   AUDITION_TEXT,
   colorForSpec,
   NEW_NARRATORS,
+  RENDER_TUNING,
   SPECS,
   validateSpecs,
   VOICE_CANDIDATES,
@@ -131,6 +132,13 @@ function resolveVoiceId(spec, manifest) {
     spec.voiceId ||
     null
   );
+}
+
+// Per-voice render tuning (RENDER_TUNING is keyed by candidate key; find the
+// key by reverse-matching the resolved voiceId through manifest.voices).
+function tuningForVoice(voiceId, manifest) {
+  const entry = Object.entries(manifest.voices || {}).find(([, v]) => v.voiceId === voiceId);
+  return (entry && RENDER_TUNING[entry[0]]) || {};
 }
 
 function selectSpecs({ only, limit }) {
@@ -364,13 +372,21 @@ async function phasePublishLike(args, manifest, mode) {
     }
     const transcript = fs.readFileSync(file, 'utf8').trim();
     const chunks = enforceHardLimit(splitTextIntoChunks(transcript));
-    const chars = chunks.reduce((s, c) => s + chunkTtsText(c, spec.delivery).length, 0);
-    jobs.push({ spec, transcript, chunks, chars, voiceId });
+    const tuning = tuningForVoice(voiceId, manifest);
+    const prefix = tuning.prefix ?? DELIVERY_PREFIX;
+    const settings = tuning.speed ? { speed: tuning.speed } : {};
+    const chars = chunks.reduce((s, c) => s + chunkTtsText(c, spec.delivery, prefix).length, 0);
+    jobs.push({ spec, transcript, chunks, chars, voiceId, prefix, settings });
   }
   if (!jobs.length) return;
 
   // Cost preflight — total characters ≈ eleven_v3 credits.
-  const cacheKeyFor = (j) => sha256([j.transcript, j.voiceId, j.spec.delivery === 'plain' ? '' : DELIVERY_PREFIX].join('::'));
+  const cacheKeyFor = (j) => sha256([
+    j.transcript,
+    j.voiceId,
+    j.spec.delivery === 'plain' ? '' : j.prefix,
+    JSON.stringify(j.settings),
+  ].join('::'));
   const totalChars = jobs.reduce((s, j) => s + j.chars, 0);
   const totalChunks = jobs.reduce((s, j) => s + j.chunks.length, 0);
   console.log(`\n${mode} preflight`);
@@ -393,7 +409,7 @@ async function phasePublishLike(args, manifest, mode) {
   const { db, storage, uid } = await firebaseSignIn();
 
   for (const job of jobs) {
-    const { spec, transcript, chunks, voiceId } = job;
+    const { spec, transcript, chunks, voiceId, prefix, settings } = job;
     const slug = spec.slug;
     const entry = manifest.stories[slug] || {};
     const hash = cacheKeyFor(job);
@@ -414,7 +430,7 @@ async function phasePublishLike(args, manifest, mode) {
       fs.mkdirSync(dir, { recursive: true });
       try {
         await mapWithConcurrency(chunks, TTS_CONCURRENCY, async (text, i) => {
-          const buf = await retryable(() => ttsChunk(chunkTtsText(text, spec.delivery), voiceId, process.env.ELEVENLABS), { label: `${slug} chunk${i}`, retries: 5, baseMs: 4000 });
+          const buf = await retryable(() => ttsChunk(chunkTtsText(text, spec.delivery, prefix), voiceId, process.env.ELEVENLABS, settings), { label: `${slug} chunk${i}`, retries: 5, baseMs: 4000 });
           fs.writeFileSync(path.join(dir, `chunk${i}.mp3`), buf);
           process.stdout.write(`   🎤 chunk ${i} done (${(buf.length / 1024).toFixed(0)} KB)\n`);
         });

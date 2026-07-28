@@ -241,15 +241,15 @@ export function enforceHardLimit(chunks) {
 // a declarative read). Specs can opt out with delivery: 'plain'.
 export const DELIVERY_PREFIX = '[whispers][slowly] ';
 
-export function chunkTtsText(chunkText, delivery) {
-  return delivery === 'plain' ? chunkText : DELIVERY_PREFIX + chunkText;
+export function chunkTtsText(chunkText, delivery, prefix = DELIVERY_PREFIX) {
+  return delivery === 'plain' ? chunkText : prefix + chunkText;
 }
 
-export async function ttsChunk(text, voiceId, apiKey) {
+export async function ttsChunk(text, voiceId, apiKey, settings = {}) {
   const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}?output_format=mp3_44100_128`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'xi-api-key': apiKey },
-    body: JSON.stringify({ text, model_id: 'eleven_v3', voice_settings: { stability: 0.5, similarity_boost: 0.5 } }),
+    body: JSON.stringify({ text, model_id: 'eleven_v3', voice_settings: { stability: 0.5, similarity_boost: 0.5, ...settings } }),
   });
   if (!res.ok) {
     const body = await res.text();

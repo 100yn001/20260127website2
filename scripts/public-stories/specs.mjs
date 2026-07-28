@@ -128,6 +128,16 @@ export const VOICE_CANDIDATES = [
   },
 ];
 
+// Per-candidate render tuning applied at TTS time (keyed by candidate key;
+// resolved through manifest.voices). `speed` is an eleven_v3 voice_setting
+// (verified accepted); `prefix` replaces the default [whispers][slowly]
+// chunk prefix. Tuning participates in the TTS cache key.
+export const RENDER_TUNING = {
+  crown: { speed: 0.85 },                        // keep the aristocrat unhurried
+  drawl: { speed: 0.85 },                        // molasses pacing for the cowboy
+  wren: { prefix: '[whispers][softly] ' },       // breathy warmth over strict slow
+};
+
 // New narrator docs to seed (shape mirrors scripts/add-roman.js; Timestamp
 // fields are added at write time). Existing narrators (grayson, beau, roman,
 // mara, julia) are resolved from the live publicNarrators collection.

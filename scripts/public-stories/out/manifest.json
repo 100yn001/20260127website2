@@ -573,7 +573,51 @@
       "name": "Veil (whisper)",
       "gender": "female",
       "previewIndex": 1
+    },
+    "crown": {
+      "voiceId": "Y4vEtN4mtuFXfs3SgmA3",
+      "name": "Crown (whisper)",
+      "gender": "male",
+      "previewIndex": 2
+    },
+    "drawl": {
+      "voiceId": "cTkwRZ3aKAHHX4ta3D7I",
+      "name": "Drawl (whisper)",
+      "gender": "male",
+      "previewIndex": 1
+    },
+    "grove": {
+      "voiceId": "SMoiNGQHggriM9PUPiR7",
+      "name": "Grove (whisper)",
+      "gender": "male",
+      "previewIndex": 1
+    },
+    "wire": {
+      "voiceId": "iboXBqWxtqehdKwZPehv",
+      "name": "Wire (whisper)",
+      "gender": "male",
+      "previewIndex": 1
+    },
+    "wren": {
+      "voiceId": "qkM30rZEs7MTvvGmwtob",
+      "name": "Wren (whisper)",
+      "gender": "female",
+      "previewIndex": 1
     }
   },
-  "voiceOverrides": {}
+  "voiceOverrides": {
+    "male": "xWPPOvvQW78MpD6evTo9",
+    "female": "On3mNeKJI0XxvSyM3sLT"
+  },
+  "voiceSlugOverrides": {
+    "orc-by-the-hearth": "SMoiNGQHggriM9PUPiR7",
+    "wolf-and-mate": "SMoiNGQHggriM9PUPiR7",
+    "crimson-hours": "Y4vEtN4mtuFXfs3SgmA3",
+    "ember-knight": "Y4vEtN4mtuFXfs3SgmA3",
+    "rivals-one-bed": "iboXBqWxtqehdKwZPehv",
+    "the-obsession": "iboXBqWxtqehdKwZPehv",
+    "night-train-home": "KeqnO1y6QvG2D10EacMO",
+    "snowed-in-chalet": "KeqnO1y6QvG2D10EacMO",
+    "midnight-encore": "KeqnO1y6QvG2D10EacMO"
+  }
 }
