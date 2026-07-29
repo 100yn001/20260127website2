@@ -6,13 +6,12 @@
 You're Not Going Anywhere.. You Don't Want To [Devoted Boyfriend] [Soft Yandere] [Possessive] ASMR
 
 ## description
-he can say your name — yourname.media · 2 free stories
+pov: a quiet night in — you're wearing his shirt, rain on the window, and he's been watching you like he's memorizing something.
+create any spicy audio story at yourname.media
 
-a soft yandere boyfriend audio roleplay — he's calm, he's devoted, and he's memorized everything about you. possessive in the way that feels like being kept warm.
+[M4F] [Soft Yandere] [Devoted] [Possessive] [Rain]
 
-[M4F] [Soft Yandere] [Devoted] [Possessive] [Wholesome-ish] [Rain]
-
-#asmr #audioroleplay #yandere
+#yandere #boyfriendasmr #asmrroleplay #softyandere #m4f
 
 ## tags (comma-separated field)
 yandere asmr, yandere boyfriend, soft yandere asmr, possessive boyfriend asmr, boyfriend roleplay, asmr roleplay m4f, audio roleplay, devoted boyfriend

@@ -6,13 +6,12 @@
 I Waited Up For You.. Come Here [Girlfriend Roleplay] [F4M] [Comfort] [Praise] ASMR
 
 ## description
-she can say your name — yourname.media · 2 free stories
-
-a girlfriend comfort audio roleplay — you come home wrecked, and she waited up. she notices everything, handles everything, and talks you down into her side. praise, reassurance, warmth.
+pov: you come home late and completely wrecked. one lamp is still on. she waited up, and she's already off the couch.
+create any spicy audio story at yourname.media
 
 [F4M] [Girlfriend Roleplay] [Comfort] [Praise] [Reassurance] [Sleep Adjacent]
 
-#asmr #girlfriendasmr #f4m
+#girlfriendasmr #comfortasmr #f4m #asmrroleplay #personalattention
 
 ## tags (comma-separated field)
 girlfriend asmr, gf asmr, f4m audio, girlfriend roleplay, comfort asmr, praise asmr, asmr for sleep, audio roleplay, reassurance asmr

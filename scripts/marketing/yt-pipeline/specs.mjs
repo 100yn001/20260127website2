@@ -57,7 +57,7 @@ export const SPECS = [
       title: `I'm Not Jealous.. Come Here [Boyfriend Roleplay] [Argument] [Making Up] ASMR`,
       thumbnailText: `i'm not jealous.\ncome here.`,
       tags: ['boyfriend asmr', 'boyfriend roleplay', 'jealous boyfriend asmr', 'asmr roleplay m4f', 'audio roleplay', 'making up asmr', 'comfort asmr', 'boyfriend audio'],
-      hashtags: ['#asmr', '#audioroleplay', '#boyfriendasmr'],
+      hashtags: ['#boyfriendasmr', '#asmrroleplay', '#audioroleplay', '#m4f', '#comfortasmr'],
       description: `pov: you laughed at someone else's joke at the party, and he went quiet the whole ride home. he says he's not jealous. he's lying.
 create any spicy audio story at yourname.media
 
@@ -77,7 +77,7 @@ create any spicy audio story at yourname.media
       title: `You're Not Going Anywhere.. You Don't Want To [Devoted Boyfriend] [Soft Yandere] [Possessive] ASMR`,
       thumbnailText: `you're not\ngoing anywhere.`,
       tags: ['yandere asmr', 'yandere boyfriend', 'soft yandere asmr', 'possessive boyfriend asmr', 'boyfriend roleplay', 'asmr roleplay m4f', 'audio roleplay', 'devoted boyfriend'],
-      hashtags: ['#asmr', '#audioroleplay', '#yandere'],
+      hashtags: ['#yandere', '#boyfriendasmr', '#asmrroleplay', '#softyandere', '#m4f'],
       description: `pov: a quiet night in — you're wearing his shirt, rain on the window, and he's been watching you like he's memorizing something.
 create any spicy audio story at yourname.media
 
@@ -97,7 +97,7 @@ create any spicy audio story at yourname.media
       title: `You Can't Sleep, So He Talks You Down [M4F] [Sleep Aid] [Rain] [Boyfriend ASMR]`,
       thumbnailText: `you can't sleep.\nhe's got you.`,
       tags: ['sleep asmr', 'boyfriend sleep asmr', 'sleep aid', 'rain asmr', 'boyfriend asmr', 'asmr for sleeping', 'sleep story', 'm4f audio', 'black screen asmr'],
-      hashtags: ['#asmr', '#sleepaid', '#boyfriendasmr'],
+      hashtags: ['#sleepasmr', '#rainsounds', '#boyfriendasmr', '#deepsleep', '#sleepaid'],
       description: `pov: it's late, it's raining, and you've been turning over for an hour with tomorrow too loud in your head — and he notices.
 create any spicy audio story at yourname.media
 
@@ -120,7 +120,7 @@ SPECS.push({
     title: `I Waited Up For You.. Come Here [Girlfriend Roleplay] [F4M] [Comfort] [Praise] ASMR`,
     thumbnailText: `i waited up.\ncome here.`,
     tags: ['girlfriend asmr', 'gf asmr', 'f4m audio', 'girlfriend roleplay', 'comfort asmr', 'praise asmr', 'asmr for sleep', 'audio roleplay', 'reassurance asmr'],
-    hashtags: ['#asmr', '#girlfriendasmr', '#f4m'],
+    hashtags: ['#girlfriendasmr', '#comfortasmr', '#f4m', '#asmrroleplay', '#personalattention'],
     description: `pov: you come home late and completely wrecked. one lamp is still on. she waited up, and she's already off the couch.
 create any spicy audio story at yourname.media
 
@@ -159,7 +159,7 @@ SPECS.push({
     title: `Your Bodyguard Breaks Protocol.. Six Years of Restraint [M4F] [Protective] [Confession] ASMR`,
     thumbnailText: `six years.\ni'm done pretending.`,
     tags: ['bodyguard asmr', 'bodyguard roleplay', 'protective asmr', 'boyfriend asmr', 'asmr roleplay m4f', 'audio roleplay', 'confession asmr', 'forbidden romance asmr'],
-    hashtags: ['#asmr', '#audioroleplay', '#bodyguard'],
+    hashtags: ['#asmrroleplay', '#boyfriendasmr', '#m4f', '#bodyguard', '#forbiddenlove'],
     description: `pov: the threat at the gala was real, the safehouse door just locked, and your bodyguard of six years has stopped pretending this is just the job.
 create any spicy audio story at yourname.media
 

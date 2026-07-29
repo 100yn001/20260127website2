@@ -11,7 +11,7 @@ create any spicy audio story at yourname.media
 
 [M4F] [Boyfriend Roleplay] [Jealous] [Argument] [Making Up] [Comfort]
 
-#asmr #audioroleplay #boyfriendasmr
+#boyfriendasmr #asmrroleplay #audioroleplay #m4f #comfortasmr
 
 ## tags (comma-separated field)
 boyfriend asmr, boyfriend roleplay, jealous boyfriend asmr, asmr roleplay m4f, audio roleplay, making up asmr, comfort asmr, boyfriend audio
