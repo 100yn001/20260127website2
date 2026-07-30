@@ -33,6 +33,7 @@ const TABLE = process.env.AIRTABLE_TABLE || 'audios';
 const YT_OUT = path.join(__dirname, '../marketing/yt-pipeline/out');
 const YT_STATE = path.join(__dirname, '../marketing/yt-pipeline/tracker-state.json');
 const IMPORT_STATE = path.join(__dirname, 'state.json');
+const BATCH_MANIFEST = path.join(__dirname, '../public-stories/out/manifest.json');
 const dryRun = process.argv.includes('--dry-run');
 
 const FIELDS = [
@@ -53,6 +54,10 @@ const FIELDS = [
   // ambience bed baked into the YouTube video, if any. In-app ambience is the
   // player's universal toggle (default none) — never per-audio, so no app column.
   { name: 'video_bed', type: 'singleLineText' },
+  // generation truth: audio_status from the batch manifest / yt artifacts,
+  // video_status from rendered mp4s (+ stale flags after re-voicing)
+  { name: 'audio_status', type: 'singleLineText' },
+  { name: 'video_status', type: 'singleLineText' },
   { name: 'notes', type: 'multilineText' },
 ];
 
@@ -123,6 +128,32 @@ async function main() {
   const liveByTitle = new Map(live.map((d) => [norm(d.title), d]));
   const importState = fs.existsSync(IMPORT_STATE) ? JSON.parse(fs.readFileSync(IMPORT_STATE, 'utf8')) : {};
   const trackerState = fs.existsSync(YT_STATE) ? JSON.parse(fs.readFileSync(YT_STATE, 'utf8')) : {};
+  const batchManifest = fs.existsSync(BATCH_MANIFEST)
+    ? JSON.parse(fs.readFileSync(BATCH_MANIFEST, 'utf8')).stories || {}
+    : {};
+
+  // Pipeline-stage language for the app batch: the manifest status is relative
+  // to the CURRENT transcript+voice (a live story rolls back to text/tts when
+  // its transcript is regenerated or its narrator is re-voiced).
+  const audioStatusFor = (r) => {
+    if (r.origin === 'yt-pipeline') {
+      return fs.existsSync(path.join(YT_OUT, r.audioFile || '')) ? '✓ rendered — awaiting vet' : '✗ not rendered';
+    }
+    if (r.origin === 'app-legacy') return '✓ published (legacy)';
+    const m = batchManifest[r.slug] || {};
+    const live = !!m.docId;
+    if (m.status === 'published') return '✓ published — rerender queued';
+    if (m.status === 'tts') return live ? '⏳ re-TTS done — republish queued' : '⏳ audio rendered — publish queued';
+    if (m.status === 'text') return live ? '⏳ new transcript — TTS queued' : '⏳ text ready — publish queued';
+    return '✗ not generated';
+  };
+  const videoStatusFor = (r) => {
+    if (!r.onYoutube.expected) return '—';
+    const dir = path.join(YT_OUT, r.onYoutube.videoSlug || '');
+    const hasVideo = fs.existsSync(dir) && fs.readdirSync(dir).some((f) => f.endsWith('.mp4'));
+    if (!hasVideo) return 'planned';
+    return r.videoStale ? '⚠️ rendered — stale (re-render queued)' : '✓ rendered';
+  };
 
   const rows = RECORDS.map((r) => {
     const pinnedId = r.inApp.docId || importState[r.slug];
@@ -153,6 +184,8 @@ async function main() {
         video_slug: r.onYoutube.videoSlug || '',
         visualizer: r.visualizer?.done ? `done: ${r.visualizer.aura}` : r.visualizer?.planned ? 'planned' : '—',
         video_bed: r.videoBed || '',
+        audio_status: audioStatusFor(r),
+        video_status: videoStatusFor(r),
         notes: r.notes || '',
       },
     };
