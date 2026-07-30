@@ -34,6 +34,7 @@ const YT_OUT = path.join(__dirname, '../marketing/yt-pipeline/out');
 const YT_STATE = path.join(__dirname, '../marketing/yt-pipeline/tracker-state.json');
 const IMPORT_STATE = path.join(__dirname, 'state.json');
 const BATCH_MANIFEST = path.join(__dirname, '../public-stories/out/manifest.json');
+const ARTIFACTS_STATE = path.join(__dirname, 'artifacts-state.json');
 const dryRun = process.argv.includes('--dry-run');
 
 const FIELDS = [
@@ -58,6 +59,11 @@ const FIELDS = [
   // video_status from rendered mp4s (+ stale flags after re-voicing)
   { name: 'audio_status', type: 'singleLineText' },
   { name: 'video_status', type: 'singleLineText' },
+  // click-to-play Firebase Storage links: app audio from the live doc,
+  // yt masters + transcripts from push-artifacts.mjs (artifacts-state.json)
+  { name: 'audio_url', type: 'url' },
+  { name: 'video_url', type: 'url' },
+  { name: 'transcript_url', type: 'url' },
   { name: 'notes', type: 'multilineText' },
 ];
 
@@ -131,6 +137,7 @@ async function main() {
   const batchManifest = fs.existsSync(BATCH_MANIFEST)
     ? JSON.parse(fs.readFileSync(BATCH_MANIFEST, 'utf8')).stories || {}
     : {};
+  const artifactsState = fs.existsSync(ARTIFACTS_STATE) ? JSON.parse(fs.readFileSync(ARTIFACTS_STATE, 'utf8')) : {};
 
   // Pipeline-stage language for the app batch: the manifest status is relative
   // to the CURRENT transcript+voice (a live story rolls back to text/tts when
@@ -186,6 +193,11 @@ async function main() {
         video_bed: r.videoBed || '',
         audio_status: audioStatusFor(r),
         video_status: videoStatusFor(r),
+        ...((artifactsState[r.slug]?.audio_url || liveDoc?.audioUrl)
+          ? { audio_url: artifactsState[r.slug]?.audio_url || liveDoc.audioUrl }
+          : {}),
+        ...(artifactsState[r.slug]?.video_url ? { video_url: artifactsState[r.slug].video_url } : {}),
+        ...(artifactsState[r.slug]?.transcript_url ? { transcript_url: artifactsState[r.slug].transcript_url } : {}),
         notes: r.notes || '',
       },
     };
