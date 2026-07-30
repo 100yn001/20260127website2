@@ -354,8 +354,11 @@ async function phasePublishLike(args, manifest, mode) {
     process.exit(1);
   }
   const selected = selectSpecs(args).filter((s) => {
-    const st = manifest.stories[s.slug]?.status;
-    return mode === 'rerender' ? st === 'published' && manifest.stories[s.slug]?.docId : st !== 'published';
+    const entry = manifest.stories[s.slug] || {};
+    // docId is the discriminator, not status: a live story's status rolls back
+    // to text/tts when its transcript or voice changes, but it must be UPDATED
+    // in place (rerender), never re-added as a duplicate doc (publish).
+    return mode === 'rerender' ? !!entry.docId : !entry.docId;
   });
   if (!selected.length) {
     console.log(mode === 'rerender'
