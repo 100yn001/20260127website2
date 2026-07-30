@@ -13,6 +13,7 @@ import {
   Share2,
   SkipBack,
   SkipForward,
+  Waves,
   X,
 } from 'lucide-react-native';
 import React, { useEffect, useMemo, useState } from 'react';
@@ -29,6 +30,7 @@ import {
 
 import { Screen, TopBar } from '@/components/screen';
 import { db } from '@/config/firebase';
+import { AMBIENT_BED_LABELS, availableAmbientBeds } from '@/constants/ambient-beds';
 import { useAudioPlayer } from '@/contexts/AudioPlayerContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useArtworkTint } from '@/hooks/useArtworkTint';
@@ -57,6 +59,8 @@ export default function PlayerScreen() {
     skipBackward,
     playbackRate,
     setPlaybackRate,
+    ambientBed,
+    setAmbientBed,
   } = useAudioPlayer();
 
   // Story + origin live in the same state object so the cover memo can never
@@ -70,6 +74,9 @@ export default function PlayerScreen() {
   const [bookmarked, setBookmarked] = useState(false);
   const [transcriptOpen, setTranscriptOpen] = useState(false);
   const [speedOpen, setSpeedOpen] = useState(false);
+  const [ambientOpen, setAmbientOpen] = useState(false);
+  // Fixed bed menu (none by default) — hidden entirely until beds are uploaded.
+  const beds = availableAmbientBeds();
   const [loadError, setLoadError] = useState<string | null>(null);
   const [sharing, setSharing] = useState(false);
   const [shareToast, setShareToast] = useState<string | null>(null);
@@ -383,6 +390,18 @@ export default function PlayerScreen() {
             <Chip onPress={() => setTranscriptOpen(true)} label="transcript">
               <BookOpenText size={14} color="hsl(var(--foreground))" />
             </Chip>
+            {beds.length > 0 ? (
+              <Chip
+                active={ambientBed !== 'none'}
+                onPress={() => setAmbientOpen(true)}
+                label="ambience"
+              >
+                <Waves
+                  size={14}
+                  color={ambientBed !== 'none' ? 'hsl(var(--background))' : 'hsl(var(--foreground))'}
+                />
+              </Chip>
+            ) : null}
             <Chip onPress={handleShare} label="share">
               <Share2 size={14} color="hsl(var(--foreground))" />
             </Chip>
@@ -484,6 +503,60 @@ export default function PlayerScreen() {
               </View>
               <Text className="mt-3 text-xs font-serif text-muted-foreground">
                 changes apply right away — pick what sounds good and close.
+              </Text>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      <Modal
+        visible={ambientOpen}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setAmbientOpen(false)}
+      >
+        <Pressable className="flex-1 bg-black/50 justify-end" onPress={() => setAmbientOpen(false)}>
+          <Pressable
+            onPress={(e) => e.stopPropagation()}
+            className="bg-card border-t border-border rounded-t-[var(--radius)] self-stretch"
+          >
+            <View className="flex-row items-center justify-between px-5 pt-4 pb-2">
+              <Text className="text-base font-serif-medium text-foreground">ambience</Text>
+              <Pressable
+                onPress={() => setAmbientOpen(false)}
+                className="h-8 w-8 items-center justify-center rounded-full"
+              >
+                <X size={16} color="hsl(var(--foreground))" />
+              </Pressable>
+            </View>
+            <View className="px-5 pb-8">
+              <View className="flex-row flex-wrap gap-2">
+                {(['none', ...beds] as string[]).map((k) => {
+                  const active = ambientBed === k;
+                  return (
+                    <Pressable
+                      key={k}
+                      onPress={() => setAmbientBed(k)}
+                      accessibilityLabel={`${k} ambience`}
+                      className={cn(
+                        'rounded-full border px-4 py-2',
+                        active ? 'bg-foreground border-foreground' : 'border-border active:bg-accent'
+                      )}
+                    >
+                      <Text
+                        className={cn(
+                          'text-sm font-serif lowercase',
+                          active ? 'text-background' : 'text-foreground'
+                        )}
+                      >
+                        {k === 'none' ? 'none' : AMBIENT_BED_LABELS[k as keyof typeof AMBIENT_BED_LABELS]}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+              <Text className="mt-3 text-xs font-serif text-muted-foreground">
+                a fixed background under the narration — off by default, never part of the story audio.
               </Text>
             </View>
           </Pressable>

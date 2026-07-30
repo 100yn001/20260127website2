@@ -1,5 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 
+import { ambientBedUrl } from '@/constants/ambient-beds';
+
 export interface TrackInfo {
   id?: string;
   title: string;
@@ -28,6 +30,9 @@ interface AudioPlayerContextValue {
   stop: () => Promise<void>;
   playbackRate: number;
   setPlaybackRate: (rate: number) => Promise<void>;
+  /** Universal ambience bed ('none' or an AmbientBedKey) layered under any audio. */
+  ambientBed: string;
+  setAmbientBed: (key: string) => void;
   isAudioReady: boolean;
   debugInfo: string;
 }
@@ -110,6 +115,36 @@ export const AudioPlayerProvider = ({ children }: { children: React.ReactNode })
     } catch { /* ignore */ }
   }, []);
 
+  // ─── ambience bed (universal, opt-in, default none) ───
+  // A second looping element under the voice. Its level is baked into the
+  // file and it never follows playbackRate — rain doesn't speed up.
+  const [ambientBed, setAmbientBedState] = useState('none');
+  const bedElRef = useRef<HTMLAudioElement | null>(null);
+
+  const teardownBed = useCallback(() => {
+    const bed = bedElRef.current;
+    if (bed) {
+      try {
+        bed.pause();
+        bed.removeAttribute('src');
+        bed.load();
+      } catch { /* ignore */ }
+      bedElRef.current = null;
+    }
+  }, []);
+
+  const setAmbientBed = useCallback((key: string) => {
+    setAmbientBedState(key);
+    teardownBed();
+    const url = key !== 'none' ? ambientBedUrl(key) : null;
+    if (!url) return;
+    const bed = new Audio(url);
+    bed.loop = true;
+    bed.preload = 'auto';
+    bed.volume = 1;
+    bedElRef.current = bed;
+  }, [teardownBed]);
+
   // Cleanup audio elements
   const cleanupAudioElements = useCallback(() => {
     for (const audio of audioElementsRef.current) {
@@ -171,13 +206,23 @@ export const AudioPlayerProvider = ({ children }: { children: React.ReactNode })
     }
   }, []);
 
+  // The bed follows the voice: it plays only while narration plays (covers
+  // pause/play/seek/chunk transitions — isPlaying stays true across chunks).
+  useEffect(() => {
+    const bed = bedElRef.current;
+    if (!bed) return;
+    if (isPlaying) bed.play().catch(() => {});
+    else bed.pause();
+  }, [isPlaying, ambientBed]);
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
       stopPositionTracking();
       cleanupAudioElements();
+      teardownBed();
     };
-  }, [stopPositionTracking, cleanupAudioElements]);
+  }, [stopPositionTracking, cleanupAudioElements, teardownBed]);
 
   // ─── loadTrack ───
   const loadTrack = useCallback(async (track: TrackInfo, autoplay = true) => {
@@ -450,6 +495,8 @@ export const AudioPlayerProvider = ({ children }: { children: React.ReactNode })
     loadGenerationRef.current += 1;
     stopPositionTracking();
     cleanupAudioElements();
+    teardownBed();
+    setAmbientBedState('none');
     chunkDurationsRef.current = [];
     activeChunkIndexRef.current = 0;
     setCurrentTrack(null);
@@ -457,7 +504,7 @@ export const AudioPlayerProvider = ({ children }: { children: React.ReactNode })
     setIsAudioReady(false);
     setPosition(0);
     setDuration(0);
-  }, [stopPositionTracking, cleanupAudioElements]);
+  }, [stopPositionTracking, cleanupAudioElements, teardownBed]);
 
   const value: AudioPlayerContextValue = {
     currentTrack,
@@ -475,6 +522,8 @@ export const AudioPlayerProvider = ({ children }: { children: React.ReactNode })
     stop,
     playbackRate,
     setPlaybackRate,
+    ambientBed,
+    setAmbientBed,
     isAudioReady,
     debugInfo,
   };

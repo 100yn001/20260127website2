@@ -33,7 +33,9 @@ export interface Story {
   createdAt: Date;
   coverColor?: string;
   topographyLayers?: DepthLayer[];
-  // legacy — ambient feature removed; old docs may still carry these
+  // legacy — generated-ambient feature removed; old docs may still carry these.
+  // Playback-side ambience is now the player's universal bed toggle
+  // (constants/ambient-beds.ts), not per-story data.
   ambientUrl?: string;
   ambientPrompt?: string;
 }

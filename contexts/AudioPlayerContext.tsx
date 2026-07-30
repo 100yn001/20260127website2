@@ -13,6 +13,7 @@ import TrackPlayer, {
 } from 'react-native-track-player';
 
 import { storage } from '@/config/firebase';
+import { ambientBedUrl } from '@/constants/ambient-beds';
 
 export interface TrackInfo {
   id?: string;
@@ -42,6 +43,9 @@ interface AudioPlayerContextValue {
   stop: () => Promise<void>;
   playbackRate: number;
   setPlaybackRate: (rate: number) => Promise<void>;
+  /** Universal ambience bed ('none' or an AmbientBedKey) layered under any audio. */
+  ambientBed: string;
+  setAmbientBed: (key: string) => void;
   isAudioReady: boolean;
   debugInfo: string;
 }
@@ -160,6 +164,47 @@ export const AudioPlayerProvider = ({ children }: { children: React.ReactNode })
     AsyncStorage.setItem(PLAYBACK_RATE_KEY, String(clamped)).catch(() => {});
   }, []);
 
+  // ─── ambience bed (universal, opt-in, default none) ───
+  // A second looping expo-av sound under the RNTP voice queue. Its level is
+  // baked into the file and it never follows playbackRate.
+  const [ambientBed, setAmbientBedState] = useState('none');
+  const bedSoundRef = useRef<Audio.Sound | null>(null);
+  const bedGenRef = useRef(0);
+  const isPlayingRef = useRef(false);
+
+  const teardownBed = useCallback(async () => {
+    const bed = bedSoundRef.current;
+    bedSoundRef.current = null;
+    if (bed) {
+      try {
+        await bed.unloadAsync();
+      } catch { /* ignore */ }
+    }
+  }, []);
+
+  const setAmbientBed = useCallback((key: string) => {
+    setAmbientBedState(key);
+    const gen = ++bedGenRef.current;
+    (async () => {
+      await teardownBed();
+      const url = key !== 'none' ? ambientBedUrl(key) : null;
+      if (!url || bedGenRef.current !== gen) return;
+      try {
+        const { sound } = await Audio.Sound.createAsync(
+          { uri: url },
+          { isLooping: true, volume: 1, shouldPlay: isPlayingRef.current },
+        );
+        if (bedGenRef.current !== gen) {
+          sound.unloadAsync().catch(() => {});
+          return;
+        }
+        bedSoundRef.current = sound;
+      } catch (e) {
+        console.warn('ambient bed load failed:', e);
+      }
+    })();
+  }, [teardownBed]);
+
   const playbackState = usePlaybackState();
   const { position: trackPosSec, duration: trackDurSec } = useProgress(500);
 
@@ -183,6 +228,14 @@ export const AudioPlayerProvider = ({ children }: { children: React.ReactNode })
   }
 
   const isPlaying = playbackState.state === State.Playing;
+
+  // The bed follows the voice: plays only while narration plays.
+  useEffect(() => {
+    isPlayingRef.current = isPlaying;
+    const bed = bedSoundRef.current;
+    if (!bed) return;
+    bed.setStatusAsync({ shouldPlay: isPlaying }).catch(() => {});
+  }, [isPlaying, ambientBed]);
 
   // ─── Setup RNTP once ───
   useEffect(() => {
@@ -455,6 +508,7 @@ export const AudioPlayerProvider = ({ children }: { children: React.ReactNode })
   // ─── stop ───
   const stop = useCallback(async () => {
     loadGenerationRef.current += 1;
+    bedGenRef.current += 1;
     try {
       await TrackPlayer.reset();
     } catch (e) {
@@ -465,11 +519,13 @@ export const AudioPlayerProvider = ({ children }: { children: React.ReactNode })
       cleanupFiles(localFilesRef.current);
       localFilesRef.current = [];
     }
+    await teardownBed();
+    setAmbientBedState('none');
     chunkDurationsRef.current = [];
     setActiveChunkIndex(0);
     setCurrentTrack(null);
     setIsAudioReady(false);
-  }, []);
+  }, [teardownBed]);
 
   const value: AudioPlayerContextValue = {
     currentTrack,
@@ -487,6 +543,8 @@ export const AudioPlayerProvider = ({ children }: { children: React.ReactNode })
     stop,
     playbackRate,
     setPlaybackRate,
+    ambientBed,
+    setAmbientBed,
     isAudioReady,
     debugInfo,
   };

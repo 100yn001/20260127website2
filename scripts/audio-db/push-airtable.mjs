@@ -50,6 +50,9 @@ const FIELDS = [
   { name: 'youtube_url', type: 'url' },
   { name: 'video_slug', type: 'singleLineText' },
   { name: 'visualizer', type: 'singleLineText' },
+  // ambience bed baked into the YouTube video, if any. In-app ambience is the
+  // player's universal toggle (default none) — never per-audio, so no app column.
+  { name: 'video_bed', type: 'singleLineText' },
   { name: 'notes', type: 'multilineText' },
 ];
 
@@ -74,13 +77,25 @@ async function airtable(pathname, init = {}) {
 async function ensureTable() {
   const meta = await airtable(`meta/bases/${BASE_ID}/tables`);
   const existing = meta.tables.find((t) => t.name.toLowerCase() === TABLE.toLowerCase());
-  if (existing) return existing.name;
-  console.log(`table "${TABLE}" not found — creating it`);
-  await airtable(`meta/bases/${BASE_ID}/tables`, {
-    method: 'POST',
-    body: JSON.stringify({ name: TABLE, fields: FIELDS }),
-  });
-  return TABLE;
+  if (!existing) {
+    console.log(`table "${TABLE}" not found — creating it`);
+    await airtable(`meta/bases/${BASE_ID}/tables`, {
+      method: 'POST',
+      body: JSON.stringify({ name: TABLE, fields: FIELDS }),
+    });
+    return TABLE;
+  }
+  // self-heal: create any registry fields the existing table is missing
+  const have = new Set(existing.fields.map((f) => f.name.toLowerCase()));
+  for (const f of FIELDS) {
+    if (have.has(f.name.toLowerCase())) continue;
+    console.log(`adding missing field "${f.name}"`);
+    await airtable(`meta/bases/${BASE_ID}/tables/${existing.id}/fields`, {
+      method: 'POST',
+      body: JSON.stringify(f),
+    });
+  }
+  return existing.name;
 }
 
 async function main() {
@@ -137,6 +152,7 @@ async function main() {
         ...(ytUrl ? { youtube_url: ytUrl } : {}),
         video_slug: r.onYoutube.videoSlug || '',
         visualizer: r.visualizer?.done ? `done: ${r.visualizer.aura}` : r.visualizer?.planned ? 'planned' : '—',
+        video_bed: r.videoBed || '',
         notes: r.notes || '',
       },
     };

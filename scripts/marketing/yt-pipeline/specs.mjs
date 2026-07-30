@@ -134,6 +134,9 @@ SPECS.push({
   ...SPECS.find((s) => s.slug === 'not-jealous'),
   slug: 'not-jealous-v2',
   voiceId: 'xWPPOvvQW78MpD6evTo9',
+  // the whole script happens parked outside her place, engine off — the bed is
+  // a muffled night street, not rain (the dry slow walk to the door needs it)
+  ambient: 'street',
 });
 
 // the-bodyguard — YouTube-safe cut of the app's "close protection" (the app

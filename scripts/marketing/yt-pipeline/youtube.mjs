@@ -125,14 +125,23 @@ console.log(`🎬 ${spec.slug} — aura=${aura} palette=${palette || spec.aura} 
 
 // ── video ───────────────────────────────────────────────────────────────────
 const video = path.join(dir, `${spec.slug}-${aura}.mp4`);
-// sleep stories get synthesized rain-on-glass under the voice and through the tail
+// ambient beds are the exception, not the norm. Sleep stories get synthesized
+// rain-on-glass under the voice and through the tail; a spec can opt into
+// `ambient: 'street'` — muffled night-street rumble for parked-car scenes
+// (chain matches the approved out/not-jealous-v2/ambient-previews mix).
 const rain = `anoisesrc=colour=pink:sample_rate=44100:amplitude=0.55,lowpass=f=1400,highpass=f=300,` +
   `tremolo=f=0.15:d=0.35,volume=0.10`;
+const street = `anoisesrc=colour=brown:sample_rate=44100:amplitude=0.55,lowpass=f=300,tremolo=f=0.1:d=0.5`;
+const voiceIn = `[1:a]adelay=${Math.round(INTRO * 1000)}|${Math.round(INTRO * 1000)},apad=whole_dur=${total}`;
 const audioGraph = isSleep
-  ? `[1:a]adelay=${Math.round(INTRO * 1000)}|${Math.round(INTRO * 1000)},apad=whole_dur=${total}[v];` +
+  ? `${voiceIn}[v];` +
     `${rain},atrim=0:${total},afade=t=in:d=6,afade=t=out:st=${total - 12}:d=12[r];` +
     `[v][r]amix=inputs=2:duration=first:normalize=0[aout]`
-  : `[1:a]adelay=${Math.round(INTRO * 1000)}|${Math.round(INTRO * 1000)},apad=whole_dur=${total},afade=t=out:st=${(INTRO + voiceDur + 0.3).toFixed(2)}:d=1.2[aout]`;
+  : spec.ambient === 'street'
+    ? `${voiceIn},afade=t=out:st=${(INTRO + voiceDur + 0.3).toFixed(2)}:d=1.2[v];` +
+      `${street},atrim=0:${total},afade=t=in:d=4,afade=t=out:st=${total - 4}:d=4[r];` +
+      `[v][r]amix=inputs=2:duration=first:normalize=0[aout]`
+    : `${voiceIn},afade=t=out:st=${(INTRO + voiceDur + 0.3).toFixed(2)}:d=1.2[aout]`;
 
 // Intro sequence: black screen; yellow italic lines appear ONE BY ONE (block
 // sits below center) → all fade out → beat of pure black → gradient blooms in

@@ -110,13 +110,13 @@ async function main() {
     if (!recs.length) return '';
     const lines = [
       `\n### ${title}\n`,
-      '| audio | kind | pov | shelf | tone | in app | on youtube | visualizer | notes |',
-      '|---|---|---|---|---|---|---|---|---|',
+      '| audio | kind | pov | shelf | tone | in app | on youtube | visualizer | video bed | notes |',
+      '|---|---|---|---|---|---|---|---|---|---|',
     ];
     for (const { r, inAppCell, yt } of recs) {
       const viz = r.visualizer?.done ? `done (${r.visualizer.aura})` : r.visualizer?.planned ? 'planned' : '—';
       lines.push(
-        `| ${r.title} | ${r.kind === 'narrator' ? `narrator: ${r.narrator}` : 'one-shot'} | ${r.pov || ''} | ${r.shelf || 'explore'} | ${r.tone} | ${inAppCell} | ${yt.status} | ${viz} | ${r.notes || ''} |`,
+        `| ${r.title} | ${r.kind === 'narrator' ? `narrator: ${r.narrator}` : 'one-shot'} | ${r.pov || ''} | ${r.shelf || 'explore'} | ${r.tone} | ${inAppCell} | ${yt.status} | ${viz} | ${r.videoBed || '—'} | ${r.notes || ''} |`,
       );
     }
     return lines.join('\n');
@@ -142,12 +142,13 @@ async function main() {
   // ── audio-database.csv ──
   const esc = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
   const csv = [
-    ['slug', 'title', 'origin', 'kind', 'narrator', 'pov', 'shelf', 'tone', 'in_app', 'app_doc_id', 'on_youtube', 'video_slug', 'visualizer', 'notes'].join(','),
+    ['slug', 'title', 'origin', 'kind', 'narrator', 'pov', 'shelf', 'tone', 'in_app', 'app_doc_id', 'on_youtube', 'video_slug', 'visualizer', 'video_bed', 'notes'].join(','),
     ...rows.map(({ r, inAppCell, yt, liveDoc }) =>
       [
         r.slug, r.title, r.origin, r.kind, r.narrator || '', r.pov || '', r.shelf || '', r.tone,
         inAppCell, liveDoc?.docId || '', yt.status, r.onYoutube.videoSlug || '',
         r.visualizer?.done ? `done:${r.visualizer.aura}` : r.visualizer?.planned ? 'planned' : '',
+        r.videoBed || '',
         r.notes || '',
       ].map(esc).join(','),
     ),

@@ -9,6 +9,10 @@
 //   - every audio marked onYoutube.expected MUST also be inApp.expected
 //     (YouTube ⊆ app), enforced by check.mjs
 //   - kind is 'narrator' (persistent character) or 'one-shot'
+//   - `videoBed` marks an ambience bed BAKED into the YouTube video (rare).
+//     In-app ambience is never per-story data: the player has a universal
+//     none/rain/street/waves/forest toggle (constants/ambient-beds.ts),
+//     default none, and app audio files are always dry.
 //
 // check.mjs verifies expectations against live Firestore + yt-pipeline
 // artifacts and emits AUDIO_DATABASE.md + audio-database.csv next to it.
@@ -53,12 +57,12 @@ const legacy = [
     kind: 'narrator',
     narrator: 'lucy',
     pov: 'f4f',
-    shelf: 'bedtime stories',
+    shelf: 'bedtime',
     tone: 'sfw',
     inApp: { expected: true, docId: '1Sh8QGnwZgnIsH3PDBYi' },
     onYoutube: { expected: false },
     visualizer: { planned: false, done: false },
-    notes: 'legacy shelf name "bedtime stories"; narrator lucy has no publicNarrators doc',
+    notes: 'shelf consolidated from legacy "bedtime stories" (consolidate-shelves.mjs); narrator lucy has no publicNarrators doc',
   },
   {
     slug: 'beauty-and-the-beast',
@@ -67,12 +71,12 @@ const legacy = [
     kind: 'one-shot',
     narrator: null,
     pov: 'm4f',
-    shelf: 'bedtime stories',
+    shelf: 'bedtime',
     tone: 'sfw',
     inApp: { expected: true, docId: 'KxhqlJfGXU1CsGhWxC4l' },
     onYoutube: { expected: false },
     visualizer: { planned: false, done: false },
-    notes: 'legacy shelf name; title stored with curly quotes',
+    notes: 'shelf consolidated from legacy "bedtime stories" (consolidate-shelves.mjs); title stored with curly quotes',
   },
   {
     slug: 'belts-and-ties',
@@ -134,9 +138,10 @@ const youtube = [
     inApp: { expected: true },
     onYoutube: { expected: true, status: 'rendered', videoSlug: 'not-jealous' },
     visualizer: { planned: true, aura: 'lava', done: true },
+    videoBed: 'street',
     audioFile: 'not-jealous-v2/not-jealous-v2.mp3',
     tags: ['spicy', 'boyfriend', 'm4f'],
-    notes: 'shared yt boyfriend continuity voice; app audio = v2 (dusk voice)',
+    notes: 'shared yt boyfriend continuity voice; app audio = v2 (dusk voice), dry — night-street bed baked into the VIDEO only (parked-car scene); dry video backup in ambient-previews/',
   },
   {
     slug: 'not-going-anywhere',
@@ -166,6 +171,7 @@ const youtube = [
     inApp: { expected: true },
     onYoutube: { expected: true, status: 'rendered', videoSlug: 'cant-sleep' },
     visualizer: { planned: true, aura: 'lava', done: false },
+    videoBed: 'rain',
     audioFile: 'cant-sleep/cant-sleep.mp3',
     tags: ['sleep', 'boyfriend', 'm4f'],
     notes: 'black-screen sleep lane; re-voiced to dusk 2026-07-28 — video stale, re-render per VIDEO_SPECS',
