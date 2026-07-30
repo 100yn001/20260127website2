@@ -20,6 +20,22 @@ service firebase.storage {
       allow write: if request.auth != null && request.auth.uid == userId;
     }
 
+    // Admin-managed static areas:
+    //   masters/       marketing masters (yt audio/video + transcripts) — the
+    //                  Airtable click-to-play archive (push-artifacts.mjs)
+    //   static-assets/ app-wide files (ambience bed loops — beds.mjs)
+    // Consumers use tokened download URLs (which bypass rules), so reads stay
+    // tight: masters admin-only, static-assets any signed-in user.
+    match /masters/{allPaths=**} {
+      allow read, write: if request.auth != null
+        && request.auth.token.email == 'ellepotterhead2006@gmail.com';
+    }
+    match /static-assets/{allPaths=**} {
+      allow read:  if request.auth != null;
+      allow write: if request.auth != null
+        && request.auth.token.email == 'ellepotterhead2006@gmail.com';
+    }
+
     // Deny everything else
     match /{allPaths=**} {
       allow read, write: if false;
