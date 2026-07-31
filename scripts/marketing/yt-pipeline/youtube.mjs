@@ -49,6 +49,9 @@ function auraChain(durS) {
       return `gradients=s=480x540:rate=${FPS}:d=${durS}:n=4:c0=${P.e}:c1=${P.b}:c2=${P.c}:c3=${P.d}:x0=240:y0=0:x1=240:y1=540:speed=${0.002 * SPD},gblur=sigma=40,crop=480:270:0:'135+100*sin(2*PI*t/${38 / SPD})',${finish}`;
     case 'pulse':   // single breathing core (sleep): dark palette, sine-pulsed zoom
       return `gradients=s=480x270:rate=${FPS}:d=${durS}:n=3:c0=${P.e}:c1=${P.b}:c2=${P.c}:x0=240:y0=135:x1=470:y1=265:speed=${0.003 * SPD},gblur=sigma=60,scale=560:315,zoompan=z='1.25+0.15*sin(2*PI*on/(${FPS}*${11 / SPD}))':x='(iw-iw/zoom)/2':y='(ih-ih/zoom)/2':d=1:s=560x315:fps=${FPS},${finish}`;
+    case 'radial':  // breathing circle: a literal centered disc (core → dark edge) that
+      // expands and contracts on a slow sine — soft edge, but unmistakably a circle
+      return `gradients=s=480x270:rate=${FPS}:d=${durS}:type=radial:c0=${P.c}:c1=${P.e}:x0=240:y0=135:x1=350:y1=135,gblur=sigma=25,scale=560:315,zoompan=z='1.3+0.3*sin(2*PI*on/(${FPS}*${10 / SPD}))':x='(iw-iw/zoom)/2':y='(ih-ih/zoom)/2':d=1:s=560x315:fps=${FPS},${finish}`;
     default: throw new Error(`unknown aura ${aura}`);
   }
 }

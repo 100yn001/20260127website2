@@ -189,7 +189,7 @@ const youtube = [
     tone: 'sfw',
     inApp: { expected: true },
     onYoutube: { expected: true, status: 'rendered', videoSlug: 'waited-up' },
-    visualizer: { planned: true, aura: 'pulse', done: true },
+    visualizer: { planned: true, aura: 'radial', done: true },
     audioFile: 'waited-up/waited-up.mp3',
     tags: ['praise', 'girlfriend', 'f4m'],
     notes: 'gf comfort lane; re-voiced to veil (= julia) 2026-07-28 — video stale, re-render per VIDEO_SPECS',

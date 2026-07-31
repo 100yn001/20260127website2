@@ -35,7 +35,7 @@ Old GNLS/mgpc renders are kept as `*-backup.mp3` for reference; never publish th
 | not-jealous (v2) | dusk ✓ | lava | blue | **street** (baked ✓) | yes (cues exist) | iMessage bubbles: "to be clear i'm not jealous" / "but" / voice-note bubble | **done — archetype canon** |
 | not-going-anywhere | dusk (re-voiced) | lava | blue | — | yes | shadowed-eyes anime still + quote | re-render after audio vetted |
 | cant-sleep | dusk (re-voiced) | lava | **black** (black-screen-friendly) | **rain** + `--tail 300` | no (sleep = frictionless) | all-black minimal, faint core, "can't sleep?" | re-render after audio vetted |
-| waited-up | veil v2 (`[whispers][softly]` + speed 0.88) | **pulse** (user pick: expanding radial) | pink (dark wine) | — | yes | soft pink lamp-glow, "i waited up." | **fresh** (re-rendered 2026-07-31) |
+| waited-up | veil v2 (`[whispers][softly]` + speed 0.88) | **radial** (user pick: breathing circle) | pink (dark wine) | — | yes | soft pink lamp-glow, "i waited up." | **fresh** (re-rendered 2026-07-31) |
 | the-bodyguard | dusk (new) | lava | blue | — | yes | quote card: "six years. / i'm done pretending." | render after audio vetted |
 
 Notes:
