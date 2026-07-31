@@ -36,6 +36,7 @@ import {
     ActivityIndicator,
     Alert,
     Image,
+    Linking,
     Modal,
     Platform,
     StyleSheet,
@@ -157,6 +158,46 @@ const descriptorWords2 = [
   'tender', 'weird', 'introspective',
 ];
 
+// Recap lines cascade in top-to-bottom, hold, then dissolve in the same order.
+const RECAP_IN_STAGGER = 300;
+const RECAP_IN_DUR = 450;
+const RECAP_OUT_STAGGER = 200;
+const RECAP_OUT_DUR = 400;
+
+function StaggeredLine({
+  index,
+  dissolve,
+  style,
+  children,
+}: {
+  index: number;
+  dissolve: boolean;
+  style: any;
+  children: React.ReactNode;
+}) {
+  const lineOpacity = useSharedValue(0);
+
+  useEffect(() => {
+    lineOpacity.value = withDelay(
+      index * RECAP_IN_STAGGER,
+      withTiming(1, { duration: RECAP_IN_DUR })
+    );
+  }, [index, lineOpacity]);
+
+  useEffect(() => {
+    if (dissolve) {
+      lineOpacity.value = withDelay(
+        index * RECAP_OUT_STAGGER,
+        withTiming(0, { duration: RECAP_OUT_DUR })
+      );
+    }
+  }, [dissolve, index, lineOpacity]);
+
+  const animatedLineStyle = useAnimatedStyle(() => ({ opacity: lineOpacity.value }));
+
+  return <Animated.Text style={[style, animatedLineStyle]}>{children}</Animated.Text>;
+}
+
 export default function OnboardingScreen() {
   const router = useRouter();
   const { user, signUp, signIn: _signIn, ensureAnonymousSession } = useAuth();
@@ -181,6 +222,7 @@ export default function OnboardingScreen() {
   const [selectedDescriptors2, setSelectedDescriptors2] = useState<string[]>([]);
   const [questions] = useState(() => shuffleArray(personalityReally).slice(0, 10));
   const [initialQuestions] = useState(() => personalityInitial);
+  const [recapDissolving, setRecapDissolving] = useState(false);
   const [initialAnswers, setInitialAnswers] = useState<Record<string, string>>({});
   const [reallyAnswers, setReallyAnswers] = useState<Record<string, string>>({});
   const [nameInput, setNameInput] = useState('');
@@ -240,7 +282,10 @@ export default function OnboardingScreen() {
   const welcomeOpacity = useSharedValue(0);
   const toOpacity = useSharedValue(0);
   const ynOpacity = useSharedValue(0);
+  const taglineOpacity = useSharedValue(0);
   const buttonOpacity = useSharedValue(0);
+  const introLine1Opacity = useSharedValue(0);
+  const introLine2Opacity = useSharedValue(0);
 
   // Storyteller-recap staggered fade-in values
   const recapLeadOpacity = useSharedValue(0);
@@ -275,27 +320,51 @@ export default function OnboardingScreen() {
       welcomeOpacity.value = 0;
       toOpacity.value = 0;
       ynOpacity.value = 0;
+      taglineOpacity.value = 0;
       buttonOpacity.value = 0;
-      
+
       // Then stagger word appearances
       welcomeOpacity.value = withTiming(1, { duration: 700 });
       toOpacity.value = withDelay(400, withTiming(1, { duration: 700 }));
       ynOpacity.value = withDelay(800, withTiming(1, { duration: 1000 }));
+      taglineOpacity.value = withDelay(2200, withTiming(1, { duration: 1000 }));
       buttonOpacity.value = withDelay(4300, withTiming(1, { duration: 1500 }));
     } else {
       opacity.value = withTiming(1, { duration: 1200 });
+      if (step === 'intro-audio') {
+        introLine1Opacity.value = 0;
+        introLine2Opacity.value = 0;
+        introLine1Opacity.value = withTiming(1, { duration: 900 });
+        introLine2Opacity.value = withDelay(2000, withTiming(1, { duration: 900 }));
+      }
     }
   }, [step]);
 
   // Auto-transition for black-screen intro steps
   useEffect(() => {
     if (step === 'intro-audio') {
-      const timer = setTimeout(() => advanceStepWithFade('initial-quiz'), 3500);
+      // Two staggered beats (line 1 lands ~0.9s, line 2 ~2.9s), a short hold,
+      // then advanceStepWithFade dissolves the whole screen into the quiz.
+      const timer = setTimeout(() => advanceStepWithFade('initial-quiz'), 5200);
       return () => clearTimeout(timer);
     }
     if (step === 'initial-recap') {
-      const timer = setTimeout(() => advanceStepWithFade('intro-really'), 4500);
-      return () => clearTimeout(timer);
+      setRecapDissolving(false);
+      const chosenCount = initialQuestions
+        .map((q) => initialAnswers[`initial_${q.top}_${q.bottom}`])
+        .filter((v) => typeof v === 'string').length;
+      const lineCount = chosenCount + 2; // "so you're a" + choices + "kind of person..."
+      const allIn = (lineCount - 1) * RECAP_IN_STAGGER + RECAP_IN_DUR;
+      const allOut = (lineCount - 1) * RECAP_OUT_STAGGER + RECAP_OUT_DUR;
+      const dissolveTimer = setTimeout(() => setRecapDissolving(true), allIn + 800);
+      const advanceTimer = setTimeout(
+        () => advanceStepWithFade('intro-really'),
+        allIn + 800 + allOut + 100
+      );
+      return () => {
+        clearTimeout(dissolveTimer);
+        clearTimeout(advanceTimer);
+      };
     }
     if (step === 'intro-really') {
       const timer = setTimeout(() => advanceStepWithFade('quiz'), 3000);
@@ -764,6 +833,18 @@ export default function OnboardingScreen() {
     opacity: ynOpacity.value,
   }));
 
+  const taglineStyle = useAnimatedStyle(() => ({
+    opacity: taglineOpacity.value,
+  }));
+
+  const introLine1Style = useAnimatedStyle(() => ({
+    opacity: introLine1Opacity.value,
+  }));
+
+  const introLine2Style = useAnimatedStyle(() => ({
+    opacity: introLine2Opacity.value,
+  }));
+
   const buttonStyle = useAnimatedStyle(() => ({
     opacity: buttonOpacity.value,
   }));
@@ -779,12 +860,28 @@ export default function OnboardingScreen() {
   const cardTitleStyle = useAnimatedStyle(() => ({ opacity: cardTitleOpacity.value }));
   const cardContinueStyle = useAnimatedStyle(() => ({ opacity: cardContinueOpacity.value }));
 
+  const openAboutPage = () => {
+    if (Platform.OS === 'web') {
+      // Same origin in production and in the unified dev server: /about is the
+      // chromeless marketing one-pager.
+      window.location.assign('/about');
+    } else {
+      Linking.openURL('https://yourname.media/about');
+    }
+  };
+
+  const handleBackToWelcome = () => {
+    opacity.value = withTiming(0, { duration: 500 });
+    setTimeout(() => setStep('welcome'), 550);
+  };
+
   const handleWelcomeContinue = () => {
     // Fade out welcome screen elements
     buttonOpacity.value = withTiming(0, { duration: 800 });
     welcomeOpacity.value = withTiming(0, { duration: 900 });
     toOpacity.value = withTiming(0, { duration: 900 });
     ynOpacity.value = withTiming(0, { duration: 900 });
+    taglineOpacity.value = withTiming(0, { duration: 900 });
     setTimeout(() => {
       setStep('birthday');
       opacity.value = withTiming(1, { duration: 900 });
@@ -945,6 +1042,10 @@ export default function OnboardingScreen() {
   if (step === 'welcome') {
     return (
       <View style={styles.container}>
+        <TouchableOpacity onPress={openAboutPage} style={styles.aboutInfoButton} accessibilityLabel="about">
+          <Text style={styles.aboutInfoText}>i</Text>
+        </TouchableOpacity>
+
         <View style={styles.centered}>
           <View style={styles.titleRow}>
             <Animated.Text style={[styles.welcomeWord, welcomeStyle]}>welcome</Animated.Text>
@@ -957,6 +1058,9 @@ export default function OnboardingScreen() {
               </Text>
             </Animated.View>
           </View>
+          <Animated.Text style={[styles.welcomeTagline, taglineStyle]}>
+            personalized audio stories
+          </Animated.Text>
         </View>
 
         <Animated.View style={[styles.bottomButtons, buttonStyle]}>
@@ -964,7 +1068,7 @@ export default function OnboardingScreen() {
             <Text style={styles.continueText}>get started →</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={() => router.push('/auth/login')} style={styles.signInButton}>
-            <Text style={styles.signInText}>already have an account? sign in</Text>
+            <Text style={styles.signInText}>i already have an account</Text>
           </TouchableOpacity>
         </Animated.View>
       </View>
@@ -976,9 +1080,12 @@ export default function OnboardingScreen() {
     return (
       <View style={styles.container}>
         <Animated.View style={[styles.fullScreen, animatedStyle]}>
+          <TouchableOpacity onPress={handleBackToWelcome} style={styles.backButton} accessibilityLabel="back">
+            <Text style={styles.backText}>←</Text>
+          </TouchableOpacity>
           <View style={styles.centered}>
             <Text style={styles.subtitle}>
-              when&apos;s your <Text style={styles.italic}>birthday</Text>?
+              when&apos;s your birthday?
             </Text>
             <View style={styles.birthdayRow}>
               <TextInput
@@ -1050,12 +1157,12 @@ export default function OnboardingScreen() {
       <View style={styles.container}>
         <Animated.View style={[styles.fullScreen, animatedStyle]}>
           <View style={styles.centered}>
-            <Text style={styles.subtitle}>
-              <Text style={styles.bracket}>{'{'}yn{'}'}</Text> creates personalized{'\n'}audio experiences
-            </Text>
-            <Text style={[styles.subtitle, { marginTop: 32 }]}>
-              let&apos;s get to know <Text style={styles.italic}>you</Text>
-            </Text>
+            <Animated.Text style={[styles.introLine, introLine1Style]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
+              <Text style={styles.bracket}>{'{'}yn{'}'}</Text> creates personalized audio stories
+            </Animated.Text>
+            <Animated.Text style={[styles.introLine, { marginTop: 24 }, introLine2Style]}>
+              so let&apos;s get to know <Text style={styles.italic}>you</Text>
+            </Animated.Text>
           </View>
         </Animated.View>
       </View>
@@ -1111,14 +1218,27 @@ export default function OnboardingScreen() {
       <View style={styles.container}>
         <Animated.View style={[styles.fullScreen, animatedStyle]}>
           <View style={styles.centered}>
-            <Text style={styles.recapLead}>so you&apos;re a</Text>
+            <StaggeredLine index={0} dissolve={recapDissolving} style={styles.recapLead}>
+              so you&apos;re a
+            </StaggeredLine>
             {chosen.map((choice, i) => (
-              <Text key={`${choice}_${i}`} style={styles.recapChoice}>
+              <StaggeredLine
+                key={`${choice}_${i}`}
+                index={i + 1}
+                dissolve={recapDissolving}
+                style={styles.recapChoice}
+              >
                 <Text style={styles.italic}>{choice}</Text>
                 {i < chosen.length - 1 ? ',' : ''}
-              </Text>
+              </StaggeredLine>
             ))}
-            <Text style={styles.recapTail}>kind of person...</Text>
+            <StaggeredLine
+              index={chosen.length + 1}
+              dissolve={recapDissolving}
+              style={styles.recapTail}
+            >
+              kind of person...
+            </StaggeredLine>
           </View>
         </Animated.View>
       </View>
@@ -1879,12 +1999,54 @@ const styles = StyleSheet.create({
   },
   bracket: {
     color: '#7f1d1d',
+    fontFamily: 'EBGaramond-Medium',
+  },
+  welcomeTagline: {
+    fontSize: 18,
+    color: 'rgba(255, 255, 255, 0.6)',
+    fontFamily: 'EBGaramond-Regular',
+    marginTop: 20,
+    textAlign: 'center',
+  },
+  aboutInfoButton: {
+    position: 'absolute',
+    top: Platform.OS === 'web' ? 24 : 64,
+    right: 24,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.25)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
+  },
+  aboutInfoText: {
+    fontSize: 15,
+    lineHeight: 15,
+    textAlign: 'center',
+    marginTop: -1,
+    color: 'rgba(255, 255, 255, 0.5)',
+    fontFamily: 'EBGaramond-Regular',
+    fontStyle: 'italic',
+  },
+  backButton: {
+    position: 'absolute',
+    top: Platform.OS === 'web' ? 24 : 64,
+    left: 24,
+    padding: 8,
+    zIndex: 10,
+  },
+  backText: {
+    fontSize: 22,
+    color: 'rgba(255, 255, 255, 0.5)',
+    fontFamily: 'EBGaramond-Regular',
   },
   bottomButtons: {
     position: 'absolute',
     bottom: 60,
     alignItems: 'center',
-    gap: 16,
+    gap: 4,
   },
   bottomButtonsFixed: {
     position: 'absolute',
@@ -1893,11 +2055,11 @@ const styles = StyleSheet.create({
   },
   button: {
     paddingHorizontal: 20,
-    paddingVertical: 10,
+    paddingVertical: 8,
   },
   signInButton: {
     paddingHorizontal: 20,
-    paddingVertical: 10,
+    paddingVertical: 6,
   },
   signInText: {
     fontSize: 14,
@@ -1909,6 +2071,12 @@ const styles = StyleSheet.create({
     fontSize: 24,
     color: '#fff',
     marginBottom: 40,
+    textAlign: 'center',
+    fontFamily: 'EBGaramond-Regular',
+  },
+  introLine: {
+    fontSize: 24,
+    color: '#fff',
     textAlign: 'center',
     fontFamily: 'EBGaramond-Regular',
   },
@@ -1926,7 +2094,7 @@ const styles = StyleSheet.create({
     marginTop: 24,
   },
   continueText: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '500',
     color: '#fff',
     fontFamily: 'EBGaramond-Medium',

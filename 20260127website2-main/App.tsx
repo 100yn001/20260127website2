@@ -2,10 +2,7 @@ import { motion } from 'framer-motion';
 import React from 'react';
 import { BrowserRouter, Link, Route, Routes } from 'react-router-dom';
 import { About } from './components/About';
-import { Home } from './components/Home';
-import { Navbar } from './components/Navbar';
 import { Privacy } from './components/Privacy';
-import { Support } from './components/Support';
 
 const TheSynk: React.FC = () => (
   <div className="w-full min-h-screen flex flex-col items-center justify-center p-8 max-w-3xl mx-auto">
@@ -185,17 +182,17 @@ const TheSynkPrivacy: React.FC = () => (
   </div>
 );
 
+// The whole site is chromeless — no navbar; every page embeds its own links.
+// Production serves `/` as a redirect to /app (vercel.json); the `/` route
+// here is a dev/fallback alias for the one-pager.
 export default function App() {
   return (
     <BrowserRouter>
       <div className="min-h-screen w-full bg-black text-white font-['EB_Garamond'] selection:bg-red-900 selection:text-white overflow-x-hidden overflow-y-auto">
-        <Navbar />
-        
         <main className="w-full min-h-screen relative">
           <Routes>
-            <Route path="/" element={<Home />} />
+            <Route path="/" element={<About />} />
             <Route path="/about" element={<About />} />
-            <Route path="/support" element={<Support />} />
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/thesynk" element={<TheSynk />} />
             <Route path="/thesynk/support" element={<TheSynkSupport />} />

@@ -1,15 +1,19 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 
 export const Privacy: React.FC = () => {
   return (
     <div className="w-full min-h-screen flex flex-col items-center py-24 px-8">
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 1, ease: "easeOut" }}
         className="max-w-3xl w-full space-y-8"
       >
+        <Link to="/about" className="text-sm tracking-[0.3em] uppercase text-gray-500 hover:text-gray-300 transition-colors duration-300">
+          &larr; back
+        </Link>
         <h1 className="text-4xl md:text-5xl text-white font-light mb-4">Privacy Policy</h1>
         
         <p className="text-gray-400 text-sm">Last Updated: January 27, 2025</p>

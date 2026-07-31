@@ -34,10 +34,10 @@ export default function IndexScreen() {
       // User is signed in, go to main app
       router.replace('/(tabs)/library');
     } else {
-      // Always land on sign-in. The login screen has a 'sign up' link for
-      // new users; onboarding now happens after account creation rather
-      // than as a cold gate to the app.
-      router.replace('/auth/login');
+      // Signed out: land on the onboarding welcome screen — it is the
+      // de-facto landing page (yourname.media redirects here) and carries
+      // both the sign in and sign up paths.
+      router.replace('/onboarding');
     }
     setChecking(false);
   };
