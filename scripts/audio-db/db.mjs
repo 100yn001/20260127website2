@@ -192,7 +192,7 @@ const youtube = [
     visualizer: { planned: true, aura: 'radial', done: true },
     audioFile: 'waited-up/waited-up.mp3',
     tags: ['praise', 'girlfriend', 'f4m'],
-    notes: 'gf comfort lane; re-voiced to veil (= julia) 2026-07-28 — video stale, re-render per VIDEO_SPECS',
+    notes: 'gf comfort lane; veil v2 delivery ([whispers][softly] + 0.88) 2026-07-31 — app copy swapped to v2 in place; radial breathing-circle video fresh',
   },
 ];
 
