@@ -10,6 +10,7 @@ import { entitlementsRef, readEntitlements } from './entitlements';
 import { getAnthropic } from './fable';
 import {
   generateDepthLayers,
+  houseDelivery,
   mapWithConcurrency,
   splitTextIntoChunks,
   ttsChunkBuffer,
@@ -114,7 +115,10 @@ export const generateFirstStory = onCall(
       const voiceId = FIRST_STORY_VOICE_IDS[gender];
       const chunks = splitTextIntoChunks(transcript);
 
-      const chunkBuffers = await mapWithConcurrency(chunks, 2, (c) => ttsChunkBuffer(c, voiceId));
+      const chunkBuffers = await mapWithConcurrency(chunks, 2, (c) => {
+        const d = houseDelivery(c, voiceId);
+        return ttsChunkBuffer(d.text, voiceId, d.settings);
+      });
 
       const timestamp = Date.now();
       const folder = 'generated-audio/daytime';

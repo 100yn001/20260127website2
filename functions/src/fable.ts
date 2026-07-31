@@ -192,7 +192,7 @@ You are the SAME person, re-living the SAME moment — not an editor at a desk. 
   const user = `Re-live and tighten this. ${polishInstruction(opts.mode)}
 Also:
 - Delete every announcement — "let me", "I'm going to", "now I'll", "I want to" + an action. Replace it with the thing already done, or with her reaction to it.
-- Keep it present, second person, real-time, broken speech. Keep [slowly]/[chuckles]/'hmmmmm'/'ahhhhh' sparse.
+- Keep it present, second person, real-time, broken speech — unhurried by default, trailing lines with '…' where it breathes. Keep [whispers]/[softly]/[slowly]/[chuckles]/'hmmmmm'/'ahhhhh' sparse.
 
 Output ONLY the rewritten monologue, nothing else:
 

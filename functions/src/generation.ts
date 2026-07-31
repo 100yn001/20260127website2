@@ -23,6 +23,7 @@ import {
   generateTranscript,
   type FableRecipe,
 } from './fable';
+import { narrationModeFromLegacy } from './narration-modes';
 import {
   claimStorySlot,
   entitlementsRef,
@@ -161,7 +162,44 @@ export function generateDepthLayers(count: number = 5) {
 
 // ── ElevenLabs + Storage ────────────────────────────────────────────────────
 
-export async function ttsChunkBuffer(text: string, voiceId: string): Promise<Buffer> {
+// House delivery: every chunk is its own eleven_v3 call, so the delivery cue
+// must re-assert itself per chunk or later chunks drift back to a declarative
+// read. The stack scales with the mode the USER picked — full whisper only for
+// immersive; a light [softly] otherwise — so their choice keeps agency.
+// Mirrors scripts/public-stories/lib.mjs.
+export const DELIVERY_PREFIX_BY_MODE: Record<string, string> = {
+  immersive: '[whispers][slowly] ',
+  intermediate: '[softly] ',
+  cinematic: '[softly] ',
+};
+
+// Per-voice tuning for the designed roster voices (live narrator docs point at
+// these): unhurried speed for crown/drawl, breathy-warm stack for wren.
+export const VOICE_TUNING: Record<string, { prefix?: string; speed?: number }> = {
+  Y4vEtN4mtuFXfs3SgmA3: { speed: 0.85 }, // crown
+  cTkwRZ3aKAHHX4ta3D7I: { speed: 0.85 }, // drawl
+  qkM30rZEs7MTvvGmwtob: { prefix: '[whispers][softly] ' }, // wren
+};
+
+/** Prefix + per-voice settings for one TTS chunk of app narration. */
+export function houseDelivery(
+  chunk: string,
+  voiceId: string,
+  mode: string = 'immersive',
+): { text: string; settings?: { speed?: number } } {
+  const tuning = VOICE_TUNING[voiceId] || {};
+  const prefix = tuning.prefix ?? DELIVERY_PREFIX_BY_MODE[mode] ?? DELIVERY_PREFIX_BY_MODE.immersive;
+  return {
+    text: prefix + chunk,
+    settings: tuning.speed ? { speed: tuning.speed } : undefined,
+  };
+}
+
+export async function ttsChunkBuffer(
+  text: string,
+  voiceId: string,
+  settings?: { speed?: number },
+): Promise<Buffer> {
   const res = await fetch(
     `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}?output_format=mp3_44100_128`,
     {
@@ -173,7 +211,7 @@ export async function ttsChunkBuffer(text: string, voiceId: string): Promise<Buf
       body: JSON.stringify({
         text,
         model_id: 'eleven_v3',
-        voice_settings: { stability: 0.5, similarity_boost: 0.5 },
+        voice_settings: { stability: 0.5, similarity_boost: 0.5, ...(settings || {}) },
       }),
     },
   );
@@ -325,9 +363,12 @@ export const generateStoryWorker = onTaskDispatched(
       if (chunks.length === 0) throw new Error('Transcript produced no audio chunks');
       console.log(`📝 ${chunks.length} chunk(s) for TTS, voice ${voiceId}`);
 
+      const deliveryMode =
+        (recipe.narrationMode as string) || narrationModeFromLegacy(recipe.narrativeRatio as number | undefined);
       const chunkBuffers = await mapWithConcurrency(chunks, TTS_CONCURRENCY, (chunk, i) => {
         console.log(`🎤 chunk ${i + 1}/${chunks.length} (${chunk.length} chars)`);
-        return ttsChunkBuffer(chunk, voiceId);
+        const d = houseDelivery(chunk, voiceId, deliveryMode);
+        return ttsChunkBuffer(d.text, voiceId, d.settings);
       });
 
       // STEP 4: uploads

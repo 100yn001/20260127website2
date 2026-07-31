@@ -140,6 +140,9 @@ SPECS.push({
   // the whole script happens parked outside her place, engine off — the bed is
   // a muffled night street, not rain (the dry slow walk to the door needs it)
   ambient: 'street',
+  // re-paced 2026-07-31: same words, fragmented with breath-breaks (was reading
+  // too continuously); slight slowdown keeps the nervous energy
+  ttsSettings: { speed: 0.9 },
 });
 
 // the-bodyguard — YouTube-safe cut of the app's "close protection" (the app
