@@ -1,5 +1,6 @@
 import { auth } from '@/config/firebase';
 import { deleteUserData } from '@/services/user-service';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
     EmailAuthProvider,
     User,
@@ -30,6 +31,22 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Everything a signed-in user accumulated on this device. Cleared on sign-out
+// so the next person (or a fresh session) never sees the previous user's name
+// or onboarding state. Device prefs (appTheme, yn:playbackRate, …) survive.
+const USER_SCOPED_KEYS = [
+  'hasCompletedOnboarding',
+  'userName',
+  'onboardingAnswers',
+  'storyTagPreferences',
+];
+
+// 'hasSignedInBefore' is deliberately NOT user-scoped: it records that this
+// device has held a real account, which routes signed-out visitors to the
+// sign-in screen instead of the onboarding welcome. Only account deletion
+// resets it.
+const HAS_SIGNED_IN_BEFORE_KEY = 'hasSignedInBefore';
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -38,6 +55,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
       setLoading(false);
+      if (user && !user.isAnonymous) {
+        AsyncStorage.setItem(HAS_SIGNED_IN_BEFORE_KEY, 'true').catch(() => {});
+      }
     });
 
     return unsubscribe;
@@ -83,6 +103,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = async () => {
     try {
       await firebaseSignOut(auth);
+      try {
+        await AsyncStorage.multiRemove(USER_SCOPED_KEYS);
+      } catch {
+        // A storage failure must not mask a successful sign-out.
+      }
       setUser(null);
     } catch (error: any) {
       throw new Error(error.message);
@@ -111,6 +136,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // then remove the auth account.
       await deleteUserData(uid);
       await deleteUser(current);
+      try {
+        await AsyncStorage.multiRemove([...USER_SCOPED_KEYS, HAS_SIGNED_IN_BEFORE_KEY]);
+      } catch {
+        // Non-fatal: the account itself is gone.
+      }
       setUser(null);
     } catch (error: any) {
       throw new Error(error.code ?? error.message);

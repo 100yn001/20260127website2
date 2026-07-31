@@ -27,15 +27,15 @@ Welcome Screen (onboarding)
   → Stays logged in until manual logout
 ```
 
-### 3. **Automatic Login (Already Logged In)**
+### 3. **App Start Routing (index.tsx gate)**
 ```
-App Start (index.tsx)
+App Start (index.tsx) — yourname.media 307s to /app, which lands here
   → Check Firebase Auth
-  → User exists?
-    ✓ Yes → Main App (Library)
-    ✗ No → Check AsyncStorage for hasCompletedOnboarding
-      ✓ True → Login Screen
-      ✗ False → Welcome Screen (onboarding)
+  → Signed in (real account)? → Main App (Library)
+  → Anonymous session (mid-onboarding relaunch)? → Onboarding
+  → Signed out → Check AsyncStorage for hasSignedInBefore
+      ✓ 'true'  → Login Screen (this device has held an account)
+      ✗ absent  → Welcome Screen (onboarding) — fresh visitor
 ```
 
 ### 4. **Logout**
@@ -43,19 +43,22 @@ App Start (index.tsx)
 Profile Screen
   → "Log Out" button
   → Confirmation dialog
-  → Sign out from Firebase
-  → Clear AsyncStorage (hasCompletedOnboarding, userName, onboardingAnswers)
-  → Redirect to Login Screen (/auth/login)
+  → Sign out from Firebase (AuthContext.signOut)
+  → Clear user-scoped AsyncStorage keys
+    (hasCompletedOnboarding, userName, onboardingAnswers, storyTagPreferences)
+  → hasSignedInBefore is kept — the NEXT cold visit routes to Login
+  → Redirect to Welcome Screen (/onboarding)
 ```
+
+Account deletion additionally clears `hasSignedInBefore` (the device is
+fresh again) and also lands on the Welcome Screen.
 
 ## Key Files
 
 ### `/app/index.tsx` - Route Guard
 - Checks if user is authenticated
-- If authenticated → Library
-- If not authenticated:
-  - Has completed onboarding → Login
-  - Has not completed onboarding → Onboarding
+- Real account → Library; anonymous → Onboarding
+- Signed out: `hasSignedInBefore` → Login, else → Onboarding welcome
 
 ### `/app/onboarding.tsx` - New User Flow
 - Welcome screen with "Get Started" and "Sign In" links
@@ -73,9 +76,8 @@ Profile Screen
 
 ### `/app/(tabs)/profile.tsx` - Logout
 - "Log Out" button in profile
-- Clears Firebase auth
-- Clears AsyncStorage
-- Redirects to index (which routes to login)
+- Calls AuthContext.signOut (Firebase sign-out + user-scoped storage purge)
+- Redirects to /onboarding (welcome screen)
 
 ### `/contexts/AuthContext.tsx` - Auth State
 - Provides `user`, `loading`, `signIn`, `signUp`, `signOut`
@@ -87,9 +89,12 @@ Profile Screen
 ### How It Works:
 1. **Firebase Auth** maintains session automatically
 2. **AsyncStorage** stores:
-   - `hasCompletedOnboarding`: 'true'
-   - `userName`: User's display name
-   - `onboardingAnswers`: Quiz responses
+   - `hasCompletedOnboarding`: 'true' (user-scoped, cleared on logout)
+   - `userName`: User's display name (user-scoped, cleared on logout)
+   - `onboardingAnswers`: Quiz responses (user-scoped, cleared on logout)
+   - `storyTagPreferences`: (user-scoped, cleared on logout)
+   - `hasSignedInBefore`: 'true' once any real account signs in on this
+     device; survives logout, removed only by account deletion
 
 3. **On App Restart**:
    - Firebase SDK checks for existing session
@@ -127,8 +132,9 @@ Profile Screen
 
 ✅ **Logout Flow**
 - [ ] "Log Out" button shows confirmation
-- [ ] Logout clears session
-- [ ] User redirected to Login screen
+- [ ] Logout clears session AND user-scoped localStorage keys
+- [ ] User lands on the onboarding welcome screen
+- [ ] Next cold visit routes to the Login screen (hasSignedInBefore)
 - [ ] User must sign in again
 
 ✅ **Persistence**

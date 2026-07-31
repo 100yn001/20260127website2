@@ -308,7 +308,9 @@ export default function OnboardingScreen() {
   }, []);
 
   useEffect(() => {
-    if (user && hasCompletedOnboarding && step === 'welcome') {
+    // Only a REAL signed-in account skips onboarding — an anonymous session
+    // with a stale hasCompletedOnboarding flag must not bounce into the app.
+    if (user && !user.isAnonymous && hasCompletedOnboarding && step === 'welcome') {
       router.replace('/(tabs)/library');
     }
   }, [user, hasCompletedOnboarding, step, router]);

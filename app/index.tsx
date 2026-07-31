@@ -1,4 +1,5 @@
 import { useAuth } from '@/contexts/AuthContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
@@ -34,10 +35,11 @@ export default function IndexScreen() {
       // User is signed in, go to main app
       router.replace('/(tabs)/library');
     } else {
-      // Signed out: land on the onboarding welcome screen — it is the
-      // de-facto landing page (yourname.media redirects here) and carries
-      // both the sign in and sign up paths.
-      router.replace('/onboarding');
+      // Signed out. A device that has held a real account before goes to
+      // sign-in; a fresh visitor gets the onboarding welcome (the de-facto
+      // landing page — yourname.media redirects here).
+      const returning = await AsyncStorage.getItem('hasSignedInBefore').catch(() => null);
+      router.replace(returning === 'true' ? '/auth/login' : '/onboarding');
     }
     setChecking(false);
   };
