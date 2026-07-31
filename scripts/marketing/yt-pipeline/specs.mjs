@@ -114,6 +114,9 @@ SPECS.push({
   aura: 'pink',
   genderOther: 'female',
   voiceId: GF_VOICE_ID,
+  // caretaking piece: softer tag stack + real slowdown so the pauses breathe
+  ttsPrefix: '[whispers][softly] ',
+  ttsSettings: { speed: 0.88 },
   quotable: `"I waited up. … Come here. You're done for today."`,
   premise: `He comes home late — drained, past the point of words, the kind of tired that isn't about sleep. One lamp on; she waited up. She takes one look and takes over: bag out of his hand, shoes off, sits him down, tucks him into her side. She notices everything out loud — that he skipped lunch, that he's been rewriting the same apology text in his head all day, that he always goes quiet when he thinks he's failed. Praise and reassurance, gently bossy, never pitying. It descends into sleepy warmth: one clean "I love you," his breathing slowing against her.`,
   youtube: {

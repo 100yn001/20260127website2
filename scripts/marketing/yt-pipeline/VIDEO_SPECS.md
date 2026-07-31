@@ -35,12 +35,15 @@ Old GNLS/mgpc renders are kept as `*-backup.mp3` for reference; never publish th
 | not-jealous (v2) | dusk ✓ | lava | blue | **street** (baked ✓) | yes (cues exist) | iMessage bubbles: "to be clear i'm not jealous" / "but" / voice-note bubble | **done — archetype canon** |
 | not-going-anywhere | dusk (re-voiced) | lava | blue | — | yes | shadowed-eyes anime still + quote | re-render after audio vetted |
 | cant-sleep | dusk (re-voiced) | lava | **black** (black-screen-friendly) | **rain** + `--tail 300` | no (sleep = frictionless) | all-black minimal, faint core, "can't sleep?" | re-render after audio vetted |
-| waited-up | veil (re-voiced) | lava | pink | — | yes | soft pink lamp-glow, "i waited up." | re-render after audio vetted |
+| waited-up | veil v2 (`[whispers][softly]` + speed 0.88) | **pulse** (user pick: expanding radial) | pink (dark wine) | — | yes | soft pink lamp-glow, "i waited up." | **fresh** (re-rendered 2026-07-31) |
 | the-bodyguard | dusk (new) | lava | blue | — | yes | quote card: "six years. / i'm done pretending." | render after audio vetted |
 
 Notes:
-- cant-sleep and waited-up previously used the `pulse` aura — superseded: the archetype is lava
-  everywhere; the sleep lane keeps its identity via the black palette + rain bed instead.
+- cant-sleep previously used the `pulse` aura — superseded: the archetype default is lava; the
+  sleep lane keeps its identity via the black palette + rain bed instead. waited-up RETURNED to
+  pulse by user choice (2026-07-31): expanding-radial breathing core in dark pink.
+- Per-spec TTS delivery overrides exist (`ttsPrefix`, `ttsSettings`) — waited-up runs
+  `[whispers][softly]` + speed 0.88; old veil render kept as waited-up-backup-veil-v1.mp3.
 - Audio re-renders make the existing mp4s stale (they embed the old voice); the table's status
   column is the truth until re-rendered.
 - The current not-jealous-v2 mp4 is an audio-only remux of the approved render (street bed mixed

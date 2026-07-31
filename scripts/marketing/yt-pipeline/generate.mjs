@@ -164,10 +164,11 @@ async function main() {
       const chars = winner.length;
       console.log(`\n🎤 ${spec.slug} — ${chunks.length} chunks, ${chars} chars (~${chars} ElevenLabs credits)`);
       if (!yes) { console.log('   pass --yes to run TTS'); continue; }
-      // house delivery: same per-chunk [whispers][slowly] prefix as the app
-      // pipeline — airy, close-mic, never declarative
+      // house delivery: per-chunk [whispers][slowly] prefix as in the app
+      // pipeline — airy, close-mic, never declarative. Specs may override with
+      // ttsPrefix (tag stack) and ttsSettings (e.g. { speed: 0.88 }).
       const buffers = await mapWithConcurrency(chunks, TTS_CONCURRENCY, (c, i) =>
-        retryable(() => ttsChunk(chunkTtsText(c), spec.voiceId || VOICE_ID, process.env.ELEVENLABS), { label: `${spec.slug} chunk ${i + 1}`, retries: 5, baseMs: 4000 }));
+        retryable(() => ttsChunk(chunkTtsText(c, undefined, spec.ttsPrefix), spec.voiceId || VOICE_ID, process.env.ELEVENLABS, spec.ttsSettings || {}), { label: `${spec.slug} chunk ${i + 1}`, retries: 5, baseMs: 4000 }));
       const all = Buffer.concat(buffers);
       const mp3 = path.join(dir, `${spec.slug}.mp3`);
       fs.writeFileSync(mp3, all);
