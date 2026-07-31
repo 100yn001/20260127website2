@@ -1,6 +1,6 @@
 # upload bundle — not-jealous-v2
 
-**video:** not-jealous-v2-lava.mp4 · **thumbnail:** not-jealous-v2-thumb-imessage.png
+**video:** not-jealous-v2-lava.mp4 · **thumbnail:** not-jealous-v2-thumb.png
 
 ## title
 I'm Not Jealous.. Come Here [Boyfriend Roleplay] [Argument] [Making Up] ASMR

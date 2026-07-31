@@ -1,6 +1,6 @@
 # upload bundle — waited-up
 
-**video:** waited-up-pulse.mp4 · **thumbnail:** waited-up-thumb.png
+**video:** waited-up-radial.mp4 · **thumbnail:** waited-up-thumb.png
 
 ## title
 I Waited Up For You.. Come Here [Girlfriend Roleplay] [F4M] [Comfort] [Praise] ASMR

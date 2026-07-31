@@ -1,1287 +1,732 @@
 [
  {
   "text": "i'm fine.",
-  "start": 0,
-  "end": 1.03
+  "start": 0.0,
+  "end": 2.97
  },
  {
-  "text": "…",
-  "start": 2.92,
-  "end": 3.11
- },
- {
-  "text": "i said i'm fine, that's— four times, i",
-  "start": 3.11,
-  "end": 6.63
- },
- {
-  "text": "know.",
-  "start": 6.63,
-  "end": 7.27
- },
- {
-  "text": "i can count.",
-  "start": 7.48,
-  "end": 9.15
- },
- {
-  "text": "i'm not gripping the wheel.",
-  "start": 10,
-  "end": 12.23
- },
- {
-  "text": "i'm just…",
-  "start": 12.4,
-  "end": 13.67
- },
- {
-  "text": "holding it.",
-  "start": 13.67,
-  "end": 15.27
- },
- {
-  "text": "that's what wheels are for.",
-  "start": 15.44,
-  "end": 18.31
- },
- {
-  "text": "yeah, the engine's off.",
-  "start": 18.67,
-  "end": 21.75
- },
- {
-  "text": "i know it's off.",
-  "start": 22.04,
-  "end": 23.67
- },
- {
-  "text": "[slowly] i'm just sitting here.",
-  "start": 24.32,
-  "end": 26.55
- },
- {
-  "text": "…",
-  "start": 27.79,
-  "end": 28.39
- },
- {
-  "text": "what?",
-  "start": 28.34,
-  "end": 29.35
- },
- {
-  "text": "can't a guy sit in a car?",
-  "start": 29.32,
-  "end": 31.11
- },
- {
-  "text": "it was a good party.",
-  "start": 32.19,
-  "end": 33.91
- },
- {
-  "text": "it was fine.",
-  "start": 34.16,
-  "end": 36.07
- },
- {
-  "text": "everything's fine tonight, apparently.",
-  "start": 36.04,
-  "end": 39.27
- },
- {
-  "text": "very fine night.",
-  "start": 39.38,
-  "end": 41.67
- },
- {
-  "text": "hmmmmm.",
-  "start": 42.77,
-  "end": 44.07
- },
- {
-  "text": "…",
-  "start": 45.13,
-  "end": 45.67
- },
- {
-  "text": "sorry.",
-  "start": 45.63,
-  "end": 46.63
- },
- {
-  "text": "that came out— never mind.",
-  "start": 46.63,
-  "end": 49.99
- },
- {
-  "text": "no, i had fun.",
-  "start": 50.54,
-  "end": 53.03
- },
- {
-  "text": "i did.",
-  "start": 53.33,
-  "end": 54.48
- },
- {
-  "text": "i talked to…",
-  "start": 54.92,
-  "end": 56.55
- },
- {
-  "text": "people.",
-  "start": 56.56,
-  "end": 58.07
- },
- {
-  "text": "there were people.",
-  "start": 58.14,
-  "end": 60.07
- },
- {
-  "text": "i talked to some of them.",
-  "start": 60.52,
-  "end": 62.39
- },
- {
-  "text": "i don't know, an hour?",
-  "start": 63.2,
-  "end": 65.59
- },
- {
-  "text": "two?",
-  "start": 65.75,
-  "end": 67.12
- },
- {
-  "text": "i wasn't watching the clock.",
-  "start": 67.56,
-  "end": 69.68
- },
- {
-  "text": "i wasn't watching anything.",
-  "start": 70.25,
-  "end": 72.32
- },
- {
-  "text": "…",
-  "start": 73.78,
-  "end": 74.48
- },
- {
-  "text": "why are you looking at me like that.",
-  "start": 74.48,
-  "end": 76.32
- },
- {
-  "text": "i'm not avoiding your eyes, i'm looking at",
-  "start": 77.05,
-  "end": 80.4
- },
- {
-  "text": "the street.",
-  "start": 80.4,
-  "end": 81.36
- },
- {
-  "text": "there's a whole street out there.",
-  "start": 81.36,
-  "end": 83.84
- },
- {
-  "text": "very interesting street.",
-  "start": 83.99,
-  "end": 86.56
- },
- {
-  "text": "ahhhhh…",
-  "start": 87.23,
-  "end": 89.28
- },
- {
-  "text": "tired.",
-  "start": 89.27,
-  "end": 90.84
- },
- {
-  "text": "long night.",
-  "start": 90.82,
-  "end": 92.23
- },
- {
-  "text": "we should— you should probably head in,",
-  "start": 92.48,
-  "end": 96.64
- },
- {
-  "text": "right?",
-  "start": 96.64,
-  "end": 97.28
- },
- {
-  "text": "it's late.",
-  "start": 97.34,
-  "end": 99.09
- },
- {
-  "text": "…",
-  "start": 99.86,
-  "end": 100.32
- },
- {
-  "text": "okay.",
-  "start": 100.28,
-  "end": 101.12
- },
- {
-  "text": "you're not moving.",
-  "start": 101.25,
-  "end": 103.88
- },
- {
-  "text": "great.",
-  "start": 103.85,
-  "end": 104.8
- },
- {
-  "text": "we're doing this.",
-  "start": 104.89,
-  "end": 106.4
- },
- {
-  "text": "doing what?",
-  "start": 106.71,
-  "end": 108.8
- },
- {
-  "text": "nothing.",
-  "start": 108.88,
-  "end": 110.96
- },
- {
-  "text": "we're doing nothing, that's my whole",
-  "start": 110.99,
-  "end": 113.44
- },
- {
-  "text": "point, there's nothing to—",
-  "start": 113.44,
-  "end": 115.76
- },
- {
-  "text": "who?",
-  "start": 116.08,
-  "end": 118.02
- },
- {
-  "text": "…",
-  "start": 118.75,
-  "end": 119.2
- },
- {
-  "text": "him.",
-  "start": 119.2,
-  "end": 119.92
- },
- {
-  "text": "yeah.",
-  "start": 120.07,
-  "end": 122.12
- },
- {
-  "text": "no, i know who you mean.",
-  "start": 122.19,
-  "end": 124.88
- },
- {
-  "text": "i just—",
-  "start": 125.42,
-  "end": 126.21
- },
- {
-  "text": "he seemed…",
-  "start": 126.75,
-  "end": 128.65
- },
- {
-  "text": "nice.",
-  "start": 128.66,
-  "end": 129.57
- },
- {
-  "text": "nice…",
-  "start": 129.77,
-  "end": 131.81
- },
- {
-  "text": "guy.",
-  "start": 131.8,
-  "end": 132.93
- },
- {
-  "text": "who exists.",
-  "start": 132.92,
-  "end": 134.29
- },
- {
-  "text": "and tells stories.",
-  "start": 134.6,
-  "end": 137.33
- },
- {
-  "text": "very long stories with a lot of hand",
-  "start": 137.46,
-  "end": 140.93
- },
- {
-  "text": "gestures, apparently, but who's counting",
-  "start": 140.93,
-  "end": 145.09
- },
- {
-  "text": "the hand gestures.",
-  "start": 145.09,
-  "end": 146.77
- },
- {
-  "text": "not me.",
-  "start": 146.92,
-  "end": 148.73
- },
- {
-  "text": "that's not a tone.",
-  "start": 149.3,
-  "end": 152.05
- },
- {
-  "text": "this is my voice.",
-  "start": 152.15,
-  "end": 154.69
- },
- {
-  "text": "this is just how it sounds when i'm—",
-  "start": 154.79,
-  "end": 158.29
- },
- {
-  "text": "…",
-  "start": 158.98,
-  "end": 159.49
- },
- {
-  "text": "when i'm tired.",
-  "start": 159.49,
-  "end": 160.45
- },
- {
-  "text": "…",
-  "start": 161.68,
-  "end": 162.29
- },
- {
-  "text": "say it again?",
-  "start": 162.29,
-  "end": 163.01
- },
- {
-  "text": "no.",
-  "start": 163.68,
-  "end": 164.93
- },
- {
-  "text": "that's not—",
-  "start": 164.95,
-  "end": 166.37
- },
- {
-  "text": "i'm not jealous.",
-  "start": 166.7,
-  "end": 168.69
- },
- {
-  "text": "i just— …",
-  "start": 168.74,
-  "end": 171.25
- },
- {
-  "text": "come here.",
-  "start": 171.25,
-  "end": 171.89
- },
- {
-  "text": "…",
-  "start": 172.88,
-  "end": 173.41
- },
- {
-  "text": "please.",
-  "start": 173.41,
-  "end": 174.29
- },
- {
-  "text": "just—",
-  "start": 174.38,
-  "end": 175.57
- },
- {
-  "text": "ahhhhh.",
-  "start": 176.64,
-  "end": 178.29
- },
- {
-  "text": "okay.",
-  "start": 178.25,
-  "end": 179.01
- },
- {
-  "text": "[slowly] okay, hold on.",
-  "start": 179.74,
-  "end": 182.37
- },
- {
-  "text": "give me a second, because i'm about to say",
-  "start": 182.44,
-  "end": 185.97
- },
- {
-  "text": "something stupid and it needs to come out",
-  "start": 185.97,
-  "end": 188.77
- },
- {
-  "text": "in the right order.",
-  "start": 188.77,
-  "end": 190.29
- },
- {
-  "text": "…",
-  "start": 191.4,
-  "end": 191.97
- },
- {
-  "text": "i watched you laugh tonight.",
-  "start": 191.97,
-  "end": 193.57
- },
- {
-  "text": "at whatever he said.",
-  "start": 193.74,
-  "end": 195.97
- },
- {
-  "text": "the thing with the— i couldn't even hear",
-  "start": 196.06,
-  "end": 199.89
- },
- {
-  "text": "it from across the room, and you did that",
-  "start": 199.89,
-  "end": 202.61
- },
- {
-  "text": "laugh.",
-  "start": 202.61,
-  "end": 203.49
- },
- {
-  "text": "the real one.",
-  "start": 203.54,
-  "end": 205.65
- },
- {
-  "text": "the one where your whole head goes back",
-  "start": 205.66,
-  "end": 208.21
- },
- {
-  "text": "and you grab someone's arm because you",
-  "start": 208.21,
-  "end": 210.21
- },
- {
-  "text": "can't—",
-  "start": 210.21,
-  "end": 210.69
- },
- {
-  "text": "yeah.",
-  "start": 210.95,
-  "end": 212.21
- },
- {
-  "text": "that one.",
-  "start": 212.23,
-  "end": 213.49
- },
- {
-  "text": "and i stood there with my drink and i",
-  "start": 214.42,
-  "end": 217.17
- },
- {
-  "text": "thought…",
-  "start": 217.17,
-  "end": 218.05
- },
- {
-  "text": "…",
-  "start": 219.28,
-  "end": 219.89
- },
- {
-  "text": "i thought you looked happier over there",
-  "start": 219.89,
-  "end": 221.81
- },
- {
-  "text": "than you've looked with me lately.",
-  "start": 221.81,
-  "end": 223.81
- },
- {
-  "text": "that's it.",
-  "start": 223.93,
-  "end": 225.57
- },
- {
-  "text": "that's the whole ugly thing.",
-  "start": 225.67,
-  "end": 228.93
- },
- {
-  "text": "that's what's been sitting in my chest for",
-  "start": 228.93,
-  "end": 230.99
- },
- {
-  "text": "the last hour while i said \"fine\" like an",
-  "start": 230.99,
-  "end": 234.75
- },
- {
-  "text": "idiot.",
-  "start": 234.75,
-  "end": 235.39
- },
- {
-  "text": "no— don't.",
-  "start": 236.68,
-  "end": 239.31
- },
- {
-  "text": "don't do the face.",
-  "start": 239.28,
-  "end": 240.99
- },
- {
-  "text": "i'm not saying it to make you—",
-  "start": 241.48,
-  "end": 244.51
- },
- {
-  "text": "i know it's not fair.",
-  "start": 245.56,
-  "end": 247.31
+  "text": "i said i'm fine, that's\u2014 four times.",
+  "start": 2.97,
+  "end": 7.56
  },
  {
   "text": "i know.",
-  "start": 247.48,
-  "end": 248.35
+  "start": 7.56,
+  "end": 8.9
  },
  {
-  "text": "he tells one funny story and i rewrite our",
-  "start": 248.63,
-  "end": 252.03
+  "text": "i can count.",
+  "start": 8.9,
+  "end": 10.9
  },
  {
-  "text": "entire— that's insane, i know it's insane",
-  "start": 251.98,
-  "end": 256.59
+  "text": "i'm not gripping the wheel.",
+  "start": 10.9,
+  "end": 14.24
  },
  {
-  "text": "while i'm doing it, that's the worst part.",
-  "start": 256.59,
-  "end": 259.47
+  "text": "i'm just",
+  "start": 14.24,
+  "end": 14.88
  },
  {
-  "text": "there's a guy in my head going \"you sound",
-  "start": 259.56,
-  "end": 263.39
+  "text": "holding it.",
+  "start": 14.88,
+  "end": 16.53
  },
  {
-  "text": "crazy\" and i'm going \"yes, thank you,",
-  "start": 263.39,
-  "end": 268.59
+  "text": "that's what wheels are for.",
+  "start": 16.53,
+  "end": 20.65
  },
  {
-  "text": "aware.\"",
-  "start": 268.55,
-  "end": 269.47
+  "text": "yeah, the engine's off.",
+  "start": 20.65,
+  "end": 23.96
  },
  {
-  "text": "[chuckles] …",
-  "start": 269.76,
-  "end": 272.11
+  "text": "i know it's off.",
+  "start": 23.96,
+  "end": 27.26
  },
  {
-  "text": "you know what i did in this car before you",
-  "start": 272.11,
-  "end": 273.87
+  "text": "i'm just sitting here.",
+  "start": 27.26,
+  "end": 29.46
  },
  {
-  "text": "got in?",
-  "start": 273.87,
-  "end": 274.51
+  "text": "what?",
+  "start": 29.46,
+  "end": 30.18
  },
  {
-  "text": "i practiced.",
-  "start": 274.96,
-  "end": 276.51
+  "text": "can't a guy sit in a car?",
+  "start": 30.18,
+  "end": 35.23
  },
  {
-  "text": "casual.",
-  "start": 276.6,
-  "end": 278.51
+  "text": "it was a good party.",
+  "start": 35.23,
+  "end": 38.25
  },
  {
-  "text": "i rehearsed sounding like a person who was",
-  "start": 278.92,
-  "end": 281.79
+  "text": "it was",
+  "start": 39.79,
+  "end": 40.44
  },
  {
-  "text": "not bothered.",
-  "start": 281.79,
-  "end": 282.99
+  "text": "i talked to some of them.",
+  "start": 40.44,
+  "end": 48.44
  },
  {
-  "text": "out loud.",
-  "start": 283.12,
-  "end": 285.03
+  "text": "i don't know, an hour?",
+  "start": 74.46,
+  "end": 76.01
  },
  {
-  "text": "to the steering wheel.",
-  "start": 285.03,
-  "end": 286.75
+  "text": "two?",
+  "start": 76.54,
+  "end": 77.74
  },
  {
-  "text": "\"how was the party?\" — like that, all",
-  "start": 287.12,
-  "end": 291.15
+  "text": "i wasn't watching the clock.",
+  "start": 78.82,
+  "end": 86.82
  },
  {
-  "text": "breezy.",
-  "start": 291.15,
-  "end": 292.11
+  "text": "i wasn't watching anything.",
+  "start": 93.32,
+  "end": 93.47
  },
  {
-  "text": "the wheel was very convinced.",
-  "start": 292.26,
-  "end": 295.07
+  "text": "there's a whole street out there.",
+  "start": 93.47,
+  "end": 94.45
  },
  {
-  "text": "you…",
-  "start": 295.24,
-  "end": 297.15
+  "text": "very interesting street.",
+  "start": 94.45,
+  "end": 98.55
  },
  {
-  "text": "less so.",
-  "start": 297.15,
-  "end": 297.95
- },
- {
-  "text": "three seconds.",
-  "start": 298.25,
-  "end": 300.59
- },
- {
-  "text": "it took you three seconds.",
-  "start": 300.81,
-  "end": 303.79
- },
- {
-  "text": "…",
-  "start": 305.02,
-  "end": 305.63
- },
- {
-  "text": "yeah, you can laugh.",
-  "start": 305.63,
-  "end": 307.95
- },
- {
-  "text": "laugh at me, i deserve it, it's—",
-  "start": 307.92,
-  "end": 311.47
- },
- {
-  "text": "hmmmmm.",
-  "start": 311.8,
-  "end": 313.23
- },
- {
-  "text": "no, that laugh's okay.",
-  "start": 313.59,
-  "end": 316.59
- },
- {
-  "text": "that one i get to have.",
-  "start": 316.71,
-  "end": 319.55
- },
- {
-  "text": "…",
-  "start": 320.6,
-  "end": 321.15
- },
- {
-  "text": "hey.",
-  "start": 321.15,
-  "end": 321.55
- },
- {
-  "text": "hands off the wheel, see?",
-  "start": 321.6,
-  "end": 324.11
- },
- {
-  "text": "turning.",
-  "start": 324.19,
-  "end": 325.95
- },
- {
-  "text": "facing you.",
-  "start": 326.02,
-  "end": 328.19
- },
- {
-  "text": "full eye contact — this is very hard for",
-  "start": 328.26,
-  "end": 332.83
- },
- {
-  "text": "me right now, please note the effort.",
-  "start": 332.83,
-  "end": 335.71
- },
- {
-  "text": "[slowly] here's the thing i actually mean,",
-  "start": 336.33,
-  "end": 339.36
- },
- {
-  "text": "under all the stupid.",
-  "start": 339.36,
-  "end": 340.88
- },
- {
-  "text": "i don't think you're going anywhere.",
-  "start": 342.05,
-  "end": 344.32
- },
- {
-  "text": "it was never really about him.",
-  "start": 344.71,
-  "end": 347.84
- },
- {
-  "text": "it's that…",
-  "start": 348.12,
-  "end": 350.6
- },
- {
-  "text": "when you laughed like that, some small",
-  "start": 350.62,
-  "end": 354.96
- },
- {
-  "text": "pathetic part of me went, \"when's the last",
-  "start": 354.96,
-  "end": 357.76
- },
- {
-  "text": "time i made her do that?\" and i couldn't",
-  "start": 357.76,
-  "end": 361.28
- },
- {
-  "text": "remember.",
-  "start": 361.28,
-  "end": 361.68
- },
- {
-  "text": "and it scared me.",
-  "start": 361.85,
-  "end": 364.16
- },
- {
-  "text": "that's the truth.",
-  "start": 364.29,
-  "end": 366.24
- },
- {
-  "text": "scared me more than any guy at any party",
-  "start": 366.71,
-  "end": 370.96
- },
- {
-  "text": "ever could.",
-  "start": 370.93,
-  "end": 373.28
- },
- {
-  "text": "…",
-  "start": 374.55,
-  "end": 374.76
- },
- {
-  "text": "don't— hey, no, don't cry, that's not— oh",
-  "start": 374.76,
-  "end": 380.8
- },
- {
-  "text": "no.",
-  "start": 380.79,
-  "end": 381.28
- },
- {
-  "text": "come here.",
-  "start": 381.45,
-  "end": 383.52
- },
- {
-  "text": "come here.",
-  "start": 383.73,
-  "end": 385.76
- },
- {
-  "text": "[slowly] ahhhhh…",
-  "start": 386.77,
-  "end": 388.16
- },
- {
-  "text": "okay.",
-  "start": 388.32,
-  "end": 390.92
- },
- {
-  "text": "okay.",
-  "start": 391.02,
-  "end": 392.24
- },
- {
-  "text": "i've got you.",
-  "start": 393.35,
-  "end": 395.52
- },
- {
-  "text": "shhh.",
-  "start": 395.67,
-  "end": 397.04
- },
- {
-  "text": "i've got you.",
-  "start": 397.29,
-  "end": 398.64
- },
- {
-  "text": "…",
-  "start": 400.11,
-  "end": 400.8
- },
- {
-  "text": "last week?",
-  "start": 400.8,
-  "end": 401.76
- },
- {
-  "text": "really?",
-  "start": 401.79,
-  "end": 403.6
- },
- {
-  "text": "the thing with the— [chuckles] — the",
-  "start": 403.61,
-  "end": 407.12
- },
- {
-  "text": "grocery store thing?",
-  "start": 407.12,
-  "end": 408.64
- },
- {
-  "text": "that made the list?",
-  "start": 408.69,
-  "end": 410.4
- },
- {
-  "text": "that's…",
-  "start": 411.13,
-  "end": 412.64
- },
- {
-  "text": "good to know.",
-  "start": 412.73,
-  "end": 414.64
- },
- {
-  "text": "honestly, i thought my material was",
-  "start": 414.64,
-  "end": 417.2
- },
- {
-  "text": "slipping.",
-  "start": 417.2,
-  "end": 417.84
- },
- {
-  "text": "no, listen— hey.",
-  "start": 418.47,
-  "end": 422.24
- },
- {
-  "text": "look at me.",
-  "start": 422.35,
-  "end": 424
- },
- {
-  "text": "last thing, then i'll stop being heavy,",
-  "start": 424.21,
-  "end": 428.24
- },
- {
-  "text": "promise.",
-  "start": 428.24,
-  "end": 429.04
- },
- {
-  "text": "if i ever do that again — the fine, fine,",
-  "start": 429.48,
-  "end": 434.32
- },
- {
-  "text": "i'm fine routine — you're allowed to just…",
-  "start": 434.32,
-  "end": 438.88
- },
- {
-  "text": "poke me.",
-  "start": 438.88,
-  "end": 439.76
- },
- {
-  "text": "in the ribs.",
-  "start": 439.83,
-  "end": 441.84
- },
- {
-  "text": "hard.",
-  "start": 441.84,
-  "end": 442.88
- },
- {
-  "text": "because marinating in it for an hour was",
-  "start": 442.88,
-  "end": 446.32
- },
- {
-  "text": "so much worse than just saying \"i got",
-  "start": 446.32,
-  "end": 450
- },
- {
-  "text": "scared watching you laugh at another man's",
-  "start": 450,
-  "end": 452.56
- },
- {
-  "text": "joke.\" which, out loud, is somehow both",
-  "start": 452.52,
-  "end": 459.28
- },
- {
-  "text": "more embarrassing and…",
-  "start": 459.28,
-  "end": 461.28
- },
- {
-  "text": "lighter.",
-  "start": 461.33,
-  "end": 463.96
- },
- {
-  "text": "it's lighter now.",
-  "start": 464.17,
-  "end": 466.08
- },
- {
-  "text": "how is it lighter now?",
-  "start": 466.29,
-  "end": 469.31
- },
- {
-  "text": "…",
-  "start": 470.16,
-  "end": 470.64
- },
- {
-  "text": "because you didn't laugh at me.",
-  "start": 470.64,
-  "end": 473.44
- },
- {
-  "text": "yeah.",
-  "start": 473.68,
-  "end": 476.08
- },
- {
-  "text": "maybe that's it.",
-  "start": 476.05,
-  "end": 477.52
- },
- {
-  "text": "c'mere.",
-  "start": 478.05,
-  "end": 479.2
- },
- {
-  "text": "forehead.",
-  "start": 479.36,
-  "end": 481.28
- },
- {
-  "text": "just—",
-  "start": 481.45,
-  "end": 482.88
- },
- {
-  "text": "[slowly] …",
-  "start": 483.51,
-  "end": 484.37
- },
- {
-  "text": "there.",
-  "start": 484.37,
-  "end": 484.56
- },
- {
-  "text": "hmmmmm.",
-  "start": 484.89,
-  "end": 487.04
- },
- {
-  "text": "you smell like the party.",
-  "start": 487.05,
-  "end": 489.04
- },
- {
-  "text": "smoke and…",
-  "start": 489.2,
-  "end": 491.36
- },
- {
-  "text": "somebody's terrible cologne.",
-  "start": 491.36,
-  "end": 494.32
- },
- {
-  "text": "not yours.",
-  "start": 494.41,
-  "end": 495.84
- },
- {
-  "text": "please not yours.",
-  "start": 495.88,
-  "end": 498.08
- },
- {
-  "text": "[chuckles] okay, his.",
-  "start": 498.33,
-  "end": 501.88
- },
- {
-  "text": "noted.",
-  "start": 501.92,
-  "end": 502.96
- },
- {
-  "text": "filing that away in a healthy, non-jealous",
-  "start": 503.37,
-  "end": 507.28
- },
- {
-  "text": "manner.",
-  "start": 507.28,
-  "end": 507.92
- },
- {
-  "text": "…",
-  "start": 509.39,
-  "end": 510.08
- },
- {
-  "text": "i'm sorry about the silent car ride.",
-  "start": 510.08,
-  "end": 512.56
- },
- {
-  "text": "longest ten minutes of my life, for the",
-  "start": 512.72,
-  "end": 516
- },
- {
-  "text": "record.",
-  "start": 516,
-  "end": 516.56
- },
- {
-  "text": "every sentence i started began with \"so,",
-  "start": 516.69,
-  "end": 522.12
- },
- {
-  "text": "that guy,\" and i knew how that would",
-  "start": 522.12,
-  "end": 525.52
- },
- {
-  "text": "sound, so i said nothing, which sounded",
-  "start": 525.47,
-  "end": 529.2
- },
- {
-  "text": "worse.",
-  "start": 529.2,
-  "end": 529.84
- },
- {
-  "text": "genius move.",
-  "start": 529.92,
-  "end": 532.67
- },
- {
-  "text": "you're warm.",
-  "start": 533.25,
-  "end": 534.56
- },
- {
-  "text": "stay like this a second.",
-  "start": 534.72,
-  "end": 538.08
- },
- {
-  "text": "just…",
-  "start": 538.11,
-  "end": 540.08
- },
- {
-  "text": "one more second.",
-  "start": 540.08,
-  "end": 541.2
- },
- {
-  "text": "ahhhhh…",
-  "start": 541.75,
-  "end": 543.52
- },
- {
-  "text": "…",
-  "start": 544.75,
-  "end": 545.36
- },
- {
-  "text": "okay.",
-  "start": 545.32,
-  "end": 546.08
+  "text": "we should\u2014 you should probably head in, right?",
+  "start": 98.55,
+  "end": 106.55
  },
  {
   "text": "it's late.",
-  "start": 546.2,
-  "end": 547.44
+  "start": 110.4,
+  "end": 112.93
  },
  {
-  "text": "you should go in.",
-  "start": 547.53,
-  "end": 549.36
+  "text": "okay.",
+  "start": 112.93,
+  "end": 114.2
  },
  {
-  "text": "but i'm walking you to the door.",
-  "start": 549.53,
-  "end": 552.64
+  "text": "you're not moving.",
+  "start": 114.2,
+  "end": 118.0
  },
  {
-  "text": "slow.",
-  "start": 552.86,
-  "end": 555.24
+  "text": "great.",
+  "start": 118.0,
+  "end": 119.27
  },
  {
-  "text": "embarrassingly slow.",
-  "start": 555.28,
-  "end": 557.36
+  "text": "we're doing this.",
+  "start": 119.27,
+  "end": 122.43
  },
  {
-  "text": "old-man-with-a-newspaper slow.",
-  "start": 557.59,
-  "end": 561.2
+  "text": "nothing.",
+  "start": 122.43,
+  "end": 123.11
  },
  {
-  "text": "because i did the math and the door is",
-  "start": 561.2,
-  "end": 563.91
+  "text": "we're doing nothing, that's my whole point,",
+  "start": 123.11,
+  "end": 125.97
  },
  {
-  "text": "only thirty feet away, and i'm not done",
-  "start": 563.91,
-  "end": 567.75
+  "text": "there's nothing to\u2014 who?",
+  "start": 125.97,
+  "end": 127.6
  },
  {
-  "text": "being next to you yet.",
-  "start": 567.75,
-  "end": 569.35
- },
- {
-  "text": "[chuckles] …",
-  "start": 570.04,
-  "end": 572.55
+  "text": "him.",
+  "start": 127.6,
+  "end": 128.01
  },
  {
   "text": "yeah.",
-  "start": 572.55,
-  "end": 573.03
+  "start": 128.01,
+  "end": 128.42
  },
  {
-  "text": "that was smoother than anything i said all",
-  "start": 573.09,
-  "end": 576.31
+  "text": "no, i know who you mean.",
+  "start": 128.42,
+  "end": 130.87
  },
  {
-  "text": "night, wasn't it.",
-  "start": 576.31,
-  "end": 577.51
+  "text": "i just\u2014 he seemed",
+  "start": 130.87,
+  "end": 138.87
  },
  {
-  "text": "don't tell the steering wheel.",
-  "start": 578.51,
-  "end": 580.55
+  "text": "nice.",
+  "start": 142.51,
+  "end": 143.38
  },
  {
-  "text": "it thinks i'm cool.",
-  "start": 580.67,
-  "end": 582.31
+  "text": "nice",
+  "start": 143.38,
+  "end": 144.21
  },
  {
-  "text": "come on.",
-  "start": 582.72,
-  "end": 584.55
+  "text": "guy.",
+  "start": 144.21,
+  "end": 149.14
+ },
+ {
+  "text": "who exists.",
+  "start": 149.14,
+  "end": 149.78
+ },
+ {
+  "text": "and tells stories.",
+  "start": 149.78,
+  "end": 152.72
+ },
+ {
+  "text": "very long stories with a lot of hand gestures,",
+  "start": 152.72,
+  "end": 157.92
+ },
+ {
+  "text": "apparently, but who's counting the hand gestures.",
+  "start": 157.92,
+  "end": 162.02
+ },
+ {
+  "text": "not me.",
+  "start": 162.02,
+  "end": 163.54
+ },
+ {
+  "text": "that's not a tone.",
+  "start": 163.54,
+  "end": 166.57
+ },
+ {
+  "text": "this is my voice.",
+  "start": 166.57,
+  "end": 168.77
+ },
+ {
+  "text": "this is just how it sounds when i'm\u2014 when i'm",
+  "start": 168.77,
+  "end": 172.55
+ },
+ {
+  "text": "he tells one funny story and i rewrite our",
+  "start": 172.55,
+  "end": 180.55
+ },
+ {
+  "text": "entire\u2014 that's insane.",
+  "start": 278.75,
+  "end": 279.48
+ },
+ {
+  "text": "that's the worst part.",
+  "start": 279.48,
+  "end": 287.46
+ },
+ {
+  "text": "there's a guy in my head going \"you sound crazy\"",
+  "start": 287.46,
+  "end": 293.1
+ },
+ {
+  "text": "and i'm going \"yes, thank you, aware.\" you",
+  "start": 293.1,
+  "end": 298.95
+ },
+ {
+  "text": "know what i did in this car before you got",
+  "start": 298.95,
+  "end": 303.11
+ },
+ {
+  "text": "in?",
+  "start": 303.11,
+  "end": 303.51
+ },
+ {
+  "text": "i practiced.",
+  "start": 303.51,
+  "end": 305.23
+ },
+ {
+  "text": "casual.",
+  "start": 305.23,
+  "end": 306.09
+ },
+ {
+  "text": "i rehearsed sounding like a person who was",
+  "start": 306.09,
+  "end": 311.58
+ },
+ {
+  "text": "not bothered.",
+  "start": 311.58,
+  "end": 312.52
+ },
+ {
+  "text": "out loud.",
+  "start": 312.52,
+  "end": 314.06
+ },
+ {
+  "text": "to the steering wheel.",
+  "start": 314.06,
+  "end": 317.13
+ },
+ {
+  "text": "\"how was the party?\" like that.",
+  "start": 317.13,
+  "end": 321.74
+ },
+ {
+  "text": "all breezy.",
+  "start": 321.74,
+  "end": 323.27
+ },
+ {
+  "text": "the wheel was very convinced.",
+  "start": 323.27,
+  "end": 326.01
+ },
+ {
+  "text": "you",
+  "start": 326.54,
+  "end": 327.61
+ },
+ {
+  "text": "less so.",
+  "start": 328.56,
+  "end": 329.49
+ },
+ {
+  "text": "three seconds.",
+  "start": 331.04,
+  "end": 331.95
+ },
+ {
+  "text": "it took you three seconds.",
+  "start": 331.95,
+  "end": 335.58
+ },
+ {
+  "text": "yeah, you can laugh.",
+  "start": 335.58,
+  "end": 339.12
+ },
+ {
+  "text": "laugh at me, i deserve it, it's\u2014",
+  "start": 339.12,
+  "end": 343.52
+ },
+ {
+  "text": "no, that laugh's okay.",
+  "start": 344.32,
+  "end": 348.24
+ },
+ {
+  "text": "that one i get to have.",
+  "start": 348.24,
+  "end": 353.92
+ },
+ {
+  "text": "hey.",
+  "start": 353.92,
+  "end": 354.86
+ },
+ {
+  "text": "hands off the wheel, see?",
+  "start": 354.86,
+  "end": 356.42
+ },
+ {
+  "text": "turning.",
+  "start": 356.42,
+  "end": 359.71
+ },
+ {
+  "text": "facing you.",
+  "start": 359.71,
+  "end": 360.47
+ },
+ {
+  "text": "full eye contact this is very hard for me right",
+  "start": 361.31,
+  "end": 366.64
+ },
+ {
+  "text": "now.",
+  "start": 366.64,
+  "end": 367.84
+ },
+ {
+  "text": "please note the effort.",
+  "start": 368.1,
+  "end": 369.71
+ },
+ {
+  "text": "here's the thing i actually mean, under all",
+  "start": 369.94,
+  "end": 373.62
+ },
+ {
+  "text": "the stupid.",
+  "start": 373.62,
+  "end": 374.62
+ },
+ {
+  "text": "i don't think you're going anywhere.",
+  "start": 374.62,
+  "end": 378.01
+ },
+ {
+  "text": "it was never really about him.",
+  "start": 378.01,
+  "end": 381.69
+ },
+ {
+  "text": "when you laughed like that, some small pathetic",
+  "start": 381.69,
+  "end": 389.35
+ },
+ {
+  "text": "part of me went",
+  "start": 389.35,
+  "end": 391.72
+ },
+ {
+  "text": "\"when's the last time i made her do that?\"",
+  "start": 391.72,
+  "end": 399.72
+ },
+ {
+  "text": "and i couldn't remember.",
+  "start": 450.28,
+  "end": 450.43
+ },
+ {
+  "text": "honestly, i thought my material was slipping.",
+  "start": 450.43,
+  "end": 451.45
+ },
+ {
+  "text": "no, listen\u2014 hey.",
+  "start": 451.45,
+  "end": 454.85
+ },
+ {
+  "text": "look at me.",
+  "start": 454.85,
+  "end": 456.72
+ },
+ {
+  "text": "last thing, then i'll stop being heavy, promise.",
+  "start": 456.72,
+  "end": 461.71
+ },
+ {
+  "text": "if i ever do that again the fine, fine, i'm",
+  "start": 461.71,
+  "end": 467.9
+ },
+ {
+  "text": "fine routine you're allowed to just",
+  "start": 467.9,
+  "end": 471.54
+ },
+ {
+  "text": "poke me.",
+  "start": 471.69,
+  "end": 472.96
+ },
+ {
+  "text": "in the ribs.",
+  "start": 472.96,
+  "end": 474.69
+ },
+ {
+  "text": "hard.",
+  "start": 474.69,
+  "end": 475.25
+ },
+ {
+  "text": "because marinating in it for an hour was so",
+  "start": 475.25,
+  "end": 480.2
+ },
+ {
+  "text": "much worse than just saying",
+  "start": 480.2,
+  "end": 482.36
+ },
+ {
+  "text": "\"i got scared watching you laugh at another",
+  "start": 482.36,
+  "end": 487.41
+ },
+ {
+  "text": "man's joke.\" which, out loud, is somehow both",
+  "start": 487.41,
+  "end": 494.37
+ },
+ {
+  "text": "more embarrassing and",
+  "start": 494.37,
+  "end": 496.39
+ },
+ {
+  "text": "lighter.",
+  "start": 496.77,
+  "end": 497.8
+ },
+ {
+  "text": "it's lighter now.",
+  "start": 499.45,
+  "end": 500.58
+ },
+ {
+  "text": "how is it lighter now?",
+  "start": 502.38,
+  "end": 503.85
+ },
+ {
+  "text": "because you didn't laugh at me.",
+  "start": 503.85,
+  "end": 507.28
+ },
+ {
+  "text": "yeah.",
+  "start": 508.76,
+  "end": 509.96
+ },
+ {
+  "text": "maybe that's it.",
+  "start": 510.85,
+  "end": 512.02
+ },
+ {
+  "text": "c'mere.",
+  "start": 512.02,
+  "end": 515.0
+ },
+ {
+  "text": "forehead.",
+  "start": 515.0,
+  "end": 516.2
+ },
+ {
+  "text": "just\u2014 there.",
+  "start": 520.87,
+  "end": 522.29
+ },
+ {
+  "text": "you smell like the party.",
+  "start": 522.8,
+  "end": 525.78
+ },
+ {
+  "text": "smoke and",
+  "start": 525.78,
+  "end": 527.42
+ },
+ {
+  "text": "somebody's terrible cologne.",
+  "start": 527.42,
+  "end": 529.06
+ },
+ {
+  "text": "not yours.",
+  "start": 530.55,
+  "end": 531.32
+ },
+ {
+  "text": "please not yours.",
+  "start": 531.71,
+  "end": 533.08
+ },
+ {
+  "text": "okay, his.",
+  "start": 533.08,
+  "end": 535.9
+ },
+ {
+  "text": "noted.",
+  "start": 535.9,
+  "end": 537.3
+ },
+ {
+  "text": "filing that away in a healthy, non-jealous",
+  "start": 537.3,
+  "end": 542.01
+ },
+ {
+  "text": "manner.",
+  "start": 542.01,
+  "end": 543.21
+ },
+ {
+  "text": "i'm sorry about the silent car ride.",
+  "start": 544.23,
+  "end": 546.28
+ },
+ {
+  "text": "longest ten minutes of my life, for the record.",
+  "start": 547.77,
+  "end": 550.76
+ },
+ {
+  "text": "every sentence i started began with \"so, that",
+  "start": 551.49,
+  "end": 555.68
+ },
+ {
+  "text": "guy,\"",
+  "start": 555.68,
+  "end": 556.14
+ },
+ {
+  "text": "and i knew how that would sound.",
+  "start": 556.14,
+  "end": 558.92
+ },
+ {
+  "text": "so i said nothing.",
+  "start": 559.93,
+  "end": 560.94
+ },
+ {
+  "text": "which sounded worse.",
+  "start": 562.5,
+  "end": 563.75
+ },
+ {
+  "text": "genius move.",
+  "start": 564.52,
+  "end": 565.49
+ },
+ {
+  "text": "you're warm.",
+  "start": 565.49,
+  "end": 568.23
+ },
+ {
+  "text": "stay like this a second.",
+  "start": 568.23,
+  "end": 574.14
+ },
+ {
+  "text": "just",
+  "start": 574.14,
+  "end": 575.07
+ },
+ {
+  "text": "one more second.",
+  "start": 575.07,
+  "end": 577.86
+ },
+ {
+  "text": "okay.",
+  "start": 578.64,
+  "end": 579.72
+ },
+ {
+  "text": "it's late.",
+  "start": 579.72,
+  "end": 580.04
+ },
+ {
+  "text": "you should go in.",
+  "start": 580.04,
+  "end": 582.75
+ },
+ {
+  "text": "but i'm walking you to the door.",
+  "start": 582.75,
+  "end": 587.49
  },
  {
   "text": "slow.",
-  "start": 584.66,
-  "end": 585.91
+  "start": 587.49,
+  "end": 588.17
  },
  {
-  "text": "i mean it.",
-  "start": 586.04,
-  "end": 587.19
+  "text": "embarrassingly slow.",
+  "start": 588.17,
+  "end": 589.11
+ },
+ {
+  "text": "old-man-with-a-newspaper slow.",
+  "start": 589.11,
+  "end": 592.86
+ },
+ {
+  "text": "because i did the math",
+  "start": 593.11,
+  "end": 594.6
+ },
+ {
+  "text": "and the door is only thirty feet away",
+  "start": 594.6,
+  "end": 599.0
+ },
+ {
+  "text": "and i'm not done being next to you yet.",
+  "start": 599.0,
+  "end": 605.34
+ },
+ {
+  "text": "yeah.",
+  "start": 605.34,
+  "end": 606.05
+ },
+ {
+  "text": "that was smoother than anything i said all",
+  "start": 606.05,
+  "end": 610.01
+ },
+ {
+  "text": "night, wasn't it.",
+  "start": 610.01,
+  "end": 610.99
+ },
+ {
+  "text": "don't tell the steering wheel.",
+  "start": 610.99,
+  "end": 613.69
+ },
+ {
+  "text": "it thinks i'm cool.",
+  "start": 615.05,
+  "end": 616.16
+ },
+ {
+  "text": "come on.",
+  "start": 616.16,
+  "end": 618.49
+ },
+ {
+  "text": "slow.",
+  "start": 619.32,
+  "end": 621.32
  }
 ]
