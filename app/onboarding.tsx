@@ -1,4 +1,5 @@
 import { auth, functions } from '@/config/firebase';
+import { ambientBedUrl } from '@/constants/ambient-beds';
 import { personalityInitial, personalityReally } from '@/constants/personality-sets';
 import { useAuth } from '@/contexts/AuthContext';
 import { generateTarotCard } from '@/services/replicate-service';
@@ -259,6 +260,9 @@ export default function OnboardingScreen() {
   const [narrationUrls, setNarrationUrls] = useState<string[]>([]);
   const [firstStoryPlaying, setFirstStoryPlaying] = useState(false);
   const narrationAudioRef = useRef<HTMLAudioElement | null>(null);
+  // Scenario ambience looped under the sample narration (web-only, like the
+  // narration element itself). Levels are baked into the bed files.
+  const ambientAudioRef = useRef<HTMLAudioElement | null>(null);
   const narrationChunkIndexRef = useRef(0);
   // Per-chunk durations in seconds, populated by probing each narration URL
   // once it lands. Total story duration = sum. Progress bar uses elapsed/total.
@@ -306,6 +310,10 @@ export default function OnboardingScreen() {
     };
     fetchOnboardingStatus();
   }, []);
+
+  // The ambience element is created imperatively (no JSX node) — make sure it
+  // can't outlive the screen.
+  useEffect(() => () => ambientAudioRef.current?.pause(), []);
 
   useEffect(() => {
     // Only a REAL signed-in account skips onboarding — an anonymous session
@@ -977,6 +985,26 @@ export default function OnboardingScreen() {
     }
   };
 
+  const startAmbient = () => {
+    if (Platform.OS !== 'web' || !firstStoryScenario) return;
+    if (!ambientAudioRef.current) {
+      const url = ambientBedUrl(firstStoryScenario === 'meditation' ? 'waves' : 'hum');
+      if (!url) return;
+      const bed = new Audio(url);
+      bed.loop = true;
+      bed.preload = 'auto';
+      ambientAudioRef.current = bed;
+    }
+    ambientAudioRef.current.play().catch(() => {});
+  };
+
+  const stopAmbient = (reset = false) => {
+    const bed = ambientAudioRef.current;
+    if (!bed) return;
+    bed.pause();
+    if (reset) bed.currentTime = 0;
+  };
+
   const playNarrationFromIndex = (i: number) => {
     if (!narrationUrls.length) return;
     const audio = narrationAudioRef.current;
@@ -994,6 +1022,7 @@ export default function OnboardingScreen() {
       setFirstStoryPlaying(false);
       narrationChunkIndexRef.current = 0;
       setFirstStoryProgress(0);
+      stopAmbient(true);
     }
   };
 
@@ -1015,6 +1044,7 @@ export default function OnboardingScreen() {
     if (!narration) return;
     if (firstStoryPlaying) {
       narration.pause();
+      stopAmbient();
       setFirstStoryPlaying(false);
       return;
     }
@@ -1023,11 +1053,13 @@ export default function OnboardingScreen() {
     } else {
       narration.play().catch((err) => console.warn('narration resume failed:', err));
     }
+    startAmbient();
     setFirstStoryPlaying(true);
   };
 
   const handleFirstStoryContinue = () => {
     narrationAudioRef.current?.pause();
+    stopAmbient(true);
     setFirstStoryPlaying(false);
     setFirstStoryProgress(0);
     advanceStepWithFade('signup');

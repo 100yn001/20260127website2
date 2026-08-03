@@ -20,11 +20,13 @@ import {
 type FirstStoryGender = 'male' | 'female' | 'neutral';
 type FirstStoryScenario = 'walk' | 'meditation';
 
-// Pinned onboarding voices (KEEP IN SYNC with services/first-story.web.ts)
+// Pinned onboarding voices — designed whisper roster (see
+// scripts/public-stories/out/manifest.json `voices`). houseDelivery picks up
+// per-voice tuning (wren's breathy prefix) automatically.
 const FIRST_STORY_VOICE_IDS: Record<FirstStoryGender, string> = {
-  male: 'Qe9WSybioZxssVEwlBSo',
-  female: 'p8JbsRMDYK9keH2updon',
-  neutral: 'pCbBcqcQw2exKK3vigeF',
+  male: 'KeqnO1y6QvG2D10EacMO', // hearth (whisper)
+  female: 'qkM30rZEs7MTvvGmwtob', // wren (whisper)
+  neutral: 'PNDAHrVM8OhOjQOChYiL', // ash (whisper) — designed 2026-08-03 for this slot
 };
 
 const SCENARIO_LABELS: Record<FirstStoryScenario, string> = {

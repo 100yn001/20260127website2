@@ -37,6 +37,10 @@ const BEDS = {
   street: 'anoisesrc=colour=brown:sample_rate=44100:amplitude=0.55:d=120,lowpass=f=300,tremolo=f=0.1:d=0.5,volume=0.8',
   waves: 'anoisesrc=colour=pink:sample_rate=44100:amplitude=0.6:d=120,lowpass=f=850,highpass=f=60,tremolo=f=0.1:d=0.85,volume=0.3',
   forest: 'anoisesrc=colour=pink:sample_rate=44100:amplitude=0.5:d=120,highpass=f=800,lowpass=f=4500,tremolo=f=0.15:d=0.55,volume=0.18',
+  // Low hum (first-story walk bed): a faint 65 Hz tone over deep brown rumble.
+  // 65 Hz × 120 s = 7800 whole cycles and tremolo 0.1 Hz = 12 periods, so the
+  // loop point stays phase-continuous like the others.
+  hum: 'sine=frequency=65:sample_rate=44100:d=120,volume=0.10[hs];anoisesrc=colour=brown:sample_rate=44100:amplitude=0.5:d=120,lowpass=f=160,tremolo=f=0.1:d=0.4,volume=0.4[hn];[hs][hn]amix=inputs=2:duration=first:normalize=0,volume=0.85',
 };
 
 function render() {

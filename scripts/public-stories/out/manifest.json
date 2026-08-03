@@ -2,33 +2,38 @@
   "narrators": {
     "roman": {
       "docId": "R0PHqmpv7dS9WK5lvy4v",
-      "voiceId": "EZinExECq4iXihkUJ2F7",
+      "voiceId": "xWPPOvvQW78MpD6evTo9",
       "name": "roman"
     },
     "mara": {
       "docId": "7lFiHSJSuruZLFidZjGv",
-      "voiceId": "IZStkRpUndihi1EJ0kcO",
+      "voiceId": "qkM30rZEs7MTvvGmwtob",
       "name": "Mara"
     },
     "kael": {
       "docId": "XwZbOwScgL1XJrJJyHb3",
-      "voiceId": "adZJnAl6IYZw4EYI9FVd",
+      "voiceId": "Y4vEtN4mtuFXfs3SgmA3",
       "name": "Kael"
     },
     "grayson": {
       "docId": "narrator_grayson_1767272245517",
-      "voiceId": "fCxG8OHm4STbIsWe4aT9",
+      "voiceId": "KeqnO1y6QvG2D10EacMO",
       "name": "Grayson"
     },
     "beau": {
       "docId": "narrator_beau_1767273230867",
-      "voiceId": "p9I5Z3pHet4GqRjSTC9L",
+      "voiceId": "cTkwRZ3aKAHHX4ta3D7I",
       "name": "Beau"
     },
     "julia": {
       "docId": "narrator_1770997940681",
-      "voiceId": "p8JbsRMDYK9keH2updon",
+      "voiceId": "On3mNeKJI0XxvSyM3sLT",
       "name": "julia"
+    },
+    "adam": {
+      "docId": "L80IovU1drxKGBGHDSeU",
+      "voiceId": "nG70y8QwtA8cL5iSuU7f",
+      "name": "Adam"
     }
   },
   "stories": {
@@ -39,17 +44,17 @@
       "words": 889,
       "targetWords": 1275,
       "announcements": 0,
-      "ttsHash": "67c96c51ab9b1fa99cdf87354d75515864dd56f104dbf9e09e8129bd2d898774",
+      "ttsHash": "967628e841168610a76bb9ce7668aee8d7ebdbe4d5c7deadc5a2dcc81d363de6",
       "chunkCount": 6,
+      "docId": "3UlS7Q1nDLU4LmDwTTxK",
       "audioChunkURLs": [
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-grayson-rain-wind-down-chunk0.mp3?alt=media&token=6280c50a-0440-4940-a6aa-d3917e12c211",
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-grayson-rain-wind-down-chunk1.mp3?alt=media&token=9a254a92-6717-48ec-91de-e412b226bbd3",
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-grayson-rain-wind-down-chunk2.mp3?alt=media&token=023b9022-2e87-4c7a-b76b-6863800c2812",
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-grayson-rain-wind-down-chunk3.mp3?alt=media&token=e5ad0396-ec77-4824-91a1-1d922ae8ec1b",
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-grayson-rain-wind-down-chunk4.mp3?alt=media&token=4caea7a5-05d3-4ff5-9e8a-29bcb1b694ca",
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-grayson-rain-wind-down-chunk5.mp3?alt=media&token=12300089-6902-4e31-ba89-68c52cdee2a7"
-      ],
-      "docId": "3UlS7Q1nDLU4LmDwTTxK"
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-grayson-rain-wind-down-chunk0.mp3?alt=media&token=c80acc50-6b7c-473f-a107-c9f2636c16e4",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-grayson-rain-wind-down-chunk1.mp3?alt=media&token=7808c5a5-9315-4384-995d-51bd1466378c",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-grayson-rain-wind-down-chunk2.mp3?alt=media&token=432a3228-3bf8-4dd0-b7aa-c1ec8613da96",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-grayson-rain-wind-down-chunk3.mp3?alt=media&token=122e8188-a44d-4ff2-b7d4-5e413410d02e",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-grayson-rain-wind-down-chunk4.mp3?alt=media&token=212c3395-10d7-48ba-8935-51b8782ee92f",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-grayson-rain-wind-down-chunk5.mp3?alt=media&token=0c9bb055-e115-4b2e-95d6-621d643df011"
+      ]
     },
     "grayson-lazy-sunday": {
       "status": "published",
@@ -58,15 +63,15 @@
       "words": 658,
       "targetWords": 850,
       "announcements": 0,
-      "ttsHash": "985ddb6ac923aa7ece3e15f13626d1873e14b46511f948ec6eebdc0b0364e2dd",
+      "ttsHash": "a8f72bf01e2b559608caeb87172fe13bd760beb176eb793977f8ffac993d7d10",
       "chunkCount": 4,
+      "docId": "scNwxsUdAVMIi4BcHRJ6",
       "audioChunkURLs": [
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-grayson-lazy-sunday-chunk0.mp3?alt=media&token=4d8b9659-dbf3-418a-98f2-c0be0ff3f392",
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-grayson-lazy-sunday-chunk1.mp3?alt=media&token=b65722b4-d4a3-4bbf-91bd-48eeb6a69220",
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-grayson-lazy-sunday-chunk2.mp3?alt=media&token=e54c6634-1478-4fa1-bb8f-8c04a95ac650",
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-grayson-lazy-sunday-chunk3.mp3?alt=media&token=db712988-b239-449e-9770-e7305177ce2c"
-      ],
-      "docId": "scNwxsUdAVMIi4BcHRJ6"
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-grayson-lazy-sunday-chunk0.mp3?alt=media&token=ab1a6644-0761-4385-9a4d-4a3d03dd45d1",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-grayson-lazy-sunday-chunk1.mp3?alt=media&token=acee4b36-5588-43a1-93f0-3c662fefaf72",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-grayson-lazy-sunday-chunk2.mp3?alt=media&token=4acb1dcc-cad3-423c-bcff-c3429e38c4f4",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-grayson-lazy-sunday-chunk3.mp3?alt=media&token=b872ff7b-9162-4322-ae54-aae7784dc206"
+      ]
     },
     "roman-he-handles-it": {
       "status": "published",
@@ -75,15 +80,15 @@
       "words": 623,
       "targetWords": 850,
       "announcements": 0,
-      "ttsHash": "1a488b5774534216be7e7520d06ef3a14fbf43dd6e6eafec73d0b2e43d7859cc",
+      "ttsHash": "bf70037bb4f1bf78c0259c020c681c4a7d6797282b98c315afe0728aa3728e52",
       "chunkCount": 4,
+      "docId": "jURBTS8a2dAp83hsmzVc",
       "audioChunkURLs": [
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-roman-he-handles-it-chunk0.mp3?alt=media&token=3460af0a-a1f5-4ac7-ba8e-83239df4dafd",
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-roman-he-handles-it-chunk1.mp3?alt=media&token=061ec048-ad26-4776-b7d4-bec382f3f406",
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-roman-he-handles-it-chunk2.mp3?alt=media&token=52163f11-8e62-4173-a38f-64a4e8b91fb2",
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-roman-he-handles-it-chunk3.mp3?alt=media&token=d6aa7cb5-d594-4362-b2b8-85301ba96638"
-      ],
-      "docId": "jURBTS8a2dAp83hsmzVc"
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-roman-he-handles-it-chunk0.mp3?alt=media&token=98243fbf-9b69-4d16-a7dc-7c8d83df56a2",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-roman-he-handles-it-chunk1.mp3?alt=media&token=9d84b20d-7b3f-4c28-b2df-13a04be9fed4",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-roman-he-handles-it-chunk2.mp3?alt=media&token=2bc7d1a8-2f17-4093-866b-e5ac476e2dcc",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-roman-he-handles-it-chunk3.mp3?alt=media&token=9baad20f-18a4-4e5f-b6a8-c242e3baad41"
+      ]
     },
     "roman-silk-tie": {
       "status": "published",
@@ -92,15 +97,15 @@
       "words": 598,
       "targetWords": 850,
       "announcements": 0,
-      "ttsHash": "d0f1515a82e58f9078b95aa93558b8bf6b18d8c59e583fb3002fb30fc8099152",
+      "ttsHash": "00c9beaeab2f8b3983cc59073f12a707eb6e1b69a4ef9c32f2a4e5114ea94145",
       "chunkCount": 4,
+      "docId": "8ROrDSPlrJ0WeW9aMxEC",
       "audioChunkURLs": [
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-roman-silk-tie-chunk0.mp3?alt=media&token=bdd1a136-4dbf-4fe1-994e-63ae6c7a55ea",
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-roman-silk-tie-chunk1.mp3?alt=media&token=cc03c1e9-49a6-4c70-bf85-5b5ca172c6e3",
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-roman-silk-tie-chunk2.mp3?alt=media&token=eceff522-febb-4f21-a9e0-a9d383284bd0",
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-roman-silk-tie-chunk3.mp3?alt=media&token=d0c217e2-8554-4f56-b449-70941b620511"
-      ],
-      "docId": "8ROrDSPlrJ0WeW9aMxEC"
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-roman-silk-tie-chunk0.mp3?alt=media&token=ce087b17-b28a-4289-873e-b78ed226a216",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-roman-silk-tie-chunk1.mp3?alt=media&token=4cabdc78-cbfb-4aa5-9fcf-ab9a0297bb7f",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-roman-silk-tie-chunk2.mp3?alt=media&token=2d4db102-7737-4339-850d-eab481ffbd49",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-roman-silk-tie-chunk3.mp3?alt=media&token=4461cbe8-738e-493d-9cb3-815956909455"
+      ]
     },
     "beau-porch-storm": {
       "status": "published",
@@ -109,15 +114,15 @@
       "words": 661,
       "targetWords": 850,
       "announcements": 0,
-      "ttsHash": "6ef960bdf36602b07d3e85fdfa00cd4223fc6ff427a2efbce734db710a806e85",
+      "ttsHash": "2639dda5ee0f461f37098c3234032511b08618df87721609367d8fc08ff9288d",
       "chunkCount": 4,
+      "docId": "NBYAK0Z2zsYexu0sK7tb",
       "audioChunkURLs": [
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-beau-porch-storm-chunk0.mp3?alt=media&token=1ba387e8-b560-4bbb-88f6-fde9f1742613",
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-beau-porch-storm-chunk1.mp3?alt=media&token=4026a151-e9be-44f8-98bd-1cf3c1291be2",
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-beau-porch-storm-chunk2.mp3?alt=media&token=281aa51f-4338-4637-b0ef-1ccb0a58544c",
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-beau-porch-storm-chunk3.mp3?alt=media&token=038d33f1-a573-450f-b918-dcf1d6e7b5f6"
-      ],
-      "docId": "NBYAK0Z2zsYexu0sK7tb"
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-beau-porch-storm-chunk0.mp3?alt=media&token=356a9f8a-70bb-4f12-b9fd-0ae34e37e37f",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-beau-porch-storm-chunk1.mp3?alt=media&token=a87deb8f-359d-4646-8fbc-a77e27178a1f",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-beau-porch-storm-chunk2.mp3?alt=media&token=8b8f537d-e6fd-4cd1-a36b-e9f18132b6db",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-beau-porch-storm-chunk3.mp3?alt=media&token=87aaa9e2-1b1b-47db-9ee2-3e7bb83cf696"
+      ]
     },
     "beau-barn-heat": {
       "status": "published",
@@ -126,14 +131,14 @@
       "words": 491,
       "targetWords": 850,
       "announcements": 1,
-      "ttsHash": "3de2becfc9e9902fc548e52d6453b0f57c9a7ec1be1d509502d9fab88f3cb5c4",
+      "ttsHash": "293cbec982ba5d26afb2461b1147495aff7d7fb5a9d470991744de4f420d57ab",
       "chunkCount": 3,
+      "docId": "Q5Wde04KxzIckyWre158",
       "audioChunkURLs": [
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-beau-barn-heat-chunk0.mp3?alt=media&token=4beb4550-c9b9-47fa-8cf4-faf50f657e37",
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-beau-barn-heat-chunk1.mp3?alt=media&token=82aa7966-7d4f-47ea-9315-fc7d1dbd4971",
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-beau-barn-heat-chunk2.mp3?alt=media&token=6ca58900-1ac5-46d5-b3a6-de12e368a17b"
-      ],
-      "docId": "Q5Wde04KxzIckyWre158"
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-beau-barn-heat-chunk0.mp3?alt=media&token=e8caa44f-baa1-4e94-9126-2faa0837b878",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-beau-barn-heat-chunk1.mp3?alt=media&token=eae3a3ba-1654-4ad0-b159-84c53d8996e9",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-beau-barn-heat-chunk2.mp3?alt=media&token=a4c634d7-f5e3-4376-9ca3-78d536bfd337"
+      ]
     },
     "mara-last-call": {
       "status": "published",
@@ -142,15 +147,15 @@
       "words": 710,
       "targetWords": 850,
       "announcements": 1,
-      "ttsHash": "1e5bc8ab05d9fbbd281d66661d1dc34bbbd06c240861af6a3e0797ab64cc5bd0",
+      "ttsHash": "0a4b04b767713ae092c568247b15e94b4b81e41681596cce8d992efcd223b747",
       "chunkCount": 4,
+      "docId": "x66U6gJNLUhI64e7KDyg",
       "audioChunkURLs": [
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-mara-last-call-chunk0.mp3?alt=media&token=f21b18ce-7773-4511-a370-22a305418e68",
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-mara-last-call-chunk1.mp3?alt=media&token=215695a9-19e9-4e2e-94fd-999087b1b603",
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-mara-last-call-chunk2.mp3?alt=media&token=0f59274a-d05f-4e06-acd2-e0ee1d576639",
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-mara-last-call-chunk3.mp3?alt=media&token=ad418c79-1374-4b8e-a24b-d160ea1020f6"
-      ],
-      "docId": "x66U6gJNLUhI64e7KDyg"
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-mara-last-call-chunk0.mp3?alt=media&token=ddb75e49-a478-45dc-ac9a-7d558e87c55e",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-mara-last-call-chunk1.mp3?alt=media&token=28a4dcb4-a157-4ef9-a5f0-c69524d1f189",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-mara-last-call-chunk2.mp3?alt=media&token=48d3d595-04f5-4d63-8f3e-496a7d0b2b69",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-mara-last-call-chunk3.mp3?alt=media&token=0d5adb6c-951e-4a69-9aa1-ee8e45c61ebd"
+      ]
     },
     "mara-locks-the-door": {
       "status": "published",
@@ -159,33 +164,56 @@
       "words": 636,
       "targetWords": 850,
       "announcements": 0,
-      "ttsHash": "4c1c4ae66261db4c6c9c9d154542e8fd49a64594b0981345a227a911328c6be1",
+      "ttsHash": "ec1ab00e0a7f1ba977a1f9de271aadc792740397bbeedc8c252ece604ce11321",
       "chunkCount": 4,
+      "docId": "tBBfkdJZ3zkQQgYPmzwH",
       "audioChunkURLs": [
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-mara-locks-the-door-chunk0.mp3?alt=media&token=145d468c-d3cb-40b7-8b07-d925fc9699d0",
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-mara-locks-the-door-chunk1.mp3?alt=media&token=24deafcb-a68e-4f2e-93a1-8730ad695dcd",
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-mara-locks-the-door-chunk2.mp3?alt=media&token=22a020f5-6fbe-415f-a76f-aa073560eb87",
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-mara-locks-the-door-chunk3.mp3?alt=media&token=419eea58-65f1-4006-838b-49ca585c96fe"
-      ],
-      "docId": "tBBfkdJZ3zkQQgYPmzwH"
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-mara-locks-the-door-chunk0.mp3?alt=media&token=dea6c539-39b8-47b3-9eaa-7084c4f0d388",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-mara-locks-the-door-chunk1.mp3?alt=media&token=a878a009-cc8a-43b6-885c-7f4f933a5957",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-mara-locks-the-door-chunk2.mp3?alt=media&token=f588c410-eb06-426f-ae01-7e7fd62722b4",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-mara-locks-the-door-chunk3.mp3?alt=media&token=338d30f7-9d0b-48c3-9808-7411d5f45763"
+      ]
     },
     "kael-starlit-court": {
-      "status": "text",
+      "status": "published",
       "error": "ElevenLabs 404: {\"detail\":{\"type\":\"not_found\",\"code\":\"voice_not_found\",\"message\":\"A voice with voice_id 'adZJnAl6IYZw4EYI9FVd' was not found.\",\"status\":\"voice_not_found\",\"request_id\":\"8aa0787b2c47b00fc9de9f8e2ab2b85b",
       "textHash": "37848382c493b087f7f8368286aeffc3ee0e93e3c3f6bd88e1131208c4361cfc",
       "words": 1206,
       "targetWords": 1400,
       "announcements": 0,
-      "pauseDensity": 10
+      "pauseDensity": 10,
+      "ttsHash": "fc5bfb6c6f6edc317e2b6423ac85e595a823408dcbcd524007e58efeaa3ddfe5",
+      "chunkCount": 7,
+      "audioChunkURLs": [
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-kael-starlit-court-chunk0.mp3?alt=media&token=0cd0f9c1-1064-47e1-8a6a-d63c97da0237",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-kael-starlit-court-chunk1.mp3?alt=media&token=1b7d1859-791e-4ee8-8fb0-30c8bc45516b",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-kael-starlit-court-chunk2.mp3?alt=media&token=648a38fe-7e2b-452e-a4e1-c206e9917eb7",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-kael-starlit-court-chunk3.mp3?alt=media&token=7fedaead-ab98-45c0-8e68-f32620b438ad",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-kael-starlit-court-chunk4.mp3?alt=media&token=2e86a363-944d-40ae-b4e3-caeed9759de9",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-kael-starlit-court-chunk5.mp3?alt=media&token=5ae0a7f2-5a64-434b-9edd-5f7038d0f769",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-kael-starlit-court-chunk6.mp3?alt=media&token=ee86e65b-9aa5-4712-a121-1bb2f70d730d"
+      ],
+      "docId": "fnZnwCsHVDuCJtB9mQVX"
     },
     "kael-the-bargain": {
-      "status": "text",
+      "status": "published",
       "error": "ElevenLabs 404: {\"detail\":{\"type\":\"not_found\",\"code\":\"voice_not_found\",\"message\":\"A voice with voice_id 'adZJnAl6IYZw4EYI9FVd' was not found.\",\"status\":\"voice_not_found\",\"request_id\":\"fdead9500b6cde25c9de9f8e2ab2b360",
       "textHash": "82cc37e3fb9a58336a5bac38a93f63c899078b36b565fe84d6f23f7b5c6fdb5f",
       "words": 1002,
       "targetWords": 1400,
       "announcements": 0,
-      "pauseDensity": 19
+      "pauseDensity": 19,
+      "ttsHash": "491a5a4bf9982118f5054af69b8f9f913b6d08ef68c6d9b7391cb8f6b14506c4",
+      "chunkCount": 6,
+      "audioChunkURLs": [
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-kael-the-bargain-chunk0.mp3?alt=media&token=8ac1c194-d708-4f5c-afdd-4a78ac0cab1b",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-kael-the-bargain-chunk1.mp3?alt=media&token=51606c86-8712-4234-b1b6-4d1cf1117eeb",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-kael-the-bargain-chunk2.mp3?alt=media&token=406d296f-ee2f-4ff4-bbaa-981fbff5aa56",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-kael-the-bargain-chunk3.mp3?alt=media&token=926110c7-e1d8-439a-a8fd-de4c5b7721c9",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-kael-the-bargain-chunk4.mp3?alt=media&token=6e9a73e7-9f49-4a8d-9bf3-f15793014f4c",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-kael-the-bargain-chunk5.mp3?alt=media&token=9da983db-04dc-4bb3-b3f2-18094328f4fb"
+      ],
+      "docId": "roFGRTgmcTSscRaNTH2R"
     },
     "julia-stay-on-the-line": {
       "status": "published",
@@ -194,17 +222,17 @@
       "words": 1047,
       "targetWords": 1275,
       "announcements": 1,
-      "ttsHash": "b72027d7f0d741be3c61f133080a0a40c7bad5ccf14ef5e9a9d5267d35bb82ce",
+      "ttsHash": "d7bd1a8cf3f7e1f67ac87cb237fcfe635d804620c794862d5823920ec33ddf6b",
       "chunkCount": 6,
+      "docId": "xFbYePcnLaJjdlPhYgi1",
       "audioChunkURLs": [
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-julia-stay-on-the-line-chunk0.mp3?alt=media&token=205d57ce-8ba2-468c-9180-4f27309a9b51",
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-julia-stay-on-the-line-chunk1.mp3?alt=media&token=b915c2b8-abdc-46f9-86e4-9fb2ac0ceed9",
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-julia-stay-on-the-line-chunk2.mp3?alt=media&token=36830ccb-32eb-4fc4-90bc-33dc8b8edacf",
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-julia-stay-on-the-line-chunk3.mp3?alt=media&token=31eb3921-6fd7-46fc-ba34-972b848db7e0",
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-julia-stay-on-the-line-chunk4.mp3?alt=media&token=3324d279-bb77-4052-845c-b1c9564e25e2",
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-julia-stay-on-the-line-chunk5.mp3?alt=media&token=24294891-ccd7-4c08-bb92-ecc3004e3d9b"
-      ],
-      "docId": "xFbYePcnLaJjdlPhYgi1"
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-julia-stay-on-the-line-chunk0.mp3?alt=media&token=611027f2-b782-4ed0-a9b6-0ca2e7ab05de",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-julia-stay-on-the-line-chunk1.mp3?alt=media&token=4ec14a38-2484-4c49-9104-2666aa9745f2",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-julia-stay-on-the-line-chunk2.mp3?alt=media&token=48019eed-111d-4247-b436-ed9ae7f25c27",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-julia-stay-on-the-line-chunk3.mp3?alt=media&token=f027238f-be76-4521-8e33-6777468b174c",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-julia-stay-on-the-line-chunk4.mp3?alt=media&token=a7e261e1-fa6c-4080-bdff-3354da287e3d",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-julia-stay-on-the-line-chunk5.mp3?alt=media&token=5c35b362-6cbb-4ad8-86d6-03a6234c4fff"
+      ]
     },
     "julia-good-boy": {
       "status": "published",
@@ -213,25 +241,40 @@
       "words": 644,
       "targetWords": 850,
       "announcements": 0,
-      "ttsHash": "d67fac6d78e3bff4d7b83733ba40d2c59ff7557cdd385859106057a1a37aa877",
+      "ttsHash": "a7974d6052e5c80d33c70c334e5a7ba6fcb5269f5d7c78c08aadb85a4cc49fa6",
       "chunkCount": 4,
+      "docId": "JB3LVQBOFd50uIxiWEba",
       "audioChunkURLs": [
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-julia-good-boy-chunk0.mp3?alt=media&token=08159b31-a93b-4677-8b83-9a5ba9045d99",
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-julia-good-boy-chunk1.mp3?alt=media&token=74918688-ccd5-43c6-81ea-d14b532add22",
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-julia-good-boy-chunk2.mp3?alt=media&token=7ebe7217-699e-4579-a03d-92485f44c8d1",
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-julia-good-boy-chunk3.mp3?alt=media&token=dc601984-8458-41c0-be6e-7ec9e5bb0ef4"
-      ],
-      "docId": "JB3LVQBOFd50uIxiWEba"
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-julia-good-boy-chunk0.mp3?alt=media&token=7de4e440-4357-4d11-8075-a7c917b1a297",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-julia-good-boy-chunk1.mp3?alt=media&token=effce52d-25cc-4445-8852-21b8a647d3d6",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-julia-good-boy-chunk2.mp3?alt=media&token=d1315c0d-31a6-4499-bafd-d101007adb3a",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-julia-good-boy-chunk3.mp3?alt=media&token=ac1d118e-d50e-454a-91df-bea36aee7199"
+      ]
     },
     "lighthouse-keeper": {
-      "status": "text",
+      "status": "published",
       "error": "Connection error.",
       "textHash": "8668031b6195f4d92096527217996018631cae6d817492015c9e955926bc26ba",
       "words": 1911,
       "targetWords": 2100,
       "announcements": 1,
       "docId": "LZLHAtWSPf1Tgvo9z0mV",
-      "pauseDensity": 9
+      "pauseDensity": 9,
+      "ttsHash": "933dd4b7b3b8bead5a3e364481db699d15538191cb23a99b1b6ea2fc7570b23a",
+      "chunkCount": 11,
+      "audioChunkURLs": [
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-lighthouse-keeper-chunk0.mp3?alt=media&token=51da3615-1c9e-4ffa-9c05-2d7bf4059242",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-lighthouse-keeper-chunk1.mp3?alt=media&token=5469988d-f8a5-40f5-bf99-473b323a9017",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-lighthouse-keeper-chunk2.mp3?alt=media&token=46d45772-6a7e-4a59-acba-73f90a460d7c",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-lighthouse-keeper-chunk3.mp3?alt=media&token=388dbea7-ebc5-4f51-ac42-a0d0d87677fc",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-lighthouse-keeper-chunk4.mp3?alt=media&token=1630c1e4-407b-468a-ac26-b2bd4c4b1223",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-lighthouse-keeper-chunk5.mp3?alt=media&token=29f3e43b-3be3-4e5c-a2bc-c5e7166f484c",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-lighthouse-keeper-chunk6.mp3?alt=media&token=3218904f-dcec-458b-8231-838a99a1f9a6",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-lighthouse-keeper-chunk7.mp3?alt=media&token=2a96fe90-68f4-4d2e-9ac4-c5337d6ae478",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-lighthouse-keeper-chunk8.mp3?alt=media&token=f5069e55-4621-4c21-88d0-b6c89c2eb98a",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-lighthouse-keeper-chunk9.mp3?alt=media&token=f1e589f6-c9d8-4c0e-b3c3-452f21582f2d",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-lighthouse-keeper-chunk10.mp3?alt=media&token=4b40f0d4-6d85-42bb-bb13-0d612697356a"
+      ]
     },
     "night-train-home": {
       "status": "published",
@@ -240,19 +283,19 @@
       "words": 710,
       "targetWords": 850,
       "announcements": 0,
-      "ttsHash": "3986e4282e4fdbb4e0ffc410d996b3046685292262d8ba707980b9a7c63efb39",
+      "ttsHash": "121c8c4b828bddcef03c446341c9d09532da0a5b2b6c26b8d7ca77fa2106f920",
       "chunkCount": 5,
+      "docId": "2XZmHgJKyZRn1rlBR45f",
       "audioChunkURLs": [
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-night-train-home-chunk0.mp3?alt=media&token=28d4a40a-058e-4282-84c1-2982a20e126a",
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-night-train-home-chunk1.mp3?alt=media&token=c6b5736f-97ac-40a6-8fd0-2d0e7903e743",
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-night-train-home-chunk2.mp3?alt=media&token=07cdcdc3-1270-4b7a-827d-ba6d5f72ceed",
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-night-train-home-chunk3.mp3?alt=media&token=3099ec0b-56c6-4d6e-acf8-46a7ae70311d",
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-night-train-home-chunk4.mp3?alt=media&token=c7c4307e-7832-487b-a7d3-10f1d0ccba5e"
-      ],
-      "docId": "2XZmHgJKyZRn1rlBR45f"
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-night-train-home-chunk0.mp3?alt=media&token=32371863-0988-4672-8f27-07e740ed6c23",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-night-train-home-chunk1.mp3?alt=media&token=bf4bfb6c-b93c-4ad3-a013-789ab1838d03",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-night-train-home-chunk2.mp3?alt=media&token=44ca316a-3b69-4076-b5c6-5b1fa545124a",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-night-train-home-chunk3.mp3?alt=media&token=3f25062c-5511-41de-95b9-ec22035a9fea",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-night-train-home-chunk4.mp3?alt=media&token=54d945ae-b3e8-40b0-af84-a8a42a33e291"
+      ]
     },
     "rain-on-the-skylight": {
-      "status": "tts",
+      "status": "published",
       "error": "Connection error.",
       "textHash": "254982912007cdfa58a55cd79fe9ca0be79c479582fd2cc826a54d5dbe098ef9",
       "words": 884,
@@ -260,17 +303,37 @@
       "announcements": 0,
       "ttsHash": "f19b6e390deebc70a514b5d092a8bd7a624c89291cec451b4f214b1cd93b3834",
       "chunkCount": 6,
-      "docId": "dmmdyJFcRUygotQfNMo6"
+      "docId": "dmmdyJFcRUygotQfNMo6",
+      "audioChunkURLs": [
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-rain-on-the-skylight-chunk0.mp3?alt=media&token=8a87bcc0-68ff-4fe6-b9e5-15903b79b75e",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-rain-on-the-skylight-chunk1.mp3?alt=media&token=0af5099b-ea53-4293-ba31-c0d974533c22",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-rain-on-the-skylight-chunk2.mp3?alt=media&token=52ac56ca-515a-477d-ad47-36d89d003b35",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-rain-on-the-skylight-chunk3.mp3?alt=media&token=82ee1b23-c77c-4a4e-b5cf-5c45899ab80d",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-rain-on-the-skylight-chunk4.mp3?alt=media&token=5ed4b0ae-4981-4bcd-aeb8-a467ee1fc430",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-rain-on-the-skylight-chunk5.mp3?alt=media&token=f127d25e-0c43-4026-9980-80c92f9b681f"
+      ]
     },
     "orc-by-the-hearth": {
-      "status": "text",
+      "status": "published",
       "error": "401 {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"API key is invalid.\"},\"request_id\":null}",
       "textHash": "f9aa642d1a8c990ebfb65bb653038bbbf67696c1042baf1014229e1e0ef66c75",
       "words": 1272,
       "targetWords": 1400,
       "announcements": 1,
       "docId": "oXPHHGZX74xQeCVmdNAt",
-      "pauseDensity": 11
+      "pauseDensity": 11,
+      "ttsHash": "031fbab7022b44bf56662c7e03b7fc089aa1f69fdd7d3ac30c7b60f7ff315bcc",
+      "chunkCount": 8,
+      "audioChunkURLs": [
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-orc-by-the-hearth-chunk0.mp3?alt=media&token=02281729-cb1c-433f-b350-4b9a74c3aaea",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-orc-by-the-hearth-chunk1.mp3?alt=media&token=f6554565-a511-4276-a324-4b73516d81b9",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-orc-by-the-hearth-chunk2.mp3?alt=media&token=fea43d0d-cfb0-455f-99bd-1d0ebdc1fefb",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-orc-by-the-hearth-chunk3.mp3?alt=media&token=0a9b8ff5-9181-4d06-bbeb-a6ff3abd1f1a",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-orc-by-the-hearth-chunk4.mp3?alt=media&token=f9e07637-75a4-4e6c-9210-afb9093dc2fa",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-orc-by-the-hearth-chunk5.mp3?alt=media&token=bda23315-ac53-428c-9ac0-3d157bdce37e",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-orc-by-the-hearth-chunk6.mp3?alt=media&token=47bc2a91-b463-45a3-a00f-e586692ba243",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-orc-by-the-hearth-chunk7.mp3?alt=media&token=c2c03854-9edf-4541-9fa6-290912d146ca"
+      ]
     },
     "snowed-in-chalet": {
       "status": "published",
@@ -279,16 +342,16 @@
       "words": 722,
       "targetWords": 850,
       "announcements": 0,
-      "ttsHash": "aa4e8196c844384b7a49238307efd78a98b27dbd3438111d8b044de700cdbdf0",
+      "ttsHash": "f070e47d0b398cd67bebd1c9dcd6e37da0b3321c573709ca901aa4b6d530995c",
       "chunkCount": 5,
+      "docId": "NFHkJOVgrVs5n5cJK2M9",
       "audioChunkURLs": [
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-snowed-in-chalet-chunk0.mp3?alt=media&token=ddf02ee9-c015-40e5-a479-88ccbfc9b51d",
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-snowed-in-chalet-chunk1.mp3?alt=media&token=85eb53fa-51b5-488d-9740-7f53ff8a1c89",
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-snowed-in-chalet-chunk2.mp3?alt=media&token=5e032722-83e5-49f0-a2c6-74752302170c",
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-snowed-in-chalet-chunk3.mp3?alt=media&token=384d84fe-3f0c-46cb-91d9-955d4ad5124c",
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-snowed-in-chalet-chunk4.mp3?alt=media&token=5e35ca0e-875b-4ac6-9b9e-558fb7e24693"
-      ],
-      "docId": "NFHkJOVgrVs5n5cJK2M9"
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-snowed-in-chalet-chunk0.mp3?alt=media&token=ca597523-a249-4f42-8dd6-3f755bd8fc8b",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-snowed-in-chalet-chunk1.mp3?alt=media&token=e0f131a4-b67d-463e-b8e6-6f0b09998aa4",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-snowed-in-chalet-chunk2.mp3?alt=media&token=7448c441-f746-4d6c-968a-59f5079b6640",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-snowed-in-chalet-chunk3.mp3?alt=media&token=65470ab1-9ba7-4203-a7b7-939772a9d241",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-snowed-in-chalet-chunk4.mp3?alt=media&token=ee57983d-73f1-4608-9633-1ff6839940f4"
+      ]
     },
     "rivals-one-bed": {
       "status": "published",
@@ -297,18 +360,18 @@
       "words": 561,
       "targetWords": 850,
       "announcements": 0,
-      "ttsHash": "2967bb0e6b12a8a6a82f78bf1216985d15e233993b605472082726301e68005f",
+      "ttsHash": "1c3202351aa84a2f75469969376d166321f4be42c8d8479fe09c11b15ac29295",
       "chunkCount": 4,
+      "docId": "tEeuQn1IKrwOuFM2o9ZB",
       "audioChunkURLs": [
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-rivals-one-bed-chunk0.mp3?alt=media&token=ba461059-9ab9-4373-94c8-9f779b0746aa",
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-rivals-one-bed-chunk1.mp3?alt=media&token=f71d2558-f683-49c7-a403-4264548de66e",
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-rivals-one-bed-chunk2.mp3?alt=media&token=71cca3e0-b941-4281-ac17-535e27a5a0fb",
-        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-rivals-one-bed-chunk3.mp3?alt=media&token=bc456c9f-b818-4352-959b-2b02546785ec"
-      ],
-      "docId": "tEeuQn1IKrwOuFM2o9ZB"
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-rivals-one-bed-chunk0.mp3?alt=media&token=d3aa49ba-ee0e-4bb9-ac48-6076351071f9",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-rivals-one-bed-chunk1.mp3?alt=media&token=87071633-ef1e-4cf5-aa75-81f6f205435a",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-rivals-one-bed-chunk2.mp3?alt=media&token=06a324f2-3843-49dc-bdab-9dd72b613439",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-rivals-one-bed-chunk3.mp3?alt=media&token=5be2c162-6e76-4fdd-92a5-43f451ecbad5"
+      ]
     },
     "the-bodyguard": {
-      "status": "tts",
+      "status": "published",
       "error": "ElevenLabs 429: {\"detail\":{\"type\":\"rate_limit_error\",\"code\":\"concurrent_limit_exceeded\",\"message\":\"Too many concurrent requests. Your current subscription is associated with a maximum of 5 concurrent requests (runnin",
       "textHash": "079245834fd059ab67a1a6afac4978eb84fd4b483d7360a6bb9cf519fb569270",
       "words": 662,
@@ -316,10 +379,16 @@
       "announcements": 1,
       "ttsHash": "ba169e138b6a5eae619a659c8902c59fe15f348b44036bfe9b940fd73c8de103",
       "chunkCount": 4,
-      "docId": "qqIL324iMnX0YZNGs1gZ"
+      "docId": "qqIL324iMnX0YZNGs1gZ",
+      "audioChunkURLs": [
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-the-bodyguard-chunk0.mp3?alt=media&token=f868f9eb-4677-4d5e-ab22-60a0bbbc140e",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-the-bodyguard-chunk1.mp3?alt=media&token=6f075c29-1dfb-4942-851f-ce43a7745822",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-the-bodyguard-chunk2.mp3?alt=media&token=87103820-dd05-4b26-adeb-e38311bf6497",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-the-bodyguard-chunk3.mp3?alt=media&token=88df7cd5-a7ab-4944-9b3a-6f18a5bc787b"
+      ]
     },
     "crimson-hours": {
-      "status": "tts",
+      "status": "published",
       "error": "ElevenLabs 429: {\"detail\":{\"type\":\"rate_limit_error\",\"code\":\"concurrent_limit_exceeded\",\"message\":\"Too many concurrent requests. Your current subscription is associated with a maximum of 5 concurrent requests (runnin",
       "textHash": "ebb3d9bd2bcc427890ca14127c457cb35f0b6d993a4f4e31f8f0e63370337ee9",
       "words": 678,
@@ -327,10 +396,16 @@
       "announcements": 0,
       "ttsHash": "e12ac32f59a810a91442214bebd6be7c85689b7f3ee4b6b0d22b6e71a7e91c87",
       "chunkCount": 4,
-      "docId": "98EQssVqOGTc7bzYZ0ys"
+      "docId": "98EQssVqOGTc7bzYZ0ys",
+      "audioChunkURLs": [
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-crimson-hours-chunk0.mp3?alt=media&token=f17671d2-77fb-4da2-b72c-b35a307925fa",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-crimson-hours-chunk1.mp3?alt=media&token=99107eab-f3f2-4895-bb22-b8cc77d3237f",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-crimson-hours-chunk2.mp3?alt=media&token=a87f7bf3-4524-4f12-8360-add873463162",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-crimson-hours-chunk3.mp3?alt=media&token=8c2d8186-ecf1-4def-ba3a-01b8cc7a1c90"
+      ]
     },
     "wolf-and-mate": {
-      "status": "tts",
+      "status": "published",
       "error": "401 {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"API key is invalid.\"},\"request_id\":null}",
       "textHash": "7d88bec0eddcea2a22565c9af14a5f8c21b967d371cf0618d6a93c5a84435f1d",
       "words": 592,
@@ -338,10 +413,16 @@
       "announcements": 0,
       "ttsHash": "dbafa1ac75bd032fd6cacfde4124e594233054db3cbadb6a308bf6ee94601415",
       "chunkCount": 4,
-      "docId": "AVzufvFx7Jwu9IzRBBYX"
+      "docId": "AVzufvFx7Jwu9IzRBBYX",
+      "audioChunkURLs": [
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-wolf-and-mate-chunk0.mp3?alt=media&token=0935e6c3-ec5e-4422-a3d3-cf55d7c06e25",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-wolf-and-mate-chunk1.mp3?alt=media&token=c30ddedd-1b33-46de-bfa0-57a7f8395c2f",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-wolf-and-mate-chunk2.mp3?alt=media&token=6861e9a9-9054-4d89-b30e-e1a4926100f8",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-wolf-and-mate-chunk3.mp3?alt=media&token=16c724bb-e543-4c44-8bc3-47136c30d142"
+      ]
     },
     "the-obsession": {
-      "status": "tts",
+      "status": "published",
       "error": "401 {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"API key is invalid.\"},\"request_id\":null}",
       "textHash": "4748cc4c6f8d3d632a5e845b6ec1a99c00674088934bcf9e6b8a4282b50126c5",
       "words": 579,
@@ -349,20 +430,36 @@
       "announcements": 0,
       "ttsHash": "586141789d41cf721ae00eaef837f0350e2d28b70d65d8685f7d436851dde450",
       "chunkCount": 4,
-      "docId": "sqVrh7gmLddtd3Gy32wP"
+      "docId": "sqVrh7gmLddtd3Gy32wP",
+      "audioChunkURLs": [
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-the-obsession-chunk0.mp3?alt=media&token=39dd1c73-0525-476e-ab51-1b02850c6b85",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-the-obsession-chunk1.mp3?alt=media&token=0efc18f3-f79a-461f-9e12-f6e9244e5907",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-the-obsession-chunk2.mp3?alt=media&token=72451ed2-b0ff-4658-9376-799cc8ccc2b2",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-the-obsession-chunk3.mp3?alt=media&token=22ac3ff4-aa2d-48c6-bc4b-8f40914cb00d"
+      ]
     },
     "ember-knight": {
-      "status": "text",
+      "status": "published",
       "error": "401 {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"API key is invalid.\"},\"request_id\":null}",
       "textHash": "8d8201a404764b01a18619625831acd12a3f1691c9008aca7aa30980b3deeaeb",
       "words": 1016,
       "targetWords": 1400,
       "announcements": 0,
       "docId": "AxrcqsLtDscYti7rTBQg",
-      "pauseDensity": 17
+      "pauseDensity": 17,
+      "ttsHash": "230b826bcfe680efb73881068cd50ca377c48c8e0a135c182e289fa29dbb34d7",
+      "chunkCount": 6,
+      "audioChunkURLs": [
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-ember-knight-chunk0.mp3?alt=media&token=61afe154-db9e-4f9f-a641-f77b399a8fd1",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-ember-knight-chunk1.mp3?alt=media&token=1e6bb49e-4a9b-4770-9816-a94fcde472a3",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-ember-knight-chunk2.mp3?alt=media&token=3e418194-b6ff-4cde-a2da-df2ba0b1a0bd",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-ember-knight-chunk3.mp3?alt=media&token=1ab373e4-2a9d-4db4-b6d7-ddffcfa60beb",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-ember-knight-chunk4.mp3?alt=media&token=07a382b9-5723-48a0-af44-506872ff3e92",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-ember-knight-chunk5.mp3?alt=media&token=5eb68a0c-a91d-4ff4-bd74-459b22fca4a3"
+      ]
     },
     "midnight-encore": {
-      "status": "tts",
+      "status": "published",
       "error": "401 {\"type\":\"error\",\"error\":{\"type\":\"authentication_error\",\"message\":\"API key is invalid.\"},\"request_id\":null}",
       "textHash": "e334da7ea9b47bf4133ec1a88865a6515db2aa5416604e5c0e2c854247bdc080",
       "words": 451,
@@ -370,28 +467,61 @@
       "announcements": 0,
       "ttsHash": "1afe34a3a4ef01e951b595dc0016e3c04d9b5d5207960f540e45f471c397087e",
       "chunkCount": 3,
-      "docId": "BYfLfog9U0f5LKongIAa"
+      "docId": "BYfLfog9U0f5LKongIAa",
+      "audioChunkURLs": [
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-midnight-encore-chunk0.mp3?alt=media&token=3feea95b-11cb-4618-868d-e691381d10a3",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-midnight-encore-chunk1.mp3?alt=media&token=95a4ef7b-7531-4b1b-810f-47f428cabb6d",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-midnight-encore-chunk2.mp3?alt=media&token=9d4ccc4e-0610-4554-892f-f83a61e037fd"
+      ]
     },
     "adam-the-atelier": {
-      "status": "text",
+      "status": "published",
       "textHash": "5a185ab231ce7ce120a9652c742e6cbc5ca9f8de7ce4da2646e859e2ee0df37b",
       "words": 720,
       "targetWords": 850,
-      "announcements": 2
+      "announcements": 2,
+      "ttsHash": "637b3ecb2e0eff73b6ddc8b84b2198b77bd019bcc95f2ef9f382c93204752e50",
+      "chunkCount": 5,
+      "audioChunkURLs": [
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-adam-the-atelier-chunk0.mp3?alt=media&token=4546981c-deb6-4ddd-8a2d-04f42dabda64",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-adam-the-atelier-chunk1.mp3?alt=media&token=8bedac7d-2d3c-4751-a854-64760fc4a036",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-adam-the-atelier-chunk2.mp3?alt=media&token=af1373f8-9446-4a2c-8d8c-78b907565e72",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-adam-the-atelier-chunk3.mp3?alt=media&token=354a94b1-9e78-4841-b646-543f120c2b16",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fdaytime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-adam-the-atelier-chunk4.mp3?alt=media&token=a3e9f511-c8b5-4628-b1af-5051c3975cd2"
+      ],
+      "docId": "cYZoigJmbYu1mwClnAhC"
     },
     "adam-still-life": {
-      "status": "text",
+      "status": "published",
       "textHash": "31203089cd48a5b77eaca2084da48c4b6268b9de79f94b38d94f2be85a391d4e",
       "words": 594,
       "targetWords": 850,
-      "announcements": 0
+      "announcements": 0,
+      "ttsHash": "f883e3b8bd80433545d225adff7c3e62091311d8544ce06219a8062d1679094f",
+      "chunkCount": 4,
+      "audioChunkURLs": [
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-adam-still-life-chunk0.mp3?alt=media&token=4a0bb9e3-6c4d-442f-9546-ab0f9c42c30b",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-adam-still-life-chunk1.mp3?alt=media&token=ce382684-b638-4eed-b217-db8efd3a3caf",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-adam-still-life-chunk2.mp3?alt=media&token=9b6ead60-c1d5-455f-a4ba-720e57385be3",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-adam-still-life-chunk3.mp3?alt=media&token=72aeeabf-d03d-4f73-bc3c-30fc077f4dd6"
+      ],
+      "docId": "OskrAt1MdhFzXsdo7E6x"
     },
     "adam-after-the-opening": {
-      "status": "text",
+      "status": "published",
       "textHash": "84dfbdc929ba5647371c5ab64acdfcc26c40911e486ee6173ea79433c4e37719",
       "words": 574,
       "targetWords": 850,
-      "announcements": 1
+      "announcements": 1,
+      "ttsHash": "4e73ef39019734831b02cb9fe50bb65467d4e99d12690cbf07ad72d4d1f8b41e",
+      "chunkCount": 4,
+      "audioChunkURLs": [
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-adam-after-the-opening-chunk0.mp3?alt=media&token=beead236-a83b-4aff-be88-d9ad1e092c62",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-adam-after-the-opening-chunk1.mp3?alt=media&token=0517c0ac-ac6c-4fc5-8949-51f677e1129e",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-adam-after-the-opening-chunk2.mp3?alt=media&token=d72c59ad-7bbf-4b6c-b822-2371fcd1e096",
+        "https://firebasestorage.googleapis.com/v0/b/yourname-7fc08.firebasestorage.app/o/generated-audio%2Fnighttime%2FtW69CMf6jUfu9HqVMYgfGJamWJD3-pub-adam-after-the-opening-chunk3.mp3?alt=media&token=75e52a30-064a-4b29-a0cd-e5ee57f6fd44"
+      ],
+      "docId": "bGMAS38KzaU6RyAaH2ki"
     }
   },
   "voiceCandidates": {
@@ -570,6 +700,12 @@
       "name": "Wren (whisper)",
       "gender": "female",
       "previewIndex": 1
+    },
+    "ash": {
+      "voiceId": "PNDAHrVM8OhOjQOChYiL",
+      "name": "Ash (whisper)",
+      "gender": "neutral",
+      "previewIndex": 2
     }
   },
   "voiceOverrides": {

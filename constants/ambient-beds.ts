@@ -10,13 +10,14 @@ import { AMBIENT_BED_URLS } from './ambient-beds.generated';
 // scripts/public-stories/beds.mjs; adding a bed later = new file + new label,
 // no player changes.
 
-export type AmbientBedKey = 'rain' | 'street' | 'waves' | 'forest';
+export type AmbientBedKey = 'rain' | 'street' | 'waves' | 'forest' | 'hum';
 
 export const AMBIENT_BED_LABELS: Record<AmbientBedKey, string> = {
   rain: 'rain',
   street: 'night street',
   waves: 'waves',
   forest: 'forest',
+  hum: 'low hum',
 };
 
 /** Beds that are actually uploaded and playable right now. */
