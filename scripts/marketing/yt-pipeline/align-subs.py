@@ -139,11 +139,52 @@ def rescue_gap(lo, hi, tA, tB):
             got += 1
     return got
 
-anchors = [i for i, t in enumerate(times) if t]
-for a, b in zip(anchors, anchors[1:]):
-    if b - a > 4 and times[b][0] - times[a][1] > 15:
-        got = rescue_gap(a + 1, b, times[a][1], times[b][0])
-        print(f'gap rescue {times[a][1]:.0f}s→{times[b][0]:.0f}s: anchored {got}/{b - a - 1}')
+# anchors must tell one consistent story: time strictly advancing, never so
+# tight that a token run is crammed into an impossible span — the signature of
+# a repeated-phrase mis-match (difflib pinning "that's not"/"when i'm" to the
+# wrong occurrence). On conflict, drop whichever anchor strays further from
+# the line through its outer neighbors; the freed desert gets rescued below.
+def sanitize():
+    dropped = 0
+    while True:
+        idx = [i for i, t in enumerate(times) if t]
+        if len(idx) < 3:
+            break
+        g = max(0.5, min(5.0, (idx[-1] - idx[0]) / max(1.0, times[idx[-1]][0] - times[idx[0]][1])))
+        bad = None
+        for x in range(1, len(idx)):
+            a, b = idx[x - 1], idx[x]
+            dt = times[b][0] - times[a][1]
+            if dt < -0.05 or ((b - a) >= 8 and dt < (b - a) / g * 0.35):
+                bad = (x, a, b)
+                break
+        if not bad:
+            break
+        x, a, b = bad
+        p = idx[x - 2] if x >= 2 else None
+        n = idx[x + 1] if x + 1 < len(idx) else None
+        def dev(i, lo, hi):
+            if lo is None or hi is None or times[hi][0] <= times[lo][1]:
+                return float('inf')
+            exp = times[lo][1] + (i - lo) / (hi - lo) * (times[hi][0] - times[lo][1])
+            return abs(times[i][0] - exp)
+        times[a if dev(a, p, n) > dev(b, p, n) else b] = None
+        dropped += 1
+    if dropped:
+        print(f'sanitize: dropped {dropped} inconsistent anchors')
+
+for rnd in range(2):
+    sanitize()
+    anchors = [i for i, t in enumerate(times) if t]
+    rescued = 0
+    for a, b in zip(anchors, anchors[1:]):
+        if b - a > 4 and times[b][0] - times[a][1] > 15:
+            got = rescue_gap(a + 1, b, times[a][1], times[b][0])
+            print(f'gap rescue r{rnd + 1} {times[a][1]:.0f}s→{times[b][0]:.0f}s: anchored {got}/{b - a - 1}')
+            rescued += got
+    if not rescued:
+        break
+sanitize()
 
 # interpolate remaining gaps EVENLY between surviving anchors (the old
 # cascading-midpoint fill bunched tokens toward the earlier anchor, which made
