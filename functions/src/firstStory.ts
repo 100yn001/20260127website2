@@ -91,6 +91,10 @@ export const generateFirstStory = onCall(
     if (!uid) throw new HttpsError('unauthenticated', 'must be signed in');
 
     const name = String(request.data?.name || 'friend').slice(0, 40);
+    // Optional phonetic spelling: substituted into the TTS text only, so the
+    // narrator says the name right while the stored transcript keeps the
+    // real spelling.
+    const phonetic = String(request.data?.phonetic || '').trim().slice(0, 60);
     const gender = (['male', 'female', 'neutral'] as const).includes(request.data?.gender)
       ? (request.data.gender as FirstStoryGender)
       : 'neutral';
@@ -117,8 +121,12 @@ export const generateFirstStory = onCall(
       const voiceId = FIRST_STORY_VOICE_IDS[gender];
       const chunks = splitTextIntoChunks(transcript);
 
+      const nameForTts = phonetic
+        ? new RegExp(name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi')
+        : null;
       const chunkBuffers = await mapWithConcurrency(chunks, 2, (c) => {
-        const d = houseDelivery(c, voiceId);
+        const spoken = nameForTts ? c.replace(nameForTts, phonetic) : c;
+        const d = houseDelivery(spoken, voiceId);
         return ttsChunkBuffer(d.text, voiceId, d.settings);
       });
 

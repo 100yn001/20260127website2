@@ -260,6 +260,10 @@ export default function OnboardingScreen() {
   const [firstStoryStage, setFirstStoryStage] = useState<FirstStoryStage>('pick');
   const [firstStoryGender, setFirstStoryGender] = useState<FirstStoryGender | null>(null);
   const [firstStoryScenario, setFirstStoryScenario] = useState<FirstStoryScenario | null>(null);
+  // Optional phonetic spelling of the name — used only in the text handed to
+  // TTS so the narrator pronounces it right; the displayed transcript keeps
+  // the real spelling.
+  const [namePhonetic, setNamePhonetic] = useState('');
   const [upgradeBusy, setUpgradeBusy] = useState(false);
   const [firstStoryError, setFirstStoryError] = useState<string | null>(null);
   const [firstStory, setFirstStory] = useState<GeneratedFirstStory | null>(null);
@@ -755,6 +759,7 @@ export default function OnboardingScreen() {
           descriptors: selectedDescriptors,
           descriptors2: selectedDescriptors2,
           dob,
+          phoneticName: namePhonetic.trim() || undefined,
         } as any,
       );
 
@@ -815,6 +820,9 @@ export default function OnboardingScreen() {
       // Also save to AsyncStorage for offline access
       await AsyncStorage.setItem('hasCompletedOnboarding', 'true');
       await AsyncStorage.setItem('userName', nameInput);
+      if (namePhonetic.trim()) {
+        await AsyncStorage.setItem('userNamePhonetic', namePhonetic.trim());
+      }
       await AsyncStorage.setItem('onboardingAnswers', JSON.stringify(answers));
 
       setIsLoading(false);
@@ -977,13 +985,14 @@ export default function OnboardingScreen() {
       // signup links the same uid, so it lands in the library automatically.
       await ensureAnonymousSession();
       const call = httpsCallable<
-        { name: string; gender: FirstStoryGender; scenario: FirstStoryScenario },
+        { name: string; gender: FirstStoryGender; scenario: FirstStoryScenario; phonetic?: string },
         GeneratedFirstStory
       >(functions, 'generateFirstStory');
       const result = await call({
         name: nameInput.trim() || 'friend',
         gender: firstStoryGender,
         scenario: firstStoryScenario,
+        phonetic: namePhonetic.trim() || undefined,
       });
       setFirstStory(result.data);
       setFirstStoryStage('ready');
@@ -1722,6 +1731,18 @@ export default function OnboardingScreen() {
                     </Text>
                   </TouchableOpacity>
                 </View>
+                <Text style={[styles.firstStoryLabel, { marginTop: 28 }]}>
+                  how do you say your name? (optional)
+                </Text>
+                <TextInput
+                  style={[styles.nameInput, styles.phoneticInput]}
+                  value={namePhonetic}
+                  onChangeText={setNamePhonetic}
+                  placeholder={`e.g. "${(nameInput.trim() || 'river').toLowerCase()}" as it sounds`}
+                  placeholderTextColor="#555"
+                  autoCapitalize="none"
+                  maxLength={60}
+                />
                 {canGenerate ? (
                   <TouchableOpacity
                     style={styles.continueButton}
@@ -1825,7 +1846,8 @@ export default function OnboardingScreen() {
         <Animated.View style={[styles.fullScreen, animatedStyle]}>
           <View style={styles.centered}>
             <Text style={[styles.subtitle, { marginBottom: 10 }]}>
-              welcome to <Text style={styles.bracket}>{'{'}yn{'}'}</Text> beta,{' '}
+              welcome to <Text style={styles.bracket}>{'{'}yn{'}'}</Text>
+              <Text style={styles.betaSup}>beta</Text>,{' '}
               <Text style={styles.italic}>{nameInput.trim() || 'friend'}</Text>
             </Text>
             <Text style={styles.betaQuota}>
@@ -1833,15 +1855,15 @@ export default function OnboardingScreen() {
             </Text>
 
             <View style={styles.betaOfferCard}>
+              <Text style={styles.betaOfferSub}>upgrade at any time</Text>
               <Text style={styles.betaOfferHeadline}>
                 {MONTHLY_STORY_LIMIT} generations / month · $3
               </Text>
-              <Text style={styles.betaOfferSub}>upgrade at any time</Text>
               <TouchableOpacity onPress={handleUpgrade} style={styles.button} disabled={upgradeBusy}>
                 {upgradeBusy ? (
-                  <ActivityIndicator size="small" color="#fff" />
+                  <ActivityIndicator size="small" color="#000" />
                 ) : (
-                  <Text style={styles.continueText}>upgrade →</Text>
+                  <Text style={styles.betaUpgradeText}>upgrade →</Text>
                 )}
               </TouchableOpacity>
             </View>
@@ -2140,6 +2162,16 @@ const styles = StyleSheet.create({
     color: 'rgba(255, 255, 255, 0.5)',
     fontFamily: 'EBGaramond-Regular',
   },
+  betaSup: {
+    fontSize: 12,
+    color: '#7f1d1d',
+    fontFamily: 'EBGaramond-Regular',
+    fontStyle: 'italic',
+    // Raises the exponent on web (span gets CSS relative positioning);
+    // native falls back to baseline-aligned small text, which still reads.
+    position: 'relative',
+    top: -7,
+  },
   betaQuota: {
     fontSize: 17,
     color: 'rgba(255, 255, 255, 0.65)',
@@ -2149,23 +2181,29 @@ const styles = StyleSheet.create({
   betaOfferCard: {
     marginTop: 44,
     alignItems: 'center',
-    gap: 6,
-    borderWidth: 1,
-    borderColor: 'rgba(127, 29, 29, 0.5)',
+    gap: 8,
+    backgroundColor: '#fff',
     borderRadius: 14,
-    paddingVertical: 22,
-    paddingHorizontal: 30,
+    paddingVertical: 24,
+    paddingHorizontal: 32,
   },
   betaOfferHeadline: {
-    fontSize: 18,
-    color: '#fff',
+    fontSize: 17,
+    color: '#000',
     fontFamily: 'EBGaramond-Medium',
   },
   betaOfferSub: {
     fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.5)',
+    color: 'rgba(0, 0, 0, 0.55)',
     fontFamily: 'EBGaramond-Regular',
-    marginBottom: 6,
+  },
+  betaUpgradeText: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: '#000',
+    fontFamily: 'EBGaramond-Medium',
+    textTransform: 'lowercase',
+    marginTop: 2,
   },
   bottomButtons: {
     position: 'absolute',
@@ -2309,6 +2347,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#fff',
     fontFamily: 'EBGaramond-Regular',
+  },
+  phoneticInput: {
+    fontSize: 16,
+    textAlign: 'center',
+    minWidth: 220,
+    alignSelf: 'center',
   },
   nameInput: {
     borderBottomWidth: 1,

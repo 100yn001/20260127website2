@@ -37,6 +37,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const USER_SCOPED_KEYS = [
   'hasCompletedOnboarding',
   'userName',
+  'userNamePhonetic',
   'onboardingAnswers',
   'storyTagPreferences',
 ];
