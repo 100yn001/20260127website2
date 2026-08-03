@@ -25,8 +25,10 @@ const STRIPE_SECRET_KEY = defineSecret('STRIPE_SECRET_KEY');
 const STRIPE_WEBHOOK_SECRET = defineSecret('STRIPE_WEBHOOK_SECRET');
 
 export const MONTHLY_PRICE_LOOKUP_KEY = 'yn_monthly_3';
-const PRODUCT_NAME = 'yn monthly';
-const PRODUCT_DESCRIPTION = 'yn subscription — 10 stories a month plus the public story library';
+// Mirrors the LIVE product (prod_UxlTDIe4LU6m2Y) — updated via API 2026-08-03.
+// Only used if the product ever has to be re-created from scratch.
+const PRODUCT_NAME = 'yn subscription';
+const PRODUCT_DESCRIPTION = '10 stories a month plus the public story library';
 const PRICE_CENTS = 300;
 
 let _stripe: Stripe | null = null;
