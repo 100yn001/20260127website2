@@ -240,6 +240,9 @@ clean = []
 for c in cues:
     if clean and c['start'] < clean[-1]['end'] - 0.05:
         c['start'] = clean[-1]['end']
+        # never drop real dialogue because the previous cue's whisper anchor
+        # overshot into it — give the clamped cue a readable floor instead
+        c['end'] = max(c['end'], round(c['start'] + 0.9, 2))
     c['end'] = min(c['end'], round(c['start'] + 8.0, 2))
     if c['end'] - c['start'] > 0.15:
         clean.append(c)
@@ -251,7 +254,8 @@ for i, c in enumerate(clean):
     if c['end'] - c['start'] < 0.7:
         c['end'] = round(max(c['end'], min(c['start'] + 1.2, nxt)), 2)
 if clean:
-    clean[-1]['end'] = round(min(dur - 0.2, max(clean[-1]['end'], clean[-1]['start'] + 2.0)), 2)
+    # the closing line holds a beat — it may outlive the audio into the outro
+    clean[-1]['end'] = round(max(clean[-1]['end'], clean[-1]['start'] + 1.5), 2)
 
 json.dump(clean, open(f'{OUT}/cues.json', 'w'), indent=1)
 print(f'✅ {OUT}/cues.json ({len(clean)} cues)')

@@ -27,11 +27,11 @@
  {
   "text": "i'm just",
   "start": 14.24,
-  "end": 14.88
+  "end": 15.14
  },
  {
   "text": "holding it.",
-  "start": 14.88,
+  "start": 15.14,
   "end": 16.53
  },
  {
@@ -57,11 +57,11 @@
  {
   "text": "what?",
   "start": 29.46,
-  "end": 30.18
+  "end": 30.36
  },
  {
   "text": "can't a guy sit in a car?",
-  "start": 30.18,
+  "start": 30.36,
   "end": 35.23
  },
  {
@@ -162,7 +162,7 @@
  {
   "text": "the street.",
   "start": 90.5,
-  "end": 91.7
+  "end": 91.4
  },
  {
   "text": "there's a whole street out there.",
@@ -215,13 +215,18 @@
   "end": 122.43
  },
  {
-  "text": "nothing.",
+  "text": "doing what?",
   "start": 122.43,
-  "end": 123.11
+  "end": 123.33
+ },
+ {
+  "text": "nothing.",
+  "start": 123.33,
+  "end": 124.23
  },
  {
   "text": "we're doing nothing, that's my whole point,",
-  "start": 123.11,
+  "start": 124.23,
   "end": 125.97
  },
  {
@@ -232,16 +237,16 @@
  {
   "text": "him.",
   "start": 127.6,
-  "end": 128.01
+  "end": 128.5
  },
  {
   "text": "yeah.",
-  "start": 128.01,
-  "end": 128.42
+  "start": 128.5,
+  "end": 129.4
  },
  {
   "text": "no, i know who you mean.",
-  "start": 128.42,
+  "start": 129.4,
   "end": 130.87
  },
  {
@@ -257,21 +262,21 @@
  {
   "text": "nice",
   "start": 143.38,
-  "end": 144.21
+  "end": 144.28
  },
  {
   "text": "guy.",
-  "start": 144.21,
+  "start": 144.28,
   "end": 149.14
  },
  {
   "text": "who exists.",
   "start": 149.14,
-  "end": 149.78
+  "end": 150.04
  },
  {
   "text": "and tells stories.",
-  "start": 149.78,
+  "start": 150.04,
   "end": 152.72
  },
  {
@@ -407,16 +412,16 @@
  {
   "text": "yeah.",
   "start": 234.28,
-  "end": 234.86
+  "end": 235.18
  },
  {
   "text": "that one.",
-  "start": 234.86,
-  "end": 236.02
+  "start": 235.18,
+  "end": 236.08
  },
  {
   "text": "and i stood there with my drink and i thought",
-  "start": 236.02,
+  "start": 236.08,
   "end": 240.37
  },
  {
@@ -472,11 +477,11 @@
  {
   "text": "not fair.",
   "start": 272.8,
-  "end": 273.36
+  "end": 273.7
  },
  {
   "text": "i know.",
-  "start": 273.36,
+  "start": 273.7,
   "end": 275.93
  },
  {
@@ -517,21 +522,21 @@
  {
   "text": "in?",
   "start": 303.11,
-  "end": 303.51
+  "end": 304.01
  },
  {
   "text": "i practiced.",
-  "start": 303.51,
+  "start": 304.01,
   "end": 305.23
  },
  {
   "text": "casual.",
   "start": 305.23,
-  "end": 306.09
+  "end": 306.13
  },
  {
   "text": "i rehearsed sounding like a person who was",
-  "start": 306.09,
+  "start": 306.13,
   "end": 311.58
  },
  {
@@ -622,7 +627,7 @@
  {
   "text": "facing you.",
   "start": 359.71,
-  "end": 360.47
+  "end": 360.61
  },
  {
   "text": "full eye contact this is very hard for me right",
@@ -632,7 +637,7 @@
  {
   "text": "now.",
   "start": 366.64,
-  "end": 367.84
+  "end": 367.54
  },
  {
   "text": "please note the effort.",
@@ -702,11 +707,11 @@
  {
   "text": "could.",
   "start": 406.96,
-  "end": 407.38
+  "end": 407.86
  },
  {
   "text": "don't\u2014 hey, no, don't cry, that's not\u2014 oh no.",
-  "start": 407.38,
+  "start": 407.86,
   "end": 414.66
  },
  {
@@ -812,11 +817,11 @@
  {
   "text": "hard.",
   "start": 474.69,
-  "end": 475.25
+  "end": 475.59
  },
  {
   "text": "because marinating in it for an hour was so",
-  "start": 475.25,
+  "start": 475.59,
   "end": 480.2
  },
  {
@@ -877,7 +882,7 @@
  {
   "text": "forehead.",
   "start": 515.0,
-  "end": 516.2
+  "end": 515.9
  },
  {
   "text": "just\u2014 there.",
@@ -927,7 +932,7 @@
  {
   "text": "manner.",
   "start": 542.01,
-  "end": 543.21
+  "end": 542.91
  },
  {
   "text": "i'm sorry about the silent car ride.",
@@ -947,11 +952,11 @@
  {
   "text": "guy,\"",
   "start": 555.68,
-  "end": 556.14
+  "end": 556.58
  },
  {
   "text": "and i knew how that would sound.",
-  "start": 556.14,
+  "start": 556.58,
   "end": 558.92
  },
  {
@@ -997,11 +1002,11 @@
  {
   "text": "it's late.",
   "start": 579.72,
-  "end": 580.04
+  "end": 580.62
  },
  {
   "text": "you should go in.",
-  "start": 580.04,
+  "start": 580.62,
   "end": 582.75
  },
  {
@@ -1012,16 +1017,16 @@
  {
   "text": "slow.",
   "start": 587.49,
-  "end": 588.17
+  "end": 588.39
  },
  {
   "text": "embarrassingly slow.",
-  "start": 588.17,
-  "end": 589.11
+  "start": 588.39,
+  "end": 589.29
  },
  {
   "text": "old-man-with-a-newspaper slow.",
-  "start": 589.11,
+  "start": 589.29,
   "end": 592.86
  },
  {
@@ -1042,11 +1047,11 @@
  {
   "text": "yeah.",
   "start": 605.34,
-  "end": 606.05
+  "end": 606.24
  },
  {
   "text": "that was smoother than anything i said all",
-  "start": 606.05,
+  "start": 606.24,
   "end": 610.01
  },
  {
@@ -1072,6 +1077,11 @@
  {
   "text": "slow.",
   "start": 619.32,
-  "end": 621.32
+  "end": 619.99
+ },
+ {
+  "text": "i mean it.",
+  "start": 619.99,
+  "end": 621.49
  }
 ]
