@@ -1,5 +1,10 @@
 import { auth, functions } from '@/config/firebase';
 import { ambientBedUrl } from '@/constants/ambient-beds';
+import {
+  FREE_STORY_LIMIT,
+  MONTHLY_STORY_LIMIT,
+  startSubscriptionCheckout,
+} from '@/services/entitlements-service';
 import { personalityInitial, personalityReally } from '@/constants/personality-sets';
 import { useAuth } from '@/contexts/AuthContext';
 import { generateTarotCard } from '@/services/replicate-service';
@@ -68,7 +73,8 @@ type Step =
   | 'name'
   | 'storyteller-recap'
   | 'first-story'
-  | 'signup';
+  | 'signup'
+  | 'welcome-beta';
 
 const MIN_AGE_YEARS = 18;
 
@@ -254,6 +260,7 @@ export default function OnboardingScreen() {
   const [firstStoryStage, setFirstStoryStage] = useState<FirstStoryStage>('pick');
   const [firstStoryGender, setFirstStoryGender] = useState<FirstStoryGender | null>(null);
   const [firstStoryScenario, setFirstStoryScenario] = useState<FirstStoryScenario | null>(null);
+  const [upgradeBusy, setUpgradeBusy] = useState(false);
   const [firstStoryError, setFirstStoryError] = useState<string | null>(null);
   const [firstStory, setFirstStory] = useState<GeneratedFirstStory | null>(null);
   // Object URLs for the player. Created after blobs land, revoked on unmount.
@@ -812,7 +819,9 @@ export default function OnboardingScreen() {
 
       setIsLoading(false);
 
-      router.replace('/(tabs)/library');
+      // Account exists — show the beta welcome (quota + optional upgrade)
+      // before dropping into the app.
+      advanceStepWithFade('welcome-beta');
 
     } catch (error: any) {
       setIsLoading(false);
@@ -1063,6 +1072,21 @@ export default function OnboardingScreen() {
     setFirstStoryPlaying(false);
     setFirstStoryProgress(0);
     advanceStepWithFade('signup');
+  };
+
+  const handleUpgrade = async () => {
+    try {
+      setUpgradeBusy(true);
+      await startSubscriptionCheckout(email.trim() || undefined);
+    } catch (err) {
+      Alert.alert('upgrade failed', err instanceof Error ? err.message : String(err));
+    } finally {
+      setUpgradeBusy(false);
+    }
+  };
+
+  const handleWelcomeBetaContinue = () => {
+    router.replace('/(tabs)/library');
   };
 
   const handleBirthdaySubmit = () => {
@@ -1795,6 +1819,48 @@ export default function OnboardingScreen() {
     );
   }
 
+  if (step === 'welcome-beta') {
+    return (
+      <View style={styles.container}>
+        <Animated.View style={[styles.fullScreen, animatedStyle]}>
+          <View style={styles.centered}>
+            <Text style={[styles.subtitle, { marginBottom: 10 }]}>
+              welcome to <Text style={styles.bracket}>{'{'}yn{'}'}</Text> beta,{' '}
+              <Text style={styles.italic}>{nameInput.trim() || 'friend'}</Text>
+            </Text>
+            <Text style={styles.betaQuota}>
+              you now have access to {FREE_STORY_LIMIT} free generations
+            </Text>
+
+            <View style={styles.betaOfferCard}>
+              <Text style={styles.betaOfferHeadline}>
+                {MONTHLY_STORY_LIMIT} generations / month · $3
+              </Text>
+              <Text style={styles.betaOfferSub}>upgrade at any time</Text>
+              <TouchableOpacity onPress={handleUpgrade} style={styles.button} disabled={upgradeBusy}>
+                {upgradeBusy ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Text style={styles.continueText}>upgrade →</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          <View style={styles.bottomButtonsFixed}>
+            <TouchableOpacity
+              onPress={handleWelcomeBetaContinue}
+              style={styles.signInButton}
+              disabled={upgradeBusy}
+            >
+              <Text style={styles.signInText}>no thank you</Text>
+            </TouchableOpacity>
+          </View>
+        </Animated.View>
+      </View>
+    );
+  }
+
   if (step === 'signup') {
     const canSubmit = email.trim() && password.trim() && confirmPassword.trim();
     return (
@@ -1807,8 +1873,6 @@ export default function OnboardingScreen() {
               </Text>
               <Text style={[styles.signupSub, { textAlign: 'center', marginBottom: 24 }]}>
                 <Text style={styles.bracket}>this is a beta!</Text>
-                {'\n'}sign up now for 5 free stories a day for a month
-                {'\n'}+ access to the public story library
               </Text>
 
               <View style={{ gap: 12 }}>
@@ -2075,6 +2139,33 @@ const styles = StyleSheet.create({
     fontSize: 22,
     color: 'rgba(255, 255, 255, 0.5)',
     fontFamily: 'EBGaramond-Regular',
+  },
+  betaQuota: {
+    fontSize: 17,
+    color: 'rgba(255, 255, 255, 0.65)',
+    fontFamily: 'EBGaramond-Regular',
+    textAlign: 'center',
+  },
+  betaOfferCard: {
+    marginTop: 44,
+    alignItems: 'center',
+    gap: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(127, 29, 29, 0.5)',
+    borderRadius: 14,
+    paddingVertical: 22,
+    paddingHorizontal: 30,
+  },
+  betaOfferHeadline: {
+    fontSize: 18,
+    color: '#fff',
+    fontFamily: 'EBGaramond-Medium',
+  },
+  betaOfferSub: {
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.5)',
+    fontFamily: 'EBGaramond-Regular',
+    marginBottom: 6,
   },
   bottomButtons: {
     position: 'absolute',
