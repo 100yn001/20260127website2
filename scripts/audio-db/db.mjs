@@ -87,10 +87,10 @@ const legacy = [
     pov: 'm4f',
     shelf: null,
     tone: 'nsfw',
-    inApp: { expected: true, docId: 'LndPvIOxQ6rIFYipSZGN' },
+    inApp: { expected: false, docId: 'LndPvIOxQ6rIFYipSZGN' },
     onYoutube: { expected: false },
     visualizer: { planned: false, done: false },
-    notes: 'no collection — lands on the "explore" shelf',
+    notes: 'REMOVED from library 2026-08-03 (user request, remove-stories.mjs); storage audio kept',
   },
   {
     slug: 'home-after-a-long-day',
@@ -101,10 +101,10 @@ const legacy = [
     pov: 'f4m',
     shelf: null,
     tone: 'sfw',
-    inApp: { expected: true, docId: 'RteBpEwZyfLrUjZk1Wh6' },
+    inApp: { expected: false, docId: 'RteBpEwZyfLrUjZk1Wh6' },
     onYoutube: { expected: false },
     visualizer: { planned: false, done: false },
-    notes: 'no collection — lands on the "explore" shelf',
+    notes: 'REMOVED from library 2026-08-03 (user request, remove-stories.mjs); storage audio kept',
   },
   {
     slug: 'after-dinner',
@@ -115,10 +115,10 @@ const legacy = [
     pov: 'm4f',
     shelf: null,
     tone: 'nsfw',
-    inApp: { expected: true, docId: 'dOPx3zYtDjUSp7jqNf4E' },
+    inApp: { expected: false, docId: 'dOPx3zYtDjUSp7jqNf4E' },
     onYoutube: { expected: false },
     visualizer: { planned: false, done: false },
-    notes: 'narrator adam has no publicNarrators doc; no collection',
+    notes: 'REMOVED from library 2026-08-03 (user request, remove-stories.mjs); storage audio kept; legacy adam pre-dates the adam narrator doc',
   },
 ];
 

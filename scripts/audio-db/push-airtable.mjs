@@ -146,7 +146,7 @@ async function main() {
     if (r.origin === 'yt-pipeline') {
       return fs.existsSync(path.join(YT_OUT, r.audioFile || '')) ? '✓ rendered — awaiting vet' : '✗ not rendered';
     }
-    if (r.origin === 'app-legacy') return '✓ published (legacy)';
+    if (r.origin === 'app-legacy') return r.inApp.expected ? '✓ published (legacy)' : '— removed from library';
     const m = batchManifest[r.slug] || {};
     const live = !!m.docId;
     if (m.status === 'published') return '✓ published — rerender queued';

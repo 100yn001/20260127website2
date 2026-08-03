@@ -24,9 +24,9 @@ Invariant: every YouTube audio also lives in the app.
 | still life | narrator: adam | m4f | after dark | nsfw | ✓ | — | — | — |  |
 | after the opening | narrator: adam | m4f | after dark | nsfw | ✓ | — | — | — |  |
 | goldilocks | narrator: lucy | f4f | bedtime | sfw | ✓ | — | — | — | shelf consolidated from legacy "bedtime stories" (consolidate-shelves.mjs); narrator lucy has no publicNarrators doc |
-| belts & ties | narrator: roman | m4f | explore | nsfw | ✓ | — | — | — | no collection — lands on the "explore" shelf |
-| home after a long day | narrator: julia | f4m | explore | sfw | ✓ | — | — | — | no collection — lands on the "explore" shelf |
-| after dinner | narrator: adam | m4f | explore | nsfw | ✓ | — | — | — | narrator adam has no publicNarrators doc; no collection |
+| belts & ties | narrator: roman | m4f | explore | nsfw | — | — | — | — | REMOVED from library 2026-08-03 (user request, remove-stories.mjs); storage audio kept |
+| home after a long day | narrator: julia | f4m | explore | sfw | — | — | — | — | REMOVED from library 2026-08-03 (user request, remove-stories.mjs); storage audio kept |
+| after dinner | narrator: adam | m4f | explore | nsfw | — | — | — | — | REMOVED from library 2026-08-03 (user request, remove-stories.mjs); storage audio kept; legacy adam pre-dates the adam narrator doc |
 
 ### One-shots
 
@@ -48,5 +48,5 @@ Invariant: every YouTube audio also lives in the app.
 | not jealous | one-shot | m4f | after dark | sfw | ✓ | rendered (not released) | done (lava) | street | shared yt boyfriend continuity voice; app audio = v2 (dusk voice), dry — night-street bed baked into the VIDEO only (parked-car scene); dry video backup in ambient-previews/ |
 | not going anywhere | one-shot | m4f | dark romance | sfw | ✓ | rendered (not released) | planned | — | soft-yandere SFW; re-voiced to dusk 2026-07-28 — video stale, re-render per VIDEO_SPECS |
 | can't sleep | one-shot | m4f | bedtime | sfw | ✓ | rendered (not released) | planned | rain | black-screen sleep lane; re-voiced to dusk 2026-07-28 — video stale, re-render per VIDEO_SPECS |
-| waited up | one-shot | f4m | bedtime | sfw | ✓ | rendered (not released) | planned | — | gf comfort lane; re-voiced to veil (= julia) 2026-07-28 — video stale, re-render per VIDEO_SPECS |
+| waited up | one-shot | f4m | bedtime | sfw | ✓ | rendered (not released) | done (radial) | — | gf comfort lane; veil v2 delivery ([whispers][softly] + 0.88) 2026-07-31 — app copy swapped to v2 in place; radial breathing-circle video fresh |
 
