@@ -1735,7 +1735,7 @@ export default function OnboardingScreen() {
               <>
                 <ActivityIndicator size="small" color="rgba(255,255,255,0.6)" />
                 <Text style={[styles.firstStoryHint, { marginTop: 24 }]}>
-                  weaving your story...
+                  generating your story...
                 </Text>
               </>
             ) : firstStoryStage === 'error' ? (

@@ -61,11 +61,14 @@ export function bakeSilverCanvases(
         src = blurred;
       }
 
+      // The blur above exists ONLY for the emboss bump map — the visible
+      // color face is painted from the sharp raster, else the whole card
+      // reads as out-of-focus.
       const colorCanvas = document.createElement('canvas');
       colorCanvas.width = texW;
       colorCanvas.height = texH;
       const cCtx = colorCanvas.getContext('2d')!;
-      cCtx.drawImage(src, 0, 0);
+      cCtx.drawImage(raw, 0, 0);
       const colorData = cCtx.getImageData(0, 0, texW, texH);
       const cd = colorData.data;
       for (let i = 0; i < cd.length; i += 4) {
